@@ -33,8 +33,9 @@ async function signOut() {
   await navigateTo('/')
 }
 
-// Dev-only convenience link to the captured-mail viewer (server still enforces admin + flag).
-const showDevMail = import.meta.dev
+// Mail viewer link when NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true (server enforces the same flag).
+const config = useRuntimeConfig()
+const showDevMail = computed(() => config.public.enableMailViewer === true)
 </script>
 
 <template>
@@ -225,12 +226,12 @@ const showDevMail = import.meta.dev
 
             <li v-if="showDevMail" class="sidebar-menu__item">
               <NuxtLink
-                to="/admin/dev-mail"
+                to="/mail"
                 class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin/dev-mail')"
+                :class="dashboardLinkClass('/mail')"
               >
                 <span class="icon"><i class="ph ph-envelope-simple" /></span>
-                <span class="text">Dev Mail Viewer</span>
+                <span class="text">Mail Inbox</span>
               </NuxtLink>
             </li>
           </ul>

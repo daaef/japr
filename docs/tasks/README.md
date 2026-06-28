@@ -30,3 +30,4 @@ Reference app: `C:\Users\reala\Creations\journal`
 | hygiene-parity | 20260626 | done | Removed dead approvals schema, strengthened password policy, consolidated signup role assignment, and documented permission rename |
 | audit-log-deferred | 20260626 | deferred | Audit log remains scope-gated for later explicit approval; no runtime audit subsystem added |
 | dashboard-perfect-parity | 20260627 | in_progress | Full dashboard parity plan covering role landing pages, workflow visibility, admin analytics, audit, public stats, and verification |
+| mail-viewer | 20260628 | done | Public `/mail` inbox when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true`; navbar + registration/activation links |

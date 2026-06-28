@@ -3,7 +3,10 @@ import { authClient } from '~~/lib/auth-client'
 import { resolveWorkspacePath } from '~/utils/workspace'
 
 const route = useRoute()
+const config = useRuntimeConfig()
 const { data: currentUser, refresh } = useCurrentUser()
+
+const showMailViewer = computed(() => config.public.enableMailViewer === true)
 
 const roles = computed(() => currentUser.value?.roles ?? [])
 const authenticated = computed(() => currentUser.value?.authenticated ?? false)
@@ -109,6 +112,15 @@ onMounted(() => {
               Journals
             </NuxtLink>
 
+            <NuxtLink
+              v-if="showMailViewer"
+              class="font-bold lg:hidden text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
+              :class="navClass(route.path.startsWith('/mail'))"
+              to="/mail"
+            >
+              Mail
+            </NuxtLink>
+
             <template v-if="authenticated">
               <NuxtLink
                 class="font-bold lg:hidden text-gray-100 hover:text-gray-400 focus:outline-none focus:text-gray-400"
@@ -182,6 +194,27 @@ onMounted(() => {
         </div>
       </div>
       <div class="flex items-center gap-x-2">
+        <NuxtLink
+          v-if="showMailViewer"
+          class="py-2 hidden px-5 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-gray-200 bg-white text-gray-700 hover:border-primary-300 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          to="/mail"
+        >
+          <svg
+            class="size-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+            />
+          </svg>
+          Mail
+        </NuxtLink>
         <template v-if="authenticated">
           <NuxtLink
             class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-secondary-800 text-white hover:bg-primary-900 focus:outline-none mr-4 focus:bg-secondary-950 disabled:opacity-50 disabled:pointer-events-none"

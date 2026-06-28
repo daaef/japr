@@ -30,13 +30,13 @@ export default defineNuxtConfig({
     googleClientSecret: '',
     defaultAdminEmail: 'admin@example.com',
     defaultAdminPassword: 'password',
-    // Dev/demo mail viewer (reads captured .data/mail). Off by default; enable with
-    // NUXT_ENABLE_MAIL_VIEWER=true. Even when on, the endpoint/page require an admin session.
-    enableMailViewer: false,
     public: {
       appName: 'JAPR',
       appDescription: 'Journal of African Policy Review',
-      baseUrl: 'http://localhost:3000'
+      baseUrl: 'http://localhost:3000',
+      // Dev/demo mail inbox (reads captured .data/mail). Off by default.
+      // Enable with NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true — public, no login required.
+      enableMailViewer: false
     }
   },
 

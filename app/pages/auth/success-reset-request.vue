@@ -5,6 +5,8 @@ definePageMeta({
 })
 
 const route = useRoute()
+const config = useRuntimeConfig()
+const showMailViewer = computed(() => config.public.enableMailViewer === true)
 const email = computed(() => typeof route.query.email === 'string' ? route.query.email : '')
 </script>
 
@@ -22,12 +24,21 @@ const email = computed(() => typeof route.query.email === 'string' ? route.query
       <p class="mt-4 text-sm text-gray-600">
         If an account exists for <strong>{{ email || 'your email' }}</strong>, you will receive password reset instructions shortly.
       </p>
-      <NuxtLink
-        to="/auth/login"
-        class="btn btn-primary mt-8 inline-flex"
-      >
-        Back to sign in
-      </NuxtLink>
+      <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <NuxtLink
+          to="/auth/login"
+          class="btn btn-primary inline-flex"
+        >
+          Back to sign in
+        </NuxtLink>
+        <NuxtLink
+          v-if="showMailViewer"
+          :to="{ path: '/mail', query: email ? { to: email } : undefined }"
+          class="inline-flex items-center rounded-full border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:border-primary-300 hover:text-primary-700"
+        >
+          View captured mail
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>

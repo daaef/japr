@@ -2,7 +2,7 @@ import { getLocalEmail } from '#server/utils/email'
 import { assertMailViewerAccess } from '#server/utils/devMail'
 
 export default defineEventHandler(async (event) => {
-  await assertMailViewerAccess(event)
+  assertMailViewerAccess(event)
 
   const id = getRouterParam(event, 'id')
   if (!id) {

@@ -5,9 +5,12 @@ definePageMeta({
 })
 
 const route = useRoute()
+const config = useRuntimeConfig()
+const showMailViewer = computed(() => config.public.enableMailViewer === true)
+
 const form = reactive({
   email: typeof route.query.email === 'string' ? route.query.email : '',
-  code: ''
+  code: typeof route.query.code === 'string' ? route.query.code : ''
 })
 
 const errorMessage = ref('')
@@ -52,7 +55,16 @@ async function submit() {
           Activate your account
         </h2>
         <p class="mt-2 text-sm text-gray-600">
-          Enter the six-digit code from your email. In local development, check `.data/mail`.
+          Enter the six-digit code from your email.
+          <template v-if="showMailViewer">
+            <NuxtLink
+              :to="{ path: '/mail', query: form.email ? { to: form.email } : undefined }"
+              class="font-medium text-primary-600 hover:text-primary-700"
+            >
+              Open the mail inbox
+            </NuxtLink>
+            to find your activation code.
+          </template>
         </p>
 
         <div
