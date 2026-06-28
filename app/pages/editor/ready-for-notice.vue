@@ -1,0 +1,15 @@
+<script setup lang="ts">
+definePageMeta({
+  middleware: ['auth', 'role'],
+  requiredRoles: ['admin', 'editor_in_chief', 'managing_editor']
+})
+</script>
+
+<template>
+  <JournalQueueList
+    title="Ready for Notice"
+    api-url="/api/editor/journals/ready-for-notice"
+    detail-path-prefix="/editor/journals"
+    empty-message="No manuscripts ready for notice."
+  />
+</template>

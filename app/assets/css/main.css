@@ -1,0 +1,76 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Georgia", "Times New Roman", serif;
+
+  /* Laravel journal tailwind.config.js — primary (orange) */
+  --color-primary-50: #fff8ed;
+  --color-primary-100: #fff0d4;
+  --color-primary-200: #ffdea8;
+  --color-primary-300: #ffc570;
+  --color-primary-400: #ffa137;
+  --color-primary-500: #ff830c;
+  --color-primary-600: #f06906;
+  --color-primary-700: #c74e07;
+  --color-primary-800: #9e3e0e;
+  --color-primary-900: #7f350f;
+  --color-primary-950: #451805;
+
+  /* Laravel journal tailwind.config.js — secondary (coral) */
+  --color-secondary-50: #fef4f2;
+  --color-secondary-100: #fde7e3;
+  --color-secondary-200: #fdd2cb;
+  --color-secondary-300: #fab2a7;
+  --color-secondary-400: #f48675;
+  --color-secondary-500: #ea5f49;
+  --color-secondary-600: #d7422b;
+  --color-secondary-700: #b53420;
+  --color-secondary-800: #962e1e;
+  --color-secondary-900: #762a1e;
+  --color-secondary-950: #43140c;
+
+  /* Nuxt UI aliases */
+  --color-orange-50: #fff8ed;
+  --color-orange-100: #fff0d4;
+  --color-orange-200: #ffdea8;
+  --color-orange-300: #ffc570;
+  --color-orange-400: #ffa137;
+  --color-orange-500: #ff830c;
+  --color-orange-600: #f06906;
+  --color-orange-700: #c74e07;
+  --color-orange-800: #9e3e0e;
+  --color-orange-900: #7f350f;
+  --color-orange-950: #451805;
+
+  --color-rose-50: #fef4f2;
+  --color-rose-100: #fde7e3;
+  --color-rose-200: #fdd2cb;
+  --color-rose-300: #fab2a7;
+  --color-rose-400: #f48675;
+  --color-rose-500: #ea5f49;
+  --color-rose-600: #d7422b;
+  --color-rose-700: #b53420;
+  --color-rose-800: #962e1e;
+  --color-rose-900: #762a1e;
+  --color-rose-950: #43140c;
+
+  --ui-primary: var(--color-primary-500);
+
+  --container-center: true;
+}
+
+body {
+  color: rgb(28 25 23);
+}
+
+/* Public site: neutralize Nuxt UI link defaults inside journal marketing shell */
+.journal-site header a,
+.journal-site #hero a:not(.btn):not([class*="bg-"]) {
+  text-decoration: none;
+}
+
+.journal-site a.bg-secondary-800:visited {
+  color: white !important;
+}

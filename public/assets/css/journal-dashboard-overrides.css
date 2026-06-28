@@ -1,0 +1,81 @@
+/* Ported from journal admin_layout.blade.php inline form/card/button rules — dashboard only */
+
+.dashboard-layout .form-control {
+  border-radius: 8px;
+  font-weight: 400;
+  outline: none;
+  width: 100%;
+  padding: 13px 16px;
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  line-height: 1.5;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-layout .form-control:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-layout .form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-layout .form-control.is-invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.dashboard-layout .form-control.is-invalid:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.dashboard-layout select[multiple].form-control {
+  min-height: 120px;
+  padding: 12px 16px;
+  background-image: none;
+}
+
+.dashboard-layout select[multiple].form-control option:checked {
+  background-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.dashboard-layout select[multiple].form-control option:checked:hover {
+  background-color: #2563eb;
+}
+
+.dashboard-layout .card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.dashboard-layout .card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  border-radius: 12px 12px 0 0;
+}
+
+.dashboard-layout .card-body {
+  padding: 1.5rem;
+}
+
+.dashboard-layout .btn-primary {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+.dashboard-layout .btn-primary:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "notification_preferences" jsonb DEFAULT '{"email":{"manuscript_status":true,"review_assignment":true,"new_submissions":true,"weekly_summary":false},"in_app":{"realtime":true,"sound":false,"desktop":false},"frequency":"immediate"}'::jsonb;

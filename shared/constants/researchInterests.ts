@@ -1,0 +1,23 @@
+export const RESEARCH_INTEREST_OPTIONS = [
+  'Agriculture',
+  'Medicine',
+  'Engineering',
+  'Social Sciences',
+  'Natural Sciences',
+  'Technology',
+  'Business',
+  'Education',
+  'Public Health',
+  'Environmental Science',
+  'Computer Science',
+  'Economics',
+  'Psychology',
+  'Law',
+  'Arts and Humanities',
+  'Mathematics',
+  'Physics',
+  'Chemistry',
+  'Biology',
+  'Geology',
+  'Astronomy'
+] as const

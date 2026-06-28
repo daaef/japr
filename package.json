@@ -1,0 +1,56 @@
+{
+  "name": "japr",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --host 0.0.0.0 --port 3000",
+    "preview": "nuxt preview --host 0.0.0.0 --port 3000",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:check": "tsx scripts/check-schema.ts",
+    "db:baseline": "node scripts/baseline-migrations.mjs",
+    "db:push:experimental": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed.ts",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.98",
+    "@iconify-json/simple-icons": "^1.2.74",
+    "@nuxt/image": "2.0.0",
+    "@nuxt/ui": "^4.5.1",
+    "@pinia/nuxt": "0.11.3",
+    "@vee-validate/nuxt": "4.15.1",
+    "@vee-validate/zod": "^4.15.1",
+    "better-auth": "^1.5.6",
+    "diff-match-patch": "^1.0.5",
+    "drizzle-orm": "^0.45.2",
+    "nuxt": "^4.4.2",
+    "pg": "^8.20.0",
+    "pinia": "^3.0.4",
+    "preline": "^4.2.0",
+    "resend": "^6.9.4",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@nuxt/eslint-config": "^1.15.2",
+    "@types/diff-match-patch": "^1.0.36",
+    "@types/node": "^24.5.2",
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^10.0.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.5",
+    "zod": "^4.3.6"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "imports": {
+    "#shared/*": "./shared/*",
+    "#server/*": "./server/*"
+  }
+}

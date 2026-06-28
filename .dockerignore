@@ -1,0 +1,16 @@
+node_modules
+.output
+.nuxt
+.git
+.data
+uploads
+*.log
+.env
+.env.*
+!.env.example
+.cursor
+.idea
+agent-transcripts
+japr-v1-reference
+coverage
+dist
