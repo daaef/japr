@@ -42,6 +42,15 @@ Manuscript file storage is now pluggable via `STORAGE_DRIVER`. On Vercel (`blob`
 - Live Blob `put`/`list`/`fetch` not exercised by automated tests (no token locally/CI). Manual verification needed on a Vercel deploy with a connected Blob store: upload a PDF in author submit → confirm download and in-browser preview; upload a DOC → confirm download works and preview shows the "download to view" message.
 - `local` driver behaviour is unchanged and remains the dev/Docker default.
 
-## Known follow-up
+## Addendum (same day) — direct-to-Blob client upload + error surfacing
 
-- Files larger than ~4.5 MB exceed Vercel's serverless request-body limit when proxied through `/api/files/upload`. Direct-to-Blob client upload (`@vercel/blob` client `upload()` + a `handleUpload` token route) is the fix and is deliberately out of this change's scope.
+After deploying, an upload on Vercel failed silently. Root causes: (1) the submit page masked the real upload error, and (2) server-proxied uploads are capped at Vercel's ~4.5 MB body limit. Implemented direct browser→Blob upload to remove the cap and fixed the masking.
+
+- **`app/pages/author/submit.vue`** — `createSubmission()` no longer overwrites a failed-upload error with the generic "Please upload your manuscript file." (returns early, keeping the real message). `uploadFile()` now delegates to `useManuscriptUpload()` and extracts `statusMessage` from `$fetch` errors. Why: surface the true failure.
+- **`app/composables/useManuscriptUpload.ts`** (new) — single upload entry used by both author pages. When `config.public.directUpload` is true it dynamically imports `@vercel/blob/client` and calls `upload(pathname, file, { access:'public', handleUploadUrl:'/api/files/upload-token', multipart:true })`, returning `result.pathname` as the opaque `fileKey`; otherwise posts multipart to `/api/files/upload`. Why: bypass the ~4.5 MB limit on Vercel while keeping local/Docker on disk, and keep both pages consistent (DRY).
+- **`server/api/files/upload-token.post.ts`** (new) — `handleUpload()` route issuing short-lived client tokens; `requireSession` enforced inside `onBeforeGenerateToken`, with `allowedContentTypes`/`maximumSizeInBytes` from the existing file config. Why: authorised, constrained direct uploads.
+- **`app/pages/author/submissions/[id].vue`** — revision `uploadFile()` switched to `useManuscriptUpload()` with the same error extraction. Why: consistency; revisions also need direct upload on Vercel.
+- **`nuxt.config.ts`** — added `runtimeConfig.public.directUpload` (env `NUXT_PUBLIC_DIRECT_UPLOAD`).
+- **`.env` / `README.md`** — documented `NUXT_PUBLIC_DIRECT_UPLOAD` and the redeploy-after-config requirement; removed the "follow-up" caveat now that direct upload ships.
+
+Stored key stays the opaque pathname (confidentiality unchanged). `pnpm typecheck` + `pnpm exec eslint` pass on all touched files. Still unverified against a live Blob store (no token locally): on Vercel set `STORAGE_DRIVER=blob`, connect a Blob store, set `NUXT_PUBLIC_DIRECT_UPLOAD=true`, redeploy, then upload.

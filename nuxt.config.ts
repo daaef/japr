@@ -36,7 +36,11 @@ export default defineNuxtConfig({
       baseUrl: 'http://localhost:3000',
       // Dev/demo mail inbox (reads captured .data/mail). Off by default.
       // Enable with NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true — public, no login required.
-      enableMailViewer: false
+      enableMailViewer: false,
+      // Upload manuscripts straight to Vercel Blob from the browser (bypasses the
+      // ~4.5MB serverless body limit). Enable on Vercel with NUXT_PUBLIC_DIRECT_UPLOAD=true
+      // alongside STORAGE_DRIVER=blob. Off by default → classic server multipart upload.
+      directUpload: false
     }
   },
 

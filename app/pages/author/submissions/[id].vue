@@ -123,6 +123,8 @@ const uploadedFile = ref<null | {
   originalName: string
 }>(null)
 
+const { uploadManuscript } = useManuscriptUpload()
+
 watchEffect(() => {
   if (!data.value.journal.id) {
     return
@@ -143,24 +145,14 @@ async function uploadFile() {
   successMessage.value = ''
 
   try {
-    const formData = new FormData()
-    formData.append('file', fileInput.value.files[0] as File)
-
-    const response = await $fetch<{
-      files: Array<{
-        fileKey: string
-        journalFormat: string
-        originalName: string
-      }>
-    }>('/api/files/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    uploadedFile.value = response.files[0] ?? null
+    uploadedFile.value = await uploadManuscript(fileInput.value.files[0] as File)
     successMessage.value = uploadedFile.value ? `Uploaded ${uploadedFile.value.originalName}.` : ''
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to upload this revision file.'
+    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
+    errorMessage.value = fetchError.data?.statusMessage
+      ?? fetchError.statusMessage
+      ?? fetchError.message
+      ?? 'Unable to upload this revision file.'
   } finally {
     actionLoading.value = false
   }

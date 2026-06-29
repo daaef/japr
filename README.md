@@ -75,10 +75,11 @@ Set these in the Vercel project **Settings → Environment Variables** for Produ
 | `MAILTRAP_API_TOKEN` / `MAILTRAP_ACCOUNT_ID` / `MAILTRAP_INBOX_ID` | optional — show the Mailtrap sandbox inbox on `/mail` (set with `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true`) |
 | `STORAGE_DRIVER` | `blob` — store manuscript uploads in Vercel Blob (disk storage is not durable on Vercel) |
 | `BLOB_READ_WRITE_TOKEN` | auto-added by Vercel when you connect a Blob store (Storage → Blob → Connect) |
+| `NUXT_PUBLIC_DIRECT_UPLOAD` | `true` — upload manuscripts browser→Blob directly (required for files over ~4.5 MB) |
 
 > The `/mail` viewer is public when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true` — it exposes activation codes and password-reset links to anyone with the URL. Enable it only on a testing/preview deployment, not a production site with real users.
 
-> **Uploads on Vercel:** set `STORAGE_DRIVER=blob` and connect a Blob store. DOC/DOCX conversion and in-browser DOC preview are disabled on Vercel (no LibreOffice/Pandoc) — PDFs preview/download directly; DOC/DOCX are download-only. Server-proxied uploads are capped by Vercel's ~4.5 MB request-body limit; larger files need direct-to-Blob client upload (follow-up).
+> **Uploads on Vercel:** set `STORAGE_DRIVER=blob`, connect a Blob store, and set `NUXT_PUBLIC_DIRECT_UPLOAD=true` so the browser uploads straight to Blob (bypassing Vercel's ~4.5 MB serverless request-body limit). Redeploy after changing any of these. DOC/DOCX conversion and in-browser DOC preview are disabled on Vercel (no LibreOffice/Pandoc) — PDFs preview/download directly; DOC/DOCX are download-only.
 
 `BETTER_AUTH_URL` must match the public site URL exactly (scheme + host, no trailing slash). On Vercel, `auth.ts` also trusts `japr.vercel.app` and `*.vercel.app` preview hosts via Better Auth `allowedHosts`.
 

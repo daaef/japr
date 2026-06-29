@@ -49,6 +49,8 @@ const uploadedFile = ref<null | {
   originalName: string
 }>(null)
 
+const { uploadManuscript } = useManuscriptUpload()
+
 const { data: categoryData } = await useFetch<{
   categories: Array<{
     id: string
@@ -160,23 +162,13 @@ async function uploadFile() {
   errorMessage.value = ''
 
   try {
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-
-    const response = await $fetch<{
-      files: Array<{
-        fileKey: string
-        journalFormat: string
-        originalName: string
-      }>
-    }>('/api/files/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    uploadedFile.value = response.files[0] ?? null
+    uploadedFile.value = await uploadManuscript(selectedFile.value)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to upload the manuscript file.'
+    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
+    errorMessage.value = fetchError.data?.statusMessage
+      ?? fetchError.statusMessage
+      ?? fetchError.message
+      ?? 'Unable to upload the manuscript file.'
   } finally {
     uploadLoading.value = false
   }
@@ -268,6 +260,10 @@ async function createSubmission() {
 
   if (!uploadedFile.value && selectedFile.value) {
     await uploadFile()
+    if (!uploadedFile.value) {
+      // uploadFile() already set errorMessage with the real server reason; don't mask it.
+      return
+    }
   }
 
   if (!uploadedFile.value) {
