@@ -31,3 +31,6 @@ Reference app: `C:\Users\reala\Creations\journal`
 | audit-log-deferred | 20260626 | deferred | Audit log remains scope-gated for later explicit approval; no runtime audit subsystem added |
 | dashboard-perfect-parity | 20260627 | in_progress | Full dashboard parity plan covering role landing pages, workflow visibility, admin analytics, audit, public stats, and verification |
 | mail-viewer | 20260628 | done | Public `/mail` inbox when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true`; navbar + registration/activation links |
+| vercel-auth-origin | 20260628 | done | Better Auth trusted origins for `japr.vercel.app` / Vercel previews; README deployment env checklist |
+| vercel-smtp-mailtrap | 20260629 | done | Generic SMTP (nodemailer) transport for Vercel email, Mailtrap-backed `/mail` viewer, atomic + email-tolerant signup (fixes 500→409 trap) |
+| vercel-uploads-blob | 20260629 | done | Pluggable `STORAGE_DRIVER` (local\|Vercel Blob) for manuscript uploads/downloads/preview; PDF-first on Vercel; opaque key keeps files private |

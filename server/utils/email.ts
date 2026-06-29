@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import nodemailer, { type Transporter } from 'nodemailer'
 import { Resend } from 'resend'
 
 export interface AppEmailPayload {
@@ -16,10 +17,38 @@ export interface LocalEmailRecord extends AppEmailPayload {
   transport: 'local'
 }
 
+const isProduction = process.env.NODE_ENV === 'production'
 const resendApiKey = process.env.RESEND_API_KEY
 const resendFrom = process.env.RESEND_FROM ?? `JAPR <noreply@${process.env.MAIL_DOMAIN ?? 'journal.local'}>`
+const mailFrom = process.env.MAIL_FROM ?? resendFrom
 const emailTransport = (process.env.EMAIL_TRANSPORT ?? (resendApiKey ? 'resend' : 'local')).toLowerCase()
 const localMailDir = resolve(process.cwd(), process.env.LOCAL_MAIL_DIR ?? '.data/mail')
+
+let smtpTransport: Transporter | null = null
+
+function getSmtpTransport() {
+  if (smtpTransport) {
+    return smtpTransport
+  }
+
+  const host = process.env.SMTP_HOST
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+
+  if (!host || !user || !pass) {
+    throw new Error('EMAIL_TRANSPORT=smtp requires SMTP_HOST, SMTP_USER and SMTP_PASS.')
+  }
+
+  smtpTransport = nodemailer.createTransport({
+    host,
+    port: Number(process.env.SMTP_PORT ?? 587),
+    // true only for implicit TLS on port 465; STARTTLS ports (587/2525) use false.
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: { user, pass }
+  })
+
+  return smtpTransport
+}
 
 function toPlainText(html: string) {
   return html
@@ -69,16 +98,33 @@ async function writeLocalEmail(payload: AppEmailPayload) {
 }
 
 export async function sendEmail(payload: AppEmailPayload) {
-  if (emailTransport === 'resend' && resendApiKey) {
-    const resend = new Resend(resendApiKey)
-
-    return resend.emails.send({
-      from: resendFrom,
+  if (emailTransport === 'smtp') {
+    return getSmtpTransport().sendMail({
+      from: mailFrom,
       to: payload.to,
       subject: payload.subject,
       html: payload.html,
       text: payload.text ?? toPlainText(payload.html)
     })
+  }
+
+  if (emailTransport === 'resend' && resendApiKey) {
+    const resend = new Resend(resendApiKey)
+
+    return resend.emails.send({
+      from: mailFrom,
+      to: payload.to,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text ?? toPlainText(payload.html)
+    })
+  }
+
+  // The local transport writes to disk, which fails on read-only serverless
+  // filesystems (e.g. Vercel). Surface a clear config error instead of a
+  // generic 500 raised deep inside a request handler.
+  if (isProduction) {
+    throw new Error('EMAIL_TRANSPORT=local is not supported in production (read-only filesystem). Set EMAIL_TRANSPORT=smtp or resend.')
   }
 
   return writeLocalEmail(payload)

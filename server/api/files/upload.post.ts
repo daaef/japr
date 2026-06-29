@@ -62,8 +62,9 @@ export default defineEventHandler(async (event) => {
       journalFormat: fileExt || '.pdf'
     }
 
-    // Auto-convert DOC/DOCX to PDF
-    if (needsPdfConversion(storagePath)) {
+    // Auto-convert DOC/DOCX to PDF. Only on the local driver: blob storage has
+    // no on-disk path and Vercel has no LibreOffice binary (PDF-first there).
+    if (storagePath && needsPdfConversion(storagePath)) {
       try {
         const pdfFullPath = await convertDocToPdf(storagePath)
         fileRecord.pdfPath = normalizeStoredFileKey(pdfFullPath)

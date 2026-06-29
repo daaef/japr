@@ -3,25 +3,10 @@ import { extname } from 'node:path'
 import { getRouterParam } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
-import { createFileStream, getStoredFileStats, resolveStoredFilePath } from '#server/utils/files'
+import { getStoredFile } from '#server/utils/files'
 import { findJournalByParam } from '#server/utils/journal-resolve'
 import { getCurrentUserContext } from '#server/utils/session'
 import { PUBLIC_MANUSCRIPT_STATUSES } from '#shared/constants/manuscriptStatus'
-
-function getContentType(storageKey: string) {
-  const extension = extname(storageKey).toLowerCase()
-
-  switch (extension) {
-    case '.pdf':
-      return 'application/pdf'
-    case '.doc':
-      return 'application/msword'
-    case '.docx':
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    default:
-      return 'application/octet-stream'
-  }
-}
 
 function buildDownloadFilename(title: string, storageKey: string) {
   const extension = extname(storageKey) || ''
@@ -66,16 +51,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'You do not have permission to download this document.' })
   }
 
-  const stats = await getStoredFileStats(journal.journalUrl)
-  const filePath = resolveStoredFilePath(journal.journalUrl)
+  const { stream, size, contentType } = await getStoredFile(journal.journalUrl)
   const filename = buildDownloadFilename(journal.title, journal.journalUrl)
 
   setResponseHeaders(event, {
-    'Content-Type': getContentType(journal.journalUrl),
-    'Content-Length': String(stats.size),
+    'Content-Type': contentType,
+    'Content-Length': String(size),
     'Content-Disposition': `attachment; filename="${filename}"`,
     'Cache-Control': 'no-cache, no-store, must-revalidate'
   })
 
-  return sendStream(event, createFileStream(filePath))
+  return sendStream(event, stream)
 })

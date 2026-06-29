@@ -1,31 +1,12 @@
 import { and, eq } from 'drizzle-orm'
-import { extname } from 'node:path'
 import { getRouterParam } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
-import { createFileStream, getStoredFileStats, resolveStoredFilePath } from '#server/utils/files'
+import { getStoredFile } from '#server/utils/files'
 import { getCurrentUserContext } from '#server/utils/session'
 import { getJournalById } from '#server/utils/submissions'
 import { isEditorialProfileRole } from '#server/utils/permissions'
-import {
-  assertManuscriptFileExists,
-  resolveManuscriptPreviewFile
-} from '#server/utils/manuscriptPreviewFile'
-
-function getContentType(storageKey: string) {
-  const extension = extname(storageKey).toLowerCase()
-
-  switch (extension) {
-    case '.pdf':
-      return 'application/pdf'
-    case '.doc':
-      return 'application/msword'
-    case '.docx':
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    default:
-      return 'application/octet-stream'
-  }
-}
+import { resolveManuscriptPreviewFile } from '#server/utils/manuscriptPreviewFile'
 
 export default defineEventHandler(async (event) => {
   const context = await getCurrentUserContext(event)
@@ -64,14 +45,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const resolved = resolveManuscriptPreviewFile(journal.journalUrl)
-  assertManuscriptFileExists(resolved.storageKey)
-
-  const stats = await getStoredFileStats(resolved.storageKey)
-  const filePath = resolveStoredFilePath(resolved.storageKey)
+  const { stream, size, contentType } = await getStoredFile(resolved.storageKey)
 
   setResponseHeaders(event, {
-    'Content-Type': getContentType(resolved.storageKey),
-    'Content-Length': String(stats.size),
+    'Content-Type': contentType,
+    'Content-Length': String(size),
     'Content-Disposition': 'inline',
     'X-Frame-Options': 'SAMEORIGIN',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -79,5 +57,5 @@ export default defineEventHandler(async (event) => {
     'Expires': '0'
   })
 
-  return sendStream(event, createFileStream(filePath))
+  return sendStream(event, stream)
 })

@@ -10,7 +10,7 @@ import {
   sanitizePreviewHtml,
   wrapHtmlDocument
 } from '#server/services/docPreview'
-import { getAllowedMimeTypes, getMaxFileSizeBytes } from '#server/utils/files'
+import { getAllowedMimeTypes, getMaxFileSizeBytes, isBlobStorage } from '#server/utils/files'
 import { requireSession } from '#server/utils/session'
 
 export default defineEventHandler(async (event) => {
@@ -60,6 +60,16 @@ export default defineEventHandler(async (event) => {
     }
 
     if (previewType === 'doc') {
+      // Pandoc is unavailable on Vercel (blob/PDF-first). Degrade with a clear
+      // message instead of a 500; PDF files still preview directly above.
+      if (isBlobStorage()) {
+        return {
+          success: false,
+          type: 'doc',
+          message: 'Preview is unavailable for DOC/DOCX here. Upload a PDF to preview, or submit and download to view.'
+        }
+      }
+
       let html = await convertDocToHtml(tempPath)
       html = sanitizePreviewHtml(html)
       html = injectWatermark(html, session.user.email || 'viewer')

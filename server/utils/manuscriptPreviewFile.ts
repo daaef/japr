@@ -1,8 +1,7 @@
-import { existsSync } from 'node:fs'
 import { extname } from 'node:path'
 import { getPdfPath, pdfExists } from '#server/services/docConversion'
 import { getPreviewType } from '#server/services/docPreview'
-import { normalizeStoredFileKey, resolveStoredFilePath } from '#server/utils/files'
+import { isBlobStorage, normalizeStoredFileKey, resolveStoredFilePath, storedFileExists } from '#server/utils/files'
 
 export type ResolvedManuscriptPreview =
   | { previewType: 'pdf', storageKey: string }
@@ -17,11 +16,14 @@ export function resolveManuscriptPreviewFile(storageKey: string): ResolvedManusc
   }
 
   if (previewType === 'doc') {
-    const fullPath = resolveStoredFilePath(storageKey)
-    if (pdfExists(fullPath)) {
-      return {
-        previewType: 'pdf',
-        storageKey: normalizeStoredFileKey(getPdfPath(fullPath))
+    // Blob storage has no on-disk converted-PDF sibling (conversion is local-only).
+    if (!isBlobStorage()) {
+      const fullPath = resolveStoredFilePath(storageKey)
+      if (pdfExists(fullPath)) {
+        return {
+          previewType: 'pdf',
+          storageKey: normalizeStoredFileKey(getPdfPath(fullPath))
+        }
       }
     }
     return { previewType: 'doc', storageKey }
@@ -30,17 +32,13 @@ export function resolveManuscriptPreviewFile(storageKey: string): ResolvedManusc
   return { previewType: 'unsupported', storageKey }
 }
 
-export function assertManuscriptFileExists(storageKey: string) {
-  const filePath = resolveStoredFilePath(storageKey)
-
-  if (!existsSync(filePath)) {
+export async function assertManuscriptFileExists(storageKey: string) {
+  if (!(await storedFileExists(storageKey))) {
     throw createError({
       statusCode: 404,
       statusMessage: 'Manuscript file not found on the server. Ask the author to re-upload the document.'
     })
   }
-
-  return filePath
 }
 
 export function getManuscriptFileExtension(storageKey: string) {

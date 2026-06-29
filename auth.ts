@@ -5,21 +5,58 @@ import { eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { accounts, sessions, userRoles, users, verifications } from '#server/db/schema'
 
+const isProduction = process.env.NODE_ENV === 'production'
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET
-const betterAuthUrl = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
+const betterAuthUrl = process.env.BETTER_AUTH_URL
+  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
 if (!betterAuthSecret) {
   console.warn('BETTER_AUTH_SECRET is not set. Authentication will fail until it is configured.')
 }
 
+function buildTrustedOrigins(): string[] {
+  const origins = new Set<string>()
+
+  try {
+    origins.add(new URL(betterAuthUrl).origin)
+  } catch {
+    // Invalid BETTER_AUTH_URL; Better Auth will surface config errors on requests.
+  }
+
+  const extraOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
+  if (extraOrigins) {
+    for (const origin of extraOrigins.split(',')) {
+      const trimmed = origin.trim()
+      if (trimmed) {
+        origins.add(trimmed)
+      }
+    }
+  }
+
+  if (!isProduction) {
+    origins.add('http://localhost:3000')
+    origins.add('http://localhost:4000')
+    origins.add('http://127.0.0.1:3000')
+  }
+
+  return [...origins]
+}
+
+function buildBaseURL() {
+  if (process.env.VERCEL_URL) {
+    return {
+      allowedHosts: ['japr.vercel.app', '*.vercel.app'],
+      protocol: 'https' as const
+    }
+  }
+
+  return betterAuthUrl
+}
+
 export const auth = betterAuth({
   secret: betterAuthSecret,
-  baseURL: betterAuthUrl,
-  trustedOrigins: [
-    'http://localhost:3000',
-    'http://localhost:4000',
-    process.env.BETTER_AUTH_URL || 'http://localhost:3000'
-  ].filter(Boolean),
+  baseURL: buildBaseURL(),
+  trustedOrigins: buildTrustedOrigins(),
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {

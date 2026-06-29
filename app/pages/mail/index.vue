@@ -109,7 +109,7 @@ function subjectIcon(subject: string) {
           Mail Inbox
         </h1>
         <p class="mt-2 text-sm text-gray-600 max-w-xl">
-          Captured outgoing mail from this environment. Use this after registering or requesting a password reset to find your code or link.
+          Captured outgoing mail from this environment (local capture or the Mailtrap sandbox inbox). Use this after registering or requesting a password reset to find your code or link.
         </p>
       </div>
       <button

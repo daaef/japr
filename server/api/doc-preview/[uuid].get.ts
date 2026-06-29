@@ -13,7 +13,7 @@ import {
   wrapHtmlDocument,
   getPreviewType
 } from '#server/services/docPreview'
-import { resolveStoredFilePath } from '#server/utils/files'
+import { isBlobStorage, resolveStoredFilePath } from '#server/utils/files'
 import {
   assertManuscriptFileExists,
   resolveManuscriptPreviewFile
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const resolved = resolveManuscriptPreviewFile(journal.journalUrl)
-  assertManuscriptFileExists(resolved.storageKey)
+  await assertManuscriptFileExists(resolved.storageKey)
 
   // Set security headers
   setResponseHeaders(event, {
@@ -88,8 +88,16 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Handle DOC/DOCX - convert to HTML with Pandoc
+  // Handle DOC/DOCX - convert to HTML with Pandoc (local/Docker only).
   if (previewType === 'doc') {
+    // Blob storage runs on Vercel where Pandoc is unavailable (PDF-first).
+    if (isBlobStorage()) {
+      throw createError({
+        statusCode: 415,
+        statusMessage: 'In-browser preview is unavailable for DOC/DOCX on this deployment. Please download the manuscript to view it.'
+      })
+    }
+
     try {
       const filePath = resolveStoredFilePath(resolved.storageKey)
       let html = await convertDocToHtml(filePath)

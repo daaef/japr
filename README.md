@@ -29,7 +29,7 @@ The product specification lives in [`academic-journal-spec.md`](academic-journal
 
 ```bash
 pnpm install
-pnpm dev              # http://localhost:4000
+pnpm dev              # http://localhost:3000
 pnpm build
 pnpm preview
 pnpm typecheck
@@ -47,9 +47,42 @@ Copy `.env.example` to `.env` and configure:
 
 - `DATABASE_URL` — PostgreSQL connection string
 - `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`
-- `RESEND_API_KEY` / `RESEND_FROM` (or `EMAIL_TRANSPORT=local`)
+- `BETTER_AUTH_TRUSTED_ORIGINS` — optional comma-separated extra origins (e.g. custom domain)
+- `NUXT_PUBLIC_BASE_URL` — public site URL for password-reset and email links (defaults to `http://localhost:3000`)
+- `EMAIL_TRANSPORT` — `local` (writes to `.data/mail/`, dev only), `smtp`, or `resend`
+- `MAIL_FROM` — sender address (falls back to `RESEND_FROM`)
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_SECURE` — required when `EMAIL_TRANSPORT=smtp` (e.g. Mailtrap)
+- `RESEND_API_KEY` / `RESEND_FROM` — required when `EMAIL_TRANSPORT=resend`
+- `MAILTRAP_API_TOKEN` / `MAILTRAP_ACCOUNT_ID` / `MAILTRAP_INBOX_ID` — optional; makes the `/mail` page read the Mailtrap sandbox inbox
+- `STORAGE_DRIVER` — `local` (disk, dev/Docker) or `blob` (Vercel Blob); `BLOB_READ_WRITE_TOKEN` is auto-set by Vercel when a Blob store is connected
 - `UPLOAD_DIR`, `MAX_FILE_SIZE_MB`, `PANDOC_PATH`
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (optional OAuth)
+
+## Vercel deployment
+
+Set these in the Vercel project **Settings → Environment Variables** for Production (and Preview if you test branch deploys). Redeploy after saving.
+
+| Variable | Example |
+|---|---|
+| `BETTER_AUTH_URL` | `https://japr.vercel.app` |
+| `BETTER_AUTH_SECRET` | strong random secret (not your local dev value) |
+| `NUXT_PUBLIC_BASE_URL` | `https://japr.vercel.app` |
+| `DATABASE_URL` | hosted PostgreSQL connection string |
+| `EMAIL_TRANSPORT` | `smtp` (or `resend`) — **never `local` on Vercel** (read-only filesystem) |
+| `MAIL_FROM` | `JAPR <no-reply@your-domain>` |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | required when `EMAIL_TRANSPORT=smtp` (Mailtrap: `live.smtp.mailtrap.io` to deliver, `sandbox.smtp.mailtrap.io` to capture) |
+| `RESEND_API_KEY` / `RESEND_FROM` | required when `EMAIL_TRANSPORT=resend` |
+| `MAILTRAP_API_TOKEN` / `MAILTRAP_ACCOUNT_ID` / `MAILTRAP_INBOX_ID` | optional — show the Mailtrap sandbox inbox on `/mail` (set with `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true`) |
+| `STORAGE_DRIVER` | `blob` — store manuscript uploads in Vercel Blob (disk storage is not durable on Vercel) |
+| `BLOB_READ_WRITE_TOKEN` | auto-added by Vercel when you connect a Blob store (Storage → Blob → Connect) |
+
+> The `/mail` viewer is public when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true` — it exposes activation codes and password-reset links to anyone with the URL. Enable it only on a testing/preview deployment, not a production site with real users.
+
+> **Uploads on Vercel:** set `STORAGE_DRIVER=blob` and connect a Blob store. DOC/DOCX conversion and in-browser DOC preview are disabled on Vercel (no LibreOffice/Pandoc) — PDFs preview/download directly; DOC/DOCX are download-only. Server-proxied uploads are capped by Vercel's ~4.5 MB request-body limit; larger files need direct-to-Blob client upload (follow-up).
+
+`BETTER_AUTH_URL` must match the public site URL exactly (scheme + host, no trailing slash). On Vercel, `auth.ts` also trusts `japr.vercel.app` and `*.vercel.app` preview hosts via Better Auth `allowedHosts`.
+
+If Google OAuth is enabled, add `https://japr.vercel.app/api/auth/callback/google` to Google Cloud authorized redirect URIs.
 
 ## Docker
 

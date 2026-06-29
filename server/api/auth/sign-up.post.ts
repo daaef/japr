@@ -27,41 +27,57 @@ export default defineEventHandler(async (event) => {
   }
 
   const password = await hashPassword(body.password)
-  const insertedUsers = await db.insert(users).values({
-    name: body.fullname,
-    fullname: body.fullname,
-    username: body.username,
-    email: body.email,
-    emailVerified: false,
-    passwordHash: password,
-    country: body.country,
-    institution: body.institution,
-    isActive: true
-  }).returning()
-
-  const user = insertedUsers[0]!
-
-  await db.insert(accounts).values({
-    id: randomUUID(),
-    userId: user.id,
-    accountId: user.id,
-    providerId: 'credential',
-    password
-  })
-
   const code = randomInt(100000, 1000000).toString()
 
-  await db.insert(activations).values({
-    email: user.email,
-    code,
-    userId: user.id
+  // Atomic: never leave a half-created user (orphaned account/activation) that
+  // would dead-end a retry on the duplicate-email 409 check above.
+  const user = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(users).values({
+      name: body.fullname,
+      fullname: body.fullname,
+      username: body.username,
+      email: body.email,
+      emailVerified: false,
+      passwordHash: password,
+      country: body.country,
+      institution: body.institution,
+      isActive: true
+    }).returning()
+
+    await tx.insert(accounts).values({
+      id: randomUUID(),
+      userId: created!.id,
+      accountId: created!.id,
+      providerId: 'credential',
+      password
+    })
+
+    await tx.insert(activations).values({
+      email: created!.email,
+      code,
+      userId: created!.id
+    })
+
+    return created!
   })
 
-  await sendRegistrationEmail(user.email, user.fullname)
-  await sendActivationEmail(user.email, user.fullname, code)
+  // The account exists after commit; an email outage must not 500 the request
+  // (that turns retries into a permanent 409 trap). Surface delivery status so
+  // the client can point the user at "Resend code".
+  let emailDelivered = true
+  try {
+    await sendRegistrationEmail(user.email, user.fullname)
+    await sendActivationEmail(user.email, user.fullname, code)
+  } catch (error) {
+    emailDelivered = false
+    console.error('Sign-up email delivery failed:', error)
+  }
 
   return {
     ok: true,
-    message: 'Registration successful. Check your email for the activation code.'
+    emailDelivered,
+    message: emailDelivered
+      ? 'Registration successful. Check your email for the activation code.'
+      : 'Account created, but we could not send your activation email. Use “Resend code” on the activation page.'
   }
 })
