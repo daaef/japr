@@ -34,3 +34,4 @@ Reference app: `C:\Users\reala\Creations\journal`
 | vercel-auth-origin | 20260628 | done | Better Auth trusted origins for `japr.vercel.app` / Vercel previews; README deployment env checklist |
 | vercel-smtp-mailtrap | 20260629 | done | Generic SMTP (nodemailer) transport for Vercel email, Mailtrap-backed `/mail` viewer, atomic + email-tolerant signup (fixes 500→409 trap) |
 | vercel-uploads-blob | 20260629 | done | Pluggable `STORAGE_DRIVER` (local\|Vercel Blob) for manuscript uploads/downloads/preview; PDF-first on Vercel; opaque key keeps files private |
+| upload-token-500 | 20260701 | done | Fix Vercel direct upload: drop forced MPU, exempt upload-token from auth middleware, surface Blob errors |

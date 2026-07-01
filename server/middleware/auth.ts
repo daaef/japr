@@ -49,6 +49,12 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  // Session for token generation is enforced inside onBeforeGenerateToken; upload-completed
+  // callbacks from Vercel Blob are verified via x-vercel-signature instead.
+  if (path === '/api/files/upload-token') {
+    return
+  }
+
   const session = await getAuthSession(event)
 
   if (!session) {
