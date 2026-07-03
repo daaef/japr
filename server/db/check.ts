@@ -11,7 +11,13 @@ import type { Pool } from 'pg'
  */
 const REQUIRED_COLUMNS: Array<{ table: string, column: string, migration: string }> = [
   // 0002_notification_preferences — better-auth selects every users column on login
-  { table: 'users', column: 'notification_preferences', migration: '0002_notification_preferences' }
+  { table: 'users', column: 'notification_preferences', migration: '0002_notification_preferences' },
+  // 0008_good_madrox — admin_audit_logs.sql existed on disk but was never registered in
+  // _journal.json, so db:migrate never created the table; every /api/admin/audit/* route 500'd.
+  { table: 'admin_audit_logs', column: 'id', migration: '0008_good_madrox' },
+  // 0009_demonic_human_robot — activate.post.ts reads these on every activation attempt
+  { table: 'activations', column: 'expires_at', migration: '0009_demonic_human_robot' },
+  { table: 'activations', column: 'attempts', migration: '0009_demonic_human_robot' }
 ]
 
 const REQUIRED_ENUM_VALUES: Array<{ enumName: string, value: string, migration: string }> = [

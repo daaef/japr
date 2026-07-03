@@ -1,9 +1,13 @@
 const buckets = new Map<string, { count: number, resetAt: number }>()
 
 const limits: Record<string, { max: number, windowMs: number }> = {
-  '/api/auth/sign-in': { max: 5, windowMs: 60_000 },
+  // better-auth mounts its own routes under /api/auth/[...all] — these must match the
+  // paths it actually serves (/sign-in/email, /request-password-reset), not guessed names.
+  '/api/auth/sign-in/email': { max: 5, windowMs: 60_000 },
   '/api/auth/sign-up': { max: 3, windowMs: 60_000 },
-  '/api/auth/forgot-password': { max: 3, windowMs: 60_000 }
+  '/api/auth/request-password-reset': { max: 3, windowMs: 60_000 },
+  '/api/auth/activate': { max: 5, windowMs: 60_000 },
+  '/api/auth/resend-activation': { max: 3, windowMs: 60_000 }
 }
 
 export default defineEventHandler((event) => {

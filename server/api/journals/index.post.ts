@@ -1,6 +1,6 @@
 import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
-import { journals, manuscriptVersions, userRoles, roles, users } from '#server/db/schema'
+import { journals, manuscriptVersions, userInterests, userRoles, roles, users } from '#server/db/schema'
 import { checkUserPermission } from '#server/utils/permissions'
 import { requireSession } from '#server/utils/session'
 import { slugify } from '#server/utils/slug'
@@ -22,6 +22,19 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 403,
       statusMessage: 'You do not have permission to create journals.'
+    })
+  }
+
+  // The client-side onboarding gate (author-onboarding.ts) only guards the SPA route;
+  // this re-verifies it server-side so the check can't be bypassed by calling the API directly.
+  const hasInterests = await db.query.userInterests.findFirst({
+    where: eq(userInterests.userId, session.user.id)
+  })
+
+  if (!hasInterests) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Select your research interests before submitting a manuscript.'
     })
   }
 

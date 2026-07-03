@@ -6,6 +6,21 @@ Select/dropdown inventory: [`docs/SELECT_DROPDOWN_INVENTORY.md`](../SELECT_DROPD
 
 Reference app: `C:\Users\reala\Creations\journal`
 
+## Platform hardening roadmap (2026-07-03)
+
+Six-phase plan closing the findings from a full-system audit of auth/onboarding, peer review, journal search, and Vercel Blob uploads. Sequencing below reflects real dependencies (a later phase reuses a helper/pattern a phase before it builds) — phases without a listed dependency can run in parallel.
+
+| Phase | Slug | Depends on | Why |
+|---|---|---|---|
+| 1 | `auth-identity-hardening` | — | Blocking: every self-registered user currently gets no role and no dashboard. **Done.** |
+| 2 | `manuscript-visibility-unification` | — | Independent; closes the reviewer-identity leaks. |
+| 3 | `review-state-guards` | Phase 2 | Touches the same `server/api/reviewer/journals/` files; land the read-path fix first. |
+| 4 | `upload-ownership-safety` | — | Independent; can run alongside 2/3. |
+| 5 | `journal-search-consolidation` | Phase 2 | Unified query-builder calls Phase 2's shared visibility function. |
+| 6 | `operational-hardening` | Phase 4 | Extends Phase 4's cleanup job into a general scheduled-job runner. |
+
+Each phase folder below has `problem.md` / `plan.md` / `solution.md` (pre-implementation) and gets a `changelog.md` once the code lands.
+
 | Slug | Date | Status | Summary |
 |------|------|--------|---------|
 | parity-gaps | 20250617 | done | P1 Laravel parity: download, author dashboard, interests gate, notification preferences/export, version links |
@@ -35,3 +50,4 @@ Reference app: `C:\Users\reala\Creations\journal`
 | vercel-smtp-mailtrap | 20260629 | done | Generic SMTP (nodemailer) transport for Vercel email, Mailtrap-backed `/mail` viewer, atomic + email-tolerant signup (fixes 500→409 trap) |
 | vercel-uploads-blob | 20260629 | done | Pluggable `STORAGE_DRIVER` (local\|Vercel Blob) for manuscript uploads/downloads/preview; PDF-first on Vercel; opaque key keeps files private |
 | upload-token-500 | 20260701 | done | Fix Vercel direct upload: drop forced MPU, exempt upload-token from auth middleware, surface Blob errors |
+| auth-identity-hardening | 20260703 | done | Sign-up routed through better-auth's own API (uniform role/activation-code assignment), activation expiry+attempt-limit, corrected rate-limit paths, Google onboarding redirect, server-side interests/review-policy gates; also fixed two pre-existing bugs (orphaned admin_audit_logs migration, uuid generateId crash on all user creation) found during verification |

@@ -26,16 +26,19 @@ export default defineEventHandler(async (event) => {
     where: eq(activations.email, body.email)
   })
 
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000)
+
   if (existing) {
     await db
       .update(activations)
-      .set({ code, userId: user.id })
+      .set({ code, userId: user.id, expiresAt, attempts: 0 })
       .where(and(eq(activations.email, body.email), eq(activations.id, existing.id)))
   } else {
     await db.insert(activations).values({
       email: body.email,
       code,
-      userId: user.id
+      userId: user.id,
+      expiresAt
     })
   }
 

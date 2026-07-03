@@ -29,6 +29,15 @@ export default defineEventHandler(async (event) => {
   const session = await requireSession(event)
   const body = await readValidatedBody(event, payload => reviewInvitationTokenSchema.parse(payload))
 
+  // The client-side gate (app/middleware/auth.ts) only guards the SPA route; this
+  // re-verifies it server-side so it can't be bypassed by calling the API directly.
+  if (!session.appUser.reviewPolicyAccepted) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'You must accept the review policy before responding to review invitations.'
+    })
+  }
+
   const reviewer = await findReviewerInvitation(session.user.id, body)
 
   if (!reviewer) {

@@ -41,9 +41,13 @@ async function signInWithGoogle() {
   errorMessage.value = ''
   loading.value = true
 
+  // With no explicit redirect target, land back on this page: the `guest` middleware
+  // (already applied to this page) sends an authenticated user to resolveWorkspacePath(...)
+  // itself, so a brand-new Google author with no interests correctly lands on
+  // /author/interests instead of a hardcoded /author.
   const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
     ? route.query.redirect
-    : '/author'
+    : '/auth/login'
 
   try {
     await authClient.signIn.social({

@@ -57,6 +57,20 @@
       "when": 1782516556222,
       "tag": "0007_wet_iron_lad",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783035574676,
+      "tag": "0008_good_madrox",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783035604664,
+      "tag": "0009_demonic_human_robot",
+      "breakpoints": true
     }
   ]
 }

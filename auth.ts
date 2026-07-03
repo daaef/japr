@@ -1,9 +1,10 @@
+import { randomInt, randomUUID } from 'node:crypto'
 import { betterAuth } from 'better-auth'
 import { APIError } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
-import { accounts, sessions, userRoles, users, verifications } from '#server/db/schema'
+import { accounts, activations, sessions, userRoles, users, verifications } from '#server/db/schema'
 
 const isProduction = process.env.NODE_ENV === 'production'
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET
@@ -57,6 +58,19 @@ export const auth = betterAuth({
   secret: betterAuthSecret,
   baseURL: buildBaseURL(),
   trustedOrigins: buildTrustedOrigins(),
+  advanced: {
+    database: {
+      // users.id is a strict Postgres `uuid` column with its own gen_random_uuid()
+      // default (unlike sessions/accounts/verifications, which migration 0007 already
+      // converted to plain text specifically so better-auth's own generated id fits).
+      // Better-auth's default id generator produces a nanoid-style string, which fails
+      // to insert into a uuid column — confirmed live: every user creation through this
+      // adapter (including Google OAuth, not just this task's email/password path)
+      // was broken until this was added. Deferring to false lets Postgres's own
+      // default assign the id instead.
+      generateId: ({ model }) => model === 'user' ? false : randomUUID()
+    }
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
@@ -68,9 +82,23 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    // Registration must not log the user in before they've activated their account —
+    // the session.create.before hook below rejects unverified users, and since this
+    // adapter runs without a real DB transaction (drizzleAdapter's `transaction` option
+    // is off), that rejection would surface as a thrown error on every sign-up instead
+    // of silently rolling anything back. Skipping auto-sign-in avoids the codepath entirely.
+    autoSignIn: false,
     sendResetPassword: async ({ user, url }) => {
       const { sendPasswordResetEmail } = await import('#server/utils/email')
       await sendPasswordResetEmail(user.email, user.name, url)
+    }
+  },
+  user: {
+    additionalFields: {
+      fullname: { type: 'string', required: true },
+      username: { type: 'string', required: true, unique: true },
+      country: { type: 'string', required: false },
+      institution: { type: 'string', required: false }
     }
   },
   socialProviders: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -104,6 +132,18 @@ export const auth = betterAuth({
             await db.insert(userRoles).values({
               userId: user.id,
               roleId: authorRole.id
+            })
+          }
+
+          // Credential sign-ups start unverified and need an activation code; Google
+          // OAuth users arrive with emailVerified already true and skip this entirely.
+          if (!user.emailVerified) {
+            const code = randomInt(100000, 1000000).toString()
+            await db.insert(activations).values({
+              email: user.email,
+              code,
+              userId: user.id,
+              expiresAt: new Date(Date.now() + 30 * 60 * 1000)
             })
           }
         }

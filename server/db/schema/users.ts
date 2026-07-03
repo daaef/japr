@@ -88,6 +88,8 @@ export const activations = pgTable('activations', {
   email: text('email').notNull(),
   code: text('code').notNull(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  attempts: integer('attempts').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ({
   emailIndex: index('activations_email_idx').on(table.email)

@@ -10,7 +10,7 @@ export interface SessionRole {
   description: string | null
 }
 
-function getAuthHeaders(event: H3Event) {
+export function getAuthHeaders(event: H3Event) {
   const headers = new Headers()
 
   for (const [key, value] of Object.entries(getRequestHeaders(event))) {

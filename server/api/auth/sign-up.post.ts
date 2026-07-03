@@ -1,8 +1,9 @@
-import { randomInt, randomUUID } from 'node:crypto'
-import { hashPassword } from 'better-auth/crypto'
+import { APIError } from 'better-auth/api'
+import { desc } from 'drizzle-orm'
 import { readValidatedBody } from 'h3'
+import { auth } from '~~/auth'
 import { db } from '#server/db/client'
-import { users, accounts, activations } from '#server/db/schema'
+import { getAuthHeaders } from '#server/utils/session'
 import { sendActivationEmail, sendRegistrationEmail } from '#server/utils/email'
 import { signUpSchema } from '#shared/validation/auth'
 
@@ -26,48 +27,48 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'Username is already taken.' })
   }
 
-  const password = await hashPassword(body.password)
-  const code = randomInt(100000, 1000000).toString()
-
-  // Atomic: never leave a half-created user (orphaned account/activation) that
-  // would dead-end a retry on the duplicate-email 409 check above.
-  const user = await db.transaction(async (tx) => {
-    const [created] = await tx.insert(users).values({
-      name: body.fullname,
-      fullname: body.fullname,
-      username: body.username,
-      email: body.email,
-      emailVerified: false,
-      passwordHash: password,
-      country: body.country,
-      institution: body.institution,
-      isActive: true
-    }).returning()
-
-    await tx.insert(accounts).values({
-      id: randomUUID(),
-      userId: created!.id,
-      accountId: created!.id,
-      providerId: 'credential',
-      password
+  // Goes through better-auth's own sign-up API (not a raw insert) so the
+  // databaseHooks.user.create.after hook in auth.ts fires unconditionally — the same
+  // hook that assigns the author role and creates the activation code for OAuth sign-ups.
+  let user: { id: string, email: string }
+  try {
+    const result = await auth.api.signUpEmail({
+      headers: getAuthHeaders(event),
+      body: {
+        name: body.fullname,
+        fullname: body.fullname,
+        username: body.username,
+        email: body.email,
+        password: body.password,
+        country: body.country,
+        institution: body.institution
+      }
     })
+    user = result.user
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw createError({
+        statusCode: error.statusCode,
+        statusMessage: error.body?.message ?? 'Unable to create this account.'
+      })
+    }
+    throw error
+  }
 
-    await tx.insert(activations).values({
-      email: created!.email,
-      code,
-      userId: created!.id
-    })
-
-    return created!
+  const activation = await db.query.activations.findFirst({
+    where: (table, { eq }) => eq(table.userId, user.id),
+    orderBy: (table) => [desc(table.createdAt)]
   })
 
-  // The account exists after commit; an email outage must not 500 the request
-  // (that turns retries into a permanent 409 trap). Surface delivery status so
-  // the client can point the user at "Resend code".
+  // The account exists after this point; an email outage must not fail the request
+  // (that turns retries into a permanent 409 trap). Surface delivery status so the
+  // client can point the user at "Resend code".
   let emailDelivered = true
   try {
-    await sendRegistrationEmail(user.email, user.fullname)
-    await sendActivationEmail(user.email, user.fullname, code)
+    await sendRegistrationEmail(user.email, body.fullname)
+    if (activation) {
+      await sendActivationEmail(user.email, body.fullname, activation.code)
+    }
   } catch (error) {
     emailDelivered = false
     console.error('Sign-up email delivery failed:', error)
