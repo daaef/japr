@@ -1,12 +1,11 @@
-import { db } from '#server/db/client'
+import { getValidatedQuery } from 'h3'
+import { listJournalsByStatus } from '#server/utils/journalQueue'
 import { requireEditorOrCopyDesk } from '#server/utils/permissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import { paginationSchema } from '#shared/validation/common'
 
 export default defineEventHandler(async (event) => {
   await requireEditorOrCopyDesk(event)
-  const journals = await db.query.journals.findMany({
-    where: (table, { eq }) => eq(table.approvalStatus, MANUSCRIPT_STATUS.PUBLISHED)
-  })
-
-  return { journals }
+  const query = await getValidatedQuery(event, value => paginationSchema.parse(value))
+  return listJournalsByStatus(query, MANUSCRIPT_STATUS.PUBLISHED)
 })

@@ -1,11 +1,12 @@
 import { extname } from 'node:path'
 import { readMultipartFormData } from 'h3'
 import { getAllowedMimeTypes, getMaxFileSizeBytes, normalizeStoredFileKey, persistUpload } from '#server/utils/files'
+import { recordUploadedFile } from '#server/utils/fileOwnership'
 import { requireSession } from '#server/utils/session'
 import { needsPdfConversion, convertDocToPdf } from '#server/services/docConversion'
 
 export default defineEventHandler(async (event) => {
-  await requireSession(event)
+  const session = await requireSession(event)
   const form = await readMultipartFormData(event)
 
   if (!form) {
@@ -43,6 +44,11 @@ export default defineEventHandler(async (event) => {
       originalName: field.filename,
       subdir: 'journals'
     })
+
+    // Same ownership record the Blob direct-upload path writes at token-mint time —
+    // the local driver writes the file server-side in one request, so this happens
+    // right after persisting instead of before an upload the server doesn't see yet.
+    await recordUploadedFile(storageKey, session.user.id)
 
     const fileExt = extname(field.filename).toLowerCase()
     const fileRecord: {

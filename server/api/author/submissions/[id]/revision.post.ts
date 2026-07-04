@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals, manuscriptVersions } from '#server/db/schema'
 import { notifyEditorsRevisionUploaded } from '#server/utils/editorNotifications'
+import { markFileAttached, verifyPendingUpload } from '#server/utils/fileOwnership'
 import { createNotification } from '#server/utils/notifications'
 import { requireAuthor } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -37,6 +38,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Submission not found.' })
   }
 
+  // A journalUrl the caller never had a token for (arbitrary or guessed) is rejected
+  // before it's saved onto this manuscript.
+  if (body.journalUrl) {
+    await verifyPendingUpload(body.journalUrl, session.user.id)
+  }
+
   const versions = await db.query.manuscriptVersions.findMany({
     where: (table, { eq }) => eq(table.journalId, journal.id)
   })
@@ -51,6 +58,10 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     .where(eq(journals.id, journal.id))
+
+  if (body.journalUrl) {
+    await markFileAttached(body.journalUrl, journal.id)
+  }
 
   await db.insert(manuscriptVersions).values({
     journalId: journal.id,

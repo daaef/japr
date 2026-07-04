@@ -50,9 +50,9 @@ export default defineEventHandler(async (event) => {
       metaTitle: body.metaTitle ?? journal.metaTitle,
       metaKeywords: body.metaKeywords ?? journal.metaKeywords,
       metaDescription: body.metaDescription ?? journal.metaDescription,
-      searchVector: [body.title ?? journal.title, body.abstract ?? journal.abstract, body.metaKeywords ?? journal.metaKeywords]
-        .filter(Boolean)
-        .join(' '),
+      license: body.license ?? journal.license,
+      // searchVector is a Postgres-generated column now (see schema) — regenerated
+      // automatically from title/abstract/metaKeywords on this same UPDATE.
       updatedAt: new Date()
     })
     .where(eq(journals.id, id))

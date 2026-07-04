@@ -5,6 +5,7 @@ import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
 import { syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireSession } from '#server/utils/session'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewInvitationTokenSchema } from '#shared/validation/reviews'
 
 async function findReviewerInvitation(
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Invitation not found.' })
   }
 
-  if (reviewer.isAccepted === false || reviewer.status === 'declined') {
+  if (reviewer.isAccepted === false || reviewer.status === REVIEWER_STATUS.DECLINED) {
     return { ok: true }
   }
 
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
     .update(reviewers)
     .set({
       isAccepted: false,
-      status: 'declined',
+      status: REVIEWER_STATUS.DECLINED,
       updatedAt: new Date()
     })
     .where(and(eq(reviewers.id, reviewer.id), eq(reviewers.userId, session.user.id)))

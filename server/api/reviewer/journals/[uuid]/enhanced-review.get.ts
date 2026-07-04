@@ -1,4 +1,5 @@
 import { db } from '#server/db/client'
+import { projectJournalForViewer } from '#server/utils/journal-visibility'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 
@@ -25,13 +26,15 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    journal,
+    // Strips co-reviewer identities/ratings — this reviewer sees their own assignment
+    // but not who else is reviewing this manuscript or what they rated it.
+    journal: projectJournalForViewer(journal, 'reviewer'),
     reviewer: reviewerRecord,
+    // rating is editor-only — a reviewer sees a peer's comment/recommendation, not their score.
     peerReviews: peerReviews.filter(review => review.userId !== session.user.id).map(review => ({
       id: review.id,
       comment: review.comment,
-      recommendation: review.recommendation,
-      rating: review.rating
+      recommendation: review.recommendation
     }))
   }
 })

@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { journals, reviewers } from '#server/db/schema'
 import { requireReviewer } from '#server/utils/permissions'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 export default defineEventHandler(async (event) => {
   const session = await requireReviewer(event)
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
     })
     .from(reviewers)
     .innerJoin(journals, eq(reviewers.journalId, journals.id))
-    .where(and(eq(reviewers.userId, session.user.id), eq(reviewers.status, 'reviewed')))
+    .where(and(eq(reviewers.userId, session.user.id), eq(reviewers.status, REVIEWER_STATUS.REVIEWED)))
 
   const now = Date.now()
 

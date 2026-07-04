@@ -4,6 +4,7 @@ import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
 import { requireSession } from '#server/utils/session'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewInvitationTokenSchema } from '#shared/validation/reviews'
 
 async function findReviewerInvitation(
@@ -52,7 +53,7 @@ export default defineEventHandler(async (event) => {
     .update(reviewers)
     .set({
       isAccepted: true,
-      status: 'in-progress',
+      status: REVIEWER_STATUS.IN_PROGRESS,
       updatedAt: new Date()
     })
     .where(and(eq(reviewers.id, reviewer.id), eq(reviewers.userId, session.user.id)))

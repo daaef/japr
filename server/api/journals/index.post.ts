@@ -2,6 +2,7 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { journals, manuscriptVersions, userInterests, userRoles, roles, users } from '#server/db/schema'
 import { checkUserPermission } from '#server/utils/permissions'
+import { markFileAttached, verifyPendingUpload } from '#server/utils/fileOwnership'
 import { requireSession } from '#server/utils/session'
 import { slugify } from '#server/utils/slug'
 import { journalCreateSchema } from '#shared/validation/journals'
@@ -54,6 +55,12 @@ export default defineEventHandler(async (event) => {
       .where(eq(users.id, session.user.id))
   }
 
+  // A journalUrl the caller never had a token for (arbitrary or guessed) is rejected
+  // before the journal row is ever created.
+  if (body.journalUrl) {
+    await verifyPendingUpload(body.journalUrl, session.user.id)
+  }
+
   const slugBase = slugify(body.title)
   const inserted = await db.insert(journals).values({
     title: body.title,
@@ -61,12 +68,12 @@ export default defineEventHandler(async (event) => {
     slug: `${slugBase}-${Date.now().toString().slice(-6)}`,
     description: body.description,
     abstract: body.abstract,
-    searchVector: [body.title, body.abstract, body.metaKeywords].filter(Boolean).join(' '),
     institution: body.institution ?? null,
     country: body.country,
     journalLanguage: body.journalLanguage,
     journalUrl: body.journalUrl ?? null,
     journalFormat: body.journalFormat ?? null,
+    license: body.license ?? null,
     userId: session.user.id,
     categoryId: body.categoryId ?? null,
     subCategoryId: body.subCategoryId ?? null,
@@ -82,6 +89,10 @@ export default defineEventHandler(async (event) => {
   }).returning()
 
   const journal = inserted[0]!
+
+  if (body.journalUrl) {
+    await markFileAttached(body.journalUrl, journal.id)
+  }
 
   await db.insert(manuscriptVersions).values({
     journalId: journal.id,

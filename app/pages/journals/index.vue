@@ -23,7 +23,11 @@ const selectedLanguages = ref<string[]>(readQueryArray('journalLanguage'))
 const selectedLicenses = ref<string[]>(readQueryArray('license'))
 const selectedCountries = ref<string[]>(readQueryArray('country'))
 
-const { data: categoryData } = await useFetch<{ categories: Array<{ id: string, name: string }> }>('/api/categories', {
+interface SubSubCategory { id: string, name: string }
+interface SubCategory { id: string, name: string, subSubCategories: SubSubCategory[] }
+interface Category { id: string, name: string, subCategories: SubCategory[] }
+
+const { data: categoryData } = await useFetch<{ categories: Category[] }>('/api/categories', {
   default: () => ({ categories: [] })
 })
 
@@ -50,7 +54,7 @@ const { data, pending, refresh } = await useFetch<{
     coverImage?: string | null
     createdAt: string
   }>
-  meta: { total: number, page: number, pageSize: number, totalPages: number }
+  meta: { total: number, page: number, pageSize: number, pageCount: number }
 }>('/api/journals/search', {
   query: computed(() => ({
     search: typeof route.query.search === 'string' ? route.query.search : undefined,
@@ -63,7 +67,7 @@ const { data, pending, refresh } = await useFetch<{
     license: readQueryArray('license'),
     page: typeof route.query.page === 'string' ? Number(route.query.page) : 1
   })),
-  default: () => ({ journals: [], meta: { total: 0, page: 1, pageSize: 10, totalPages: 1 } })
+  default: () => ({ journals: [], meta: { total: 0, page: 1, pageSize: 10, pageCount: 1 } })
 })
 
 watch(() => route.query, () => {
@@ -131,7 +135,7 @@ function toggleFilters() {
 }
 
 const page = computed(() => data.value?.meta.page ?? 1)
-const totalPages = computed(() => data.value?.meta.totalPages ?? 1)
+const totalPages = computed(() => data.value?.meta.pageCount ?? 1)
 </script>
 
 <template>
@@ -199,6 +203,8 @@ const totalPages = computed(() => data.value?.meta.totalPages ?? 1)
         </div>
         <JournalFiltersPanel
           v-model:selected-categories="selectedCategories"
+          v-model:selected-subcategories="selectedSubcategories"
+          v-model:selected-sub-subcategories="selectedSubSubcategories"
           v-model:selected-languages="selectedLanguages"
           v-model:selected-licenses="selectedLicenses"
           v-model:selected-countries="selectedCountries"

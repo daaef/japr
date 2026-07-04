@@ -4,9 +4,10 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journalComments, reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
-import { syncJournalReviewStatus } from '#server/utils/journalWorkflow'
+import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 const bodySchema = z.object({
   journalId: z.string().uuid(),
@@ -30,10 +31,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'You are not assigned as a reviewer for this journal.' })
   }
 
+  // A completed review can't be retroactively withdrawn as a decline — that would
+  // corrupt the completed-review count approve.post.ts relies on.
+  assertReviewerStatus(
+    reviewer.status,
+    [REVIEWER_STATUS.PENDING, REVIEWER_STATUS.IN_PROGRESS, REVIEWER_STATUS.DECLINED],
+    'declining this review'
+  )
+
   await db.update(reviewers).set({
     isAccepted: false,
     comment: body.comment,
-    status: 'declined',
+    status: REVIEWER_STATUS.DECLINED,
     reviewSubmittedAt: new Date(),
     updatedAt: new Date()
   }).where(eq(reviewers.id, reviewer.id))

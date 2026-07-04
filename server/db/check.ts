@@ -17,7 +17,13 @@ const REQUIRED_COLUMNS: Array<{ table: string, column: string, migration: string
   { table: 'admin_audit_logs', column: 'id', migration: '0008_good_madrox' },
   // 0009_demonic_human_robot — activate.post.ts reads these on every activation attempt
   { table: 'activations', column: 'expires_at', migration: '0009_demonic_human_robot' },
-  { table: 'activations', column: 'attempts', migration: '0009_demonic_human_robot' }
+  { table: 'activations', column: 'attempts', migration: '0009_demonic_human_robot' },
+  // 0010_majestic_garia — upload-token.post.ts / upload.post.ts write this on every upload
+  { table: 'files', column: 'storage_key', migration: '0010_majestic_garia' },
+  // 0011_spooky_masque — journalQuery.ts's search matches against this generated column
+  { table: 'journals', column: 'search_vector', migration: '0011_spooky_masque' },
+  // 0012_loud_viper — the deadline-reminder cron job reads/writes this to avoid duplicate reminders
+  { table: 'reviewers', column: 'reminded_at', migration: '0012_loud_viper' }
 ]
 
 const REQUIRED_ENUM_VALUES: Array<{ enumName: string, value: string, migration: string }> = [

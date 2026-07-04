@@ -4,6 +4,7 @@ import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
 import { getCurrentUserContext } from '#server/utils/session'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
   await db.update(reviewers).set({
     isAccepted: true,
-    status: 'in-progress',
+    status: REVIEWER_STATUS.IN_PROGRESS,
     updatedAt: new Date()
   }).where(and(eq(reviewers.id, reviewer.id), eq(reviewers.userId, context.user!.id)))
 

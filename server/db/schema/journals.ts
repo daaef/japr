@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm'
 import {
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -12,6 +14,12 @@ import {
 } from 'drizzle-orm/pg-core'
 import { categories, subCategories, subSubCategories } from './categories'
 import { users } from './users'
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return 'tsvector'
+  }
+})
 
 export const approvalStatusEnum = pgEnum('approval_status', [
   'desk_review',
@@ -81,7 +89,12 @@ export const journals = pgTable('journals', {
   accept: boolean('accept').notNull().default(true),
   agree: boolean('agree').notNull().default(true),
   isDraft: boolean('is_draft').notNull().default(false),
-  searchVector: text('search_vector'),
+  // Postgres-generated, not application-written — kept in sync automatically on every
+  // insert/update by the database itself, so no write path can ever forget to
+  // regenerate it (the previous plain-text column was only ever set at creation).
+  searchVector: tsvector('search_vector').generatedAlwaysAs(
+    sql`to_tsvector('english', coalesce(title, '') || ' ' || coalesce(abstract, '') || ' ' || coalesce(meta_keywords, ''))`
+  ),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -90,5 +103,6 @@ export const journals = pgTable('journals', {
   approvalStatusIndex: index('journals_approval_status_idx').on(table.approvalStatus),
   categoryIndex: index('journals_category_idx').on(table.categoryId),
   countryIndex: index('journals_country_idx').on(table.country),
-  languageIndex: index('journals_language_idx').on(table.journalLanguage)
+  languageIndex: index('journals_language_idx').on(table.journalLanguage),
+  searchVectorIndex: index('journals_search_vector_idx').using('gin', table.searchVector)
 }))

@@ -69,3 +69,20 @@ test('sanitizeJournalForAuthor anonymizes denormalized reviewer identities', () 
     { id: 'Reviewer 2' }
   ])
 })
+
+test('sanitizeJournalForAuthor strips the acting editor/reviewer id from changeRequests', () => {
+  const journal = {
+    id: 'journal-id',
+    changeRequests: [
+      { field: 'title', suggested_change: 'New title', editor_id: 'editor-user-id', status: 'pending' }
+    ]
+  }
+
+  const sanitized = sanitizeJournalForAuthor(journal)
+
+  assert.equal(Array.isArray(sanitized.changeRequests), true)
+  const [request] = sanitized.changeRequests as Array<Record<string, unknown>>
+  assert.equal(Object.hasOwn(request, 'editor_id'), false)
+  assert.equal(request.field, 'title')
+  assert.equal(request.suggested_change, 'New title')
+})

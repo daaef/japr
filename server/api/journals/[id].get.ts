@@ -1,5 +1,7 @@
 import { getRouterParam } from 'h3'
 import { findJournalByParam } from '#server/utils/journal-resolve'
+import { isPubliclyVisibleJournal, projectJournalForViewer } from '#server/utils/journal-visibility'
+import { resolveJournalViewerRole } from '#server/utils/journal-viewer-role'
 
 export default defineEventHandler(async (event) => {
   const param = getRouterParam(event, 'id')
@@ -10,13 +12,18 @@ export default defineEventHandler(async (event) => {
 
   const journal = await findJournalByParam(param)
 
-  if (!journal) {
+  if (!journal || !journal.isActive) {
     throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 
-  if (!journal.isActive) {
+  const viewerRole = await resolveJournalViewerRole(event, journal)
+
+  // A non-public manuscript (draft, desk review, under peer review, declined, ...) is
+  // only reachable by its owner, an assigned reviewer, or an editor — everyone else 404s,
+  // same as if it didn't exist, rather than leaking its existence/status.
+  if (viewerRole === 'public' && !isPubliclyVisibleJournal(journal)) {
     throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 
-  return { journal }
+  return { journal: projectJournalForViewer(journal, viewerRole) }
 })

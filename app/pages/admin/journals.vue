@@ -4,6 +4,8 @@ definePageMeta({
   requiredRoles: ['admin']
 })
 
+const page = ref(1)
+
 const { data } = await useFetch<{
   journals: Array<{
     id: string
@@ -13,12 +15,18 @@ const { data } = await useFetch<{
     approvalStatus: string
     createdAt: string
   }>
+  meta: { total: number, page: number, pageSize: number, pageCount: number }
 }>('/api/journals', {
-  query: {
-    pageSize: 30
-  },
-  default: () => ({ journals: [] })
+  query: computed(() => ({
+    pageSize: 30,
+    page: page.value
+  })),
+  default: () => ({ journals: [], meta: { total: 0, page: 1, pageSize: 30, pageCount: 1 } })
 })
+
+function goToPage(nextPage: number) {
+  page.value = nextPage
+}
 </script>
 
 <template>
@@ -46,6 +54,15 @@ const { data } = await useFetch<{
         </div>
       </div>
     </div>
+
+    <AppPagination
+      v-if="data.meta.total"
+      :page="data.meta.page"
+      :total-pages="data.meta.pageCount"
+      :total="data.meta.total"
+      :page-size="data.meta.pageSize"
+      @change="goToPage"
+    />
   </div>
 </template>
 

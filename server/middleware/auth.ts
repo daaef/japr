@@ -55,6 +55,12 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  // Vercel Cron invocations have no user session — each cron route verifies
+  // Authorization: Bearer CRON_SECRET internally instead (see server/utils/cronAuth.ts).
+  if (path.startsWith('/api/cron/')) {
+    return
+  }
+
   const session = await getAuthSession(event)
 
   if (!session) {

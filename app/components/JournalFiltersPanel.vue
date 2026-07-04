@@ -1,11 +1,19 @@
 <script setup lang="ts">
+import { JOURNAL_LICENSE_OPTIONS } from '#shared/constants/journalLicenses'
+
+interface SubSubCategory { id: string, name: string }
+interface SubCategory { id: string, name: string, subSubCategories: SubSubCategory[] }
+interface Category { id: string, name: string, subCategories: SubCategory[] }
+
 const selectedCategories = defineModel<string[]>('selectedCategories', { default: () => [] })
+const selectedSubcategories = defineModel<string[]>('selectedSubcategories', { default: () => [] })
+const selectedSubSubcategories = defineModel<string[]>('selectedSubSubcategories', { default: () => [] })
 const selectedLanguages = defineModel<string[]>('selectedLanguages', { default: () => [] })
 const selectedLicenses = defineModel<string[]>('selectedLicenses', { default: () => [] })
 const selectedCountries = defineModel<string[]>('selectedCountries', { default: () => [] })
 
 defineProps<{
-  categories: Array<{ id: string, name: string }>
+  categories: Category[]
   countries: string[]
 }>()
 
@@ -14,18 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const languageOptions = ['British English', 'American English', 'French']
-
-const licenseOptions = [
-  { id: 'cc-by', label: 'CC BY' },
-  { id: 'cc-by-sa', label: 'CC BY-SA' },
-  { id: 'cc-by-nd', label: 'CC BY-ND' },
-  { id: 'cc-by-nc', label: 'CC BY-NC' },
-  { id: 'cc-by-nc-sa', label: 'CC BY-NC-SA' },
-  { id: 'cc-by-nc-nd', label: 'CC BY-NC-ND' },
-  { id: 'cc0', label: 'CC0' },
-  { id: 'pub_domain', label: 'Public domain' },
-  { id: 'own_license', label: 'Publisher\'s own license' }
-]
+const licenseOptions = JOURNAL_LICENSE_OPTIONS
 
 function toggleValue(list: string[], value: string, checked: boolean) {
   if (checked) {
@@ -37,6 +34,16 @@ function toggleValue(list: string[], value: string, checked: boolean) {
 function onCategoryChange(id: string, event: Event) {
   const checked = (event.target as HTMLInputElement).checked
   selectedCategories.value = toggleValue(selectedCategories.value, id, checked)
+}
+
+function onSubcategoryChange(id: string, event: Event) {
+  const checked = (event.target as HTMLInputElement).checked
+  selectedSubcategories.value = toggleValue(selectedSubcategories.value, id, checked)
+}
+
+function onSubSubcategoryChange(id: string, event: Event) {
+  const checked = (event.target as HTMLInputElement).checked
+  selectedSubSubcategories.value = toggleValue(selectedSubSubcategories.value, id, checked)
 }
 
 function onLanguageChange(language: string, event: Event) {
@@ -130,6 +137,56 @@ function onCountryChange(country: string, event: Event) {
                   >
                   <span class="inline-block">{{ category.name }}</span>
                 </label>
+
+                <ul
+                  v-if="selectedCategories.includes(category.id) && category.subCategories.length"
+                  class="ps-6"
+                >
+                  <li
+                    v-for="subCategory in category.subCategories"
+                    :key="subCategory.id"
+                  >
+                    <label
+                      class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-gray-600 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                      :for="`subcat-${subCategory.id}`"
+                    >
+                      <input
+                        :id="`subcat-${subCategory.id}`"
+                        type="checkbox"
+                        name="subcategory[]"
+                        :value="subCategory.id"
+                        :checked="selectedSubcategories.includes(subCategory.id)"
+                        @change="onSubcategoryChange(subCategory.id, $event)"
+                      >
+                      <span class="inline-block">{{ subCategory.name }}</span>
+                    </label>
+
+                    <ul
+                      v-if="selectedSubcategories.includes(subCategory.id) && subCategory.subSubCategories.length"
+                      class="ps-6"
+                    >
+                      <li
+                        v-for="subSubCategory in subCategory.subSubCategories"
+                        :key="subSubCategory.id"
+                      >
+                        <label
+                          class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                          :for="`subsubcat-${subSubCategory.id}`"
+                        >
+                          <input
+                            :id="`subsubcat-${subSubCategory.id}`"
+                            type="checkbox"
+                            name="subsubcategory[]"
+                            :value="subSubCategory.id"
+                            :checked="selectedSubSubcategories.includes(subSubCategory.id)"
+                            @change="onSubSubcategoryChange(subSubCategory.id, $event)"
+                          >
+                          <span class="inline-block">{{ subSubCategory.name }}</span>
+                        </label>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
               </li>
             </ul>
           </div>

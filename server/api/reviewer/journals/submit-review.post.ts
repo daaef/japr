@@ -3,9 +3,10 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsAllReviewsComplete } from '#server/utils/editorNotifications'
-import { syncJournalReviewStatus } from '#server/utils/journalWorkflow'
+import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewSubmitSchema } from '#shared/validation/reviews'
 
 export default defineEventHandler(async (event) => {
@@ -29,6 +30,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Review assignment not found.' })
   }
 
+  // Only an accepted, in-progress assignment can be submitted — a pending reviewer
+  // never accepted, a declined reviewer opted out, and a reviewed one already submitted
+  // (no self-service resubmission; an editor-approved reopen is a separate action).
+  assertReviewerStatus(reviewer.status, [REVIEWER_STATUS.IN_PROGRESS], 'submitting a review')
+
   await db
     .update(reviewers)
     .set({
@@ -38,7 +44,7 @@ export default defineEventHandler(async (event) => {
       rating: body.rating,
       criteriaRatings: body.criteriaRatings,
       recommendation: body.recommendation,
-      status: 'reviewed',
+      status: REVIEWER_STATUS.REVIEWED,
       isAccepted: true,
       reviewSubmittedAt: new Date(),
       updatedAt: new Date()
@@ -49,7 +55,7 @@ export default defineEventHandler(async (event) => {
     where: (table, { eq }) => eq(table.journalId, reviewer.journalId)
   })
 
-  const allComplete = journalReviewers.every(item => item.id === reviewer.id ? true : item.status === 'reviewed')
+  const allComplete = journalReviewers.every(item => item.id === reviewer.id ? true : item.status === REVIEWER_STATUS.REVIEWED)
   const approvalStatus = await syncJournalReviewStatus(reviewer.journalId)
 
   if (allComplete || approvalStatus === MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE) {

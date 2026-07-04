@@ -13,11 +13,11 @@ Six-phase plan closing the findings from a full-system audit of auth/onboarding,
 | Phase | Slug | Depends on | Why |
 |---|---|---|---|
 | 1 | `auth-identity-hardening` | — | Blocking: every self-registered user currently gets no role and no dashboard. **Done.** |
-| 2 | `manuscript-visibility-unification` | — | Independent; closes the reviewer-identity leaks. |
-| 3 | `review-state-guards` | Phase 2 | Touches the same `server/api/reviewer/journals/` files; land the read-path fix first. |
-| 4 | `upload-ownership-safety` | — | Independent; can run alongside 2/3. |
-| 5 | `journal-search-consolidation` | Phase 2 | Unified query-builder calls Phase 2's shared visibility function. |
-| 6 | `operational-hardening` | Phase 4 | Extends Phase 4's cleanup job into a general scheduled-job runner. |
+| 2 | `manuscript-visibility-unification` | — | Independent; closes the reviewer-identity leaks. **Done.** |
+| 3 | `review-state-guards` | Phase 2 | Touches the same `server/api/reviewer/journals/` files; land the read-path fix first. **Done.** |
+| 4 | `upload-ownership-safety` | — | Independent; can run alongside 2/3. **Done.** |
+| 5 | `journal-search-consolidation` | Phase 2 | Unified query-builder calls Phase 2's shared visibility function. **Done.** |
+| 6 | `operational-hardening` | Phase 4 | Extends Phase 4's cleanup job into a general scheduled-job runner. **Done.** |
 
 Each phase folder below has `problem.md` / `plan.md` / `solution.md` (pre-implementation) and gets a `changelog.md` once the code lands.
 
@@ -51,3 +51,9 @@ Each phase folder below has `problem.md` / `plan.md` / `solution.md` (pre-implem
 | vercel-uploads-blob | 20260629 | done | Pluggable `STORAGE_DRIVER` (local\|Vercel Blob) for manuscript uploads/downloads/preview; PDF-first on Vercel; opaque key keeps files private |
 | upload-token-500 | 20260701 | done | Fix Vercel direct upload: drop forced MPU, exempt upload-token from auth middleware, surface Blob errors |
 | auth-identity-hardening | 20260703 | done | Sign-up routed through better-auth's own API (uniform role/activation-code assignment), activation expiry+attempt-limit, corrected rate-limit paths, Google onboarding redirect, server-side interests/review-policy gates; also fixed two pre-existing bugs (orphaned admin_audit_logs migration, uuid generateId crash on all user creation) found during verification |
+| manuscript-visibility-unification | 20260703 | done | Shared `projectJournalForViewer` (public/owner/reviewer/editor) replaces four drifted per-endpoint filters; non-public manuscripts 404 for non-owners; changeRequests actor-id scrub; reviewer peer-isolation (co-reviewer identities + editor-only rating field) |
+| review-state-guards | 20260703 | done | Reviewer-assignment status transitions guarded (no submit before accept, no resubmission, no decline after reviewed); request-change now requires assignment + non-terminal manuscript status; assign-reviewers conflict-of-interest check; reviewer-status constants replace conflated/raw-literal comparisons |
+| upload-ownership-safety | 20260703 | done | New `files` ownership table binds every storage key to its uploader at upload time (both drivers); journal create/revision verify ownership before saving journalUrl; local-driver path-traversal fix; admin-triggered orphaned-upload cleanup; upload-token rate limit |
+| journal-search-consolidation | 20260703 | done | Fixed permanently-broken pagination (totalPages/pageCount mismatch); unified index/search query-builder; search_vector migrated to a generated tsvector+GIN column (word/stem matching, not substring — flagged); subcategory/sub-subcategory filter UI; license field; pagination on 9 editor queues + admin journals page |
+| operational-hardening | 20260703 | done | First scheduled-execution mechanism in the app (Vercel Cron + CRON_SECRET auth); daily orphaned-upload cleanup (manual admin endpoint kept as escape hatch); reviewer deadline-reminder job with re-check-before-send and remindedAt dedup; rate limits on manuscript creation + 5 reviewer decision endpoints |
+| full-project-review | 20260704 | planned | Full code/GUI/flow/design-system review: issues catalog (`problem.md`) + 6-phase remediation roadmap (`plan.md`) — storage privacy, flow guards, server hardening, workflow correctness, frontend consolidation, design-system unification; flags two regressions vs. earlier "done" hardening tasks |

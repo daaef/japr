@@ -2,6 +2,7 @@ import { BlobError } from '@vercel/blob'
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { readBody, toWebRequest } from 'h3'
 import { getAllowedMimeTypes, getMaxFileSizeBytes } from '#server/utils/files'
+import { recordUploadedFile } from '#server/utils/fileOwnership'
 import { requireSession } from '#server/utils/session'
 
 /**
@@ -24,8 +25,12 @@ export default defineEventHandler(async (event) => {
     return await handleUpload({
       body,
       request: toWebRequest(event),
-      onBeforeGenerateToken: async () => {
-        await requireSession(event)
+      onBeforeGenerateToken: async (pathname) => {
+        const session = await requireSession(event)
+        // Record who this specific storage key was actually issued to, before the
+        // browser ever talks to Blob — journals/index.post.ts and revision.post.ts
+        // verify this at attach time so a client can't claim an arbitrary/guessed key.
+        await recordUploadedFile(pathname, session.user.id)
         return {
           allowedContentTypes: getAllowedMimeTypes(),
           maximumSizeInBytes: getMaxFileSizeBytes(),

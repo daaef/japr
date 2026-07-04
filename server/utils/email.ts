@@ -402,3 +402,25 @@ export async function sendJournalStatusChangeEmail(to: string, name: string, sub
     )
   })
 }
+
+export async function sendReviewDeadlineReminderEmail(
+  to: string,
+  reviewerName: string,
+  submissionTitle: string,
+  deadline: Date,
+  isOverdue: boolean
+) {
+  const deadlineLabel = deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  return sendEmail({
+    to,
+    subject: isOverdue ? `Overdue review: ${submissionTitle}` : `Review deadline approaching: ${submissionTitle}`,
+    html: buildJournalEmail(
+      isOverdue ? 'Your review is overdue' : 'Your review deadline is approaching',
+      `<h1>Hello, ${escapeHtml(reviewerName)}</h1>
+       <p>${isOverdue
+        ? `Your review of <strong>${escapeHtml(submissionTitle)}</strong> was due on ${deadlineLabel} and has not yet been submitted.`
+        : `Your review of <strong>${escapeHtml(submissionTitle)}</strong> is due on ${deadlineLabel}.`}</p>`
+    )
+  })
+}

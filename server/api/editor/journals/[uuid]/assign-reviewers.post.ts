@@ -11,6 +11,7 @@ import { requirePermission } from '#server/utils/permissions'
 import { getDefaultReviewDeadline } from '#server/utils/reviewerDeadlines'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewAssignmentSchema } from '#shared/validation/reviews'
 
 export default defineEventHandler(async (event) => {
@@ -35,6 +36,13 @@ export default defineEventHandler(async (event) => {
     [MANUSCRIPT_STATUS.IN_PROGRESS, MANUSCRIPT_STATUS.UNDER_PEER_REVIEW],
     'assigning reviewers'
   )
+
+  if (body.reviewerUserIds.includes(journal.userId)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'A manuscript\'s own author cannot be assigned as its reviewer.'
+    })
+  }
 
   const reviewerUsers = await db.query.users.findMany({
     where: (table, { inArray }) => inArray(table.id, body.reviewerUserIds)
@@ -61,7 +69,7 @@ export default defineEventHandler(async (event) => {
         fullname: reviewerUser.fullname,
         userId: reviewerUser.id,
         journalId: journal.id,
-        status: 'pending',
+        status: REVIEWER_STATUS.PENDING,
         token,
         assignedAt,
         reviewDeadline

@@ -26,6 +26,7 @@ export const journalCreateSchema = z.object({
   metaDescription: z.string().trim().max(255).optional().nullable(),
   journalUrl: z.string().trim().max(2000).optional().nullable(),
   journalFormat: z.string().trim().max(24).optional().nullable(),
+  license: z.string().trim().max(120).optional().nullable(),
   agree: z.boolean().default(true),
   accept: z.boolean().default(true)
 })

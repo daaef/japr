@@ -7,7 +7,20 @@ const limits: Record<string, { max: number, windowMs: number }> = {
   '/api/auth/sign-up': { max: 3, windowMs: 60_000 },
   '/api/auth/request-password-reset': { max: 3, windowMs: 60_000 },
   '/api/auth/activate': { max: 5, windowMs: 60_000 },
-  '/api/auth/resend-activation': { max: 3, windowMs: 60_000 }
+  '/api/auth/resend-activation': { max: 3, windowMs: 60_000 },
+  // This route also receives Vercel's server-to-server upload-completed webhook, but
+  // that traffic originates from Vercel's own infra IP, not the uploading user's — it
+  // forms its own separate bucket here, not the same one this limit is meant to guard.
+  '/api/files/upload-token': { max: 10, windowMs: 60_000 },
+  // Abuse prevention, not a UX throttle — generous enough that no legitimate author or
+  // reviewer should ever notice. GET requests to these same paths (e.g. accept/decline's
+  // email-link flow) are already exempt below and unaffected.
+  '/api/journals': { max: 10, windowMs: 60_000 },
+  '/api/reviewer/journals/accept': { max: 20, windowMs: 60_000 },
+  '/api/reviewer/journals/decline': { max: 20, windowMs: 60_000 },
+  '/api/reviewer/journals/decline-with-comment': { max: 20, windowMs: 60_000 },
+  '/api/reviewer/journals/submit-review': { max: 20, windowMs: 60_000 },
+  '/api/reviewer/journals/request-change': { max: 20, windowMs: 60_000 }
 }
 
 export default defineEventHandler((event) => {

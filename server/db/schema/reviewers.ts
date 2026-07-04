@@ -33,6 +33,7 @@ export const reviewers = pgTable('reviewers', {
   deadlineExtendedAt: timestamp('deadline_extended_at', { withTimezone: true }),
   originalDeadline: timestamp('original_deadline', { withTimezone: true }),
   reviewSubmittedAt: timestamp('review_submitted_at', { withTimezone: true }),
+  remindedAt: timestamp('reminded_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 }, table => ({

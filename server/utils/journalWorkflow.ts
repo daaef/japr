@@ -3,6 +3,7 @@ import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { notifyAuthorOfManuscriptStatus } from '#server/utils/manuscriptStatusNotifications'
 import { MANUSCRIPT_STATUS, REVIEW_STAGE_STATUSES, isManuscriptStatus, type ManuscriptStatus } from '#shared/constants/manuscriptStatus'
+import { REVIEWER_STATUS, isReviewerStatus, type ReviewerStatus } from '#shared/constants/reviewerStatus'
 
 export type WorkflowStatus =
   | typeof MANUSCRIPT_STATUS.IN_PROGRESS
@@ -17,11 +18,11 @@ interface ReviewerWorkflowInput {
 }
 
 export function reviewerResponseIsTerminal(reviewer: ReviewerWorkflowInput) {
-  return reviewer.status === MANUSCRIPT_STATUS.REVIEWED || reviewer.status === MANUSCRIPT_STATUS.DECLINED
+  return reviewer.status === REVIEWER_STATUS.REVIEWED || reviewer.status === REVIEWER_STATUS.DECLINED
 }
 
 export function getCompletedReviewCount(reviewers: ReviewerWorkflowInput[]) {
-  return reviewers.filter(item => item.status === MANUSCRIPT_STATUS.REVIEWED).length
+  return reviewers.filter(item => item.status === REVIEWER_STATUS.REVIEWED).length
 }
 
 export function getReviewWorkflowStatus(reviewers: ReviewerWorkflowInput[]): WorkflowStatus {
@@ -92,6 +93,20 @@ export function assertManuscriptStatus(
     throw createError({
       statusCode: 400,
       statusMessage: `Manuscript must be ${allowed.join(' or ')} before ${action}. Current status: ${currentStatus}.`
+    })
+  }
+}
+
+/** The only way any endpoint should validate a reviewers.status transition. */
+export function assertReviewerStatus(
+  currentStatus: string,
+  allowed: ReviewerStatus[],
+  action: string
+) {
+  if (!isReviewerStatus(currentStatus) || !allowed.includes(currentStatus)) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: `Review must be ${allowed.join(' or ')} before ${action}. Current status: ${currentStatus}.`
     })
   }
 }

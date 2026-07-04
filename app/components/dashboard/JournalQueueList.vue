@@ -16,9 +16,19 @@ const props = defineProps<{
   emptyMessage?: string
 }>()
 
-const { data, pending, refresh } = await useFetch<{ journals: JournalRow[] }>(props.apiUrl, {
-  default: () => ({ journals: [] })
+const page = ref(1)
+
+const { data, pending, refresh } = await useFetch<{
+  journals: JournalRow[]
+  meta: { total: number, page: number, pageSize: number, pageCount: number }
+}>(props.apiUrl, {
+  query: computed(() => ({ page: page.value })),
+  default: () => ({ journals: [], meta: { total: 0, page: 1, pageSize: 20, pageCount: 1 } })
 })
+
+function goToPage(nextPage: number) {
+  page.value = nextPage
+}
 
 function detailPath(id: string) {
   return `${props.detailPathPrefix}/${id}`
@@ -44,7 +54,7 @@ function formatDate(value?: string) {
         <div class="card-header">
           <div class="mb-0 flex-between flex-wrap gap-8">
             <h4 class="mb-0">
-              {{ title }} ({{ data?.journals.length ?? 0 }})
+              {{ title }} ({{ data?.meta.total ?? 0 }})
             </h4>
           </div>
         </div>
@@ -131,6 +141,18 @@ function formatDate(value?: string) {
               </tr>
             </tbody>
           </table>
+        </div>
+        <div
+          v-if="data?.meta.total"
+          class="card-footer"
+        >
+          <AppPagination
+            :page="data.meta.page"
+            :total-pages="data.meta.pageCount"
+            :total="data.meta.total"
+            :page-size="data.meta.pageSize"
+            @change="goToPage"
+          />
         </div>
       </div>
     </div>

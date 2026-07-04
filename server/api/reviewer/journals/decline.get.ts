@@ -5,6 +5,7 @@ import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
 import { syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { getCurrentUserContext } from '#server/utils/session'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -31,13 +32,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'This invitation belongs to another user.' })
   }
 
-  if (reviewer.isAccepted === false || reviewer.status === 'declined') {
+  if (reviewer.isAccepted === false || reviewer.status === REVIEWER_STATUS.DECLINED) {
     return sendRedirect(event, '/reviewer/reviews')
   }
 
   await db.update(reviewers).set({
     isAccepted: false,
-    status: 'declined',
+    status: REVIEWER_STATUS.DECLINED,
     updatedAt: new Date()
   }).where(and(eq(reviewers.id, reviewer.id), eq(reviewers.userId, context.user!.id)))
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { JOURNAL_LICENSE_OPTIONS } from '#shared/constants/journalLicenses'
+
 definePageMeta({
   middleware: ['auth', 'role'],
   requiredRoles: ['author', 'admin']
@@ -20,7 +22,8 @@ const form = reactive({
   journalLanguage: '',
   categoryId: '',
   subCategoryId: '',
-  subSubCategoryId: ''
+  subSubCategoryId: '',
+  license: ''
 })
 
 const agreePolicy = ref(false)
@@ -290,6 +293,7 @@ async function createSubmission() {
         subCategoryId: form.subCategoryId || null,
         subSubCategoryId: form.subSubCategoryId || null,
         metaKeywords: form.metaKeywords || null,
+        license: form.license || null,
         journalUrl: uploadedFile.value.fileKey,
         journalFormat: uploadedFile.value.journalFormat,
         agree: agreePolicy.value,
@@ -570,6 +574,28 @@ async function createSubmission() {
                     :value="subSubCategory.id"
                   >
                     {{ subSubCategory.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="col-span-full">
+              <label for="license" class="block text-sm font-medium leading-6 text-gray-900">License (optional)</label>
+              <div class="mt-2">
+                <select
+                  id="license"
+                  v-model="form.license"
+                  :class="fieldClass"
+                >
+                  <option value="">
+                    No license selected
+                  </option>
+                  <option
+                    v-for="license in JOURNAL_LICENSE_OPTIONS"
+                    :key="license.id"
+                    :value="license.label"
+                  >
+                    {{ license.label }}
                   </option>
                 </select>
               </div>

@@ -57,6 +57,7 @@ Copy `.env.example` to `.env` and configure:
 - `STORAGE_DRIVER` — `local` (disk, dev/Docker) or `blob` (Vercel Blob); `BLOB_READ_WRITE_TOKEN` is auto-set by Vercel when a Blob store is connected
 - `UPLOAD_DIR`, `MAX_FILE_SIZE_MB`, `PANDOC_PATH`
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (optional OAuth)
+- `CRON_SECRET` — required in production; authenticates Vercel Cron's calls to `/api/cron/*` (Vercel sends it automatically as `Authorization: Bearer $CRON_SECRET`, see `vercel.json`)
 
 ## Vercel deployment
 
@@ -76,6 +77,7 @@ Set these in the Vercel project **Settings → Environment Variables** for Produ
 | `STORAGE_DRIVER` | `blob` — store manuscript uploads in Vercel Blob (disk storage is not durable on Vercel) |
 | `BLOB_READ_WRITE_TOKEN` | auto-added by Vercel when you connect a Blob store (Storage → Blob → Connect) |
 | `NUXT_PUBLIC_DIRECT_UPLOAD` | `true` — upload manuscripts browser→Blob directly (required for files over ~4.5 MB) |
+| `CRON_SECRET` | random string, 16+ characters — Vercel sends this as a Bearer token to `/api/cron/*`; without it the cron routes return 503 |
 
 > The `/mail` viewer is public when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true` — it exposes activation codes and password-reset links to anyone with the URL. Enable it only on a testing/preview deployment, not a production site with real users.
 

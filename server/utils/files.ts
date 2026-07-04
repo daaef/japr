@@ -1,8 +1,8 @@
-import { mkdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, stat, unlink, writeFile } from 'node:fs/promises'
 import { createReadStream, existsSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { extname, isAbsolute, join, relative, resolve } from 'node:path'
-import { list, put } from '@vercel/blob'
+import { del, list, put } from '@vercel/blob'
 import { createId } from './ids'
 
 const storageDriver = (process.env.STORAGE_DRIVER ?? 'local').toLowerCase()
@@ -52,7 +52,17 @@ export function normalizeStoredFileKey(storagePath: string) {
 }
 
 export function resolveStoredFilePath(storageKey: string) {
-  return join(getUploadDir(), storageKey.replace(/^\/+/, ''))
+  const uploadDir = getUploadDir()
+  const resolvedPath = resolve(uploadDir, storageKey.replace(/^\/+/, ''))
+  const relativePath = relative(uploadDir, resolvedPath)
+
+  // A storageKey containing `..` segments (or resolving onto a different root
+  // entirely) must never be allowed to read outside the upload directory.
+  if (relativePath.startsWith('..') || isAbsolute(relativePath)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid file path.' })
+  }
+
+  return resolvedPath
 }
 
 /**
@@ -91,6 +101,16 @@ async function resolveBlobUrl(storageKey: string) {
   const { blobs } = await list({ prefix: storageKey, limit: 1 })
   const match = blobs.find(blob => blob.pathname === storageKey)
   return match?.url ?? null
+}
+
+/** Deletes an orphaned upload's underlying storage object. Missing files are not an error. */
+export async function deleteStoredFile(storageKey: string) {
+  if (isBlobStorage()) {
+    await del(storageKey).catch(() => undefined)
+    return
+  }
+
+  await unlink(resolveStoredFilePath(storageKey)).catch(() => undefined)
 }
 
 export async function storedFileExists(storageKey: string) {
