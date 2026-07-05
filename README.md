@@ -79,11 +79,11 @@ Set these in the Vercel project **Settings → Environment Variables** for Produ
 | `NUXT_PUBLIC_DIRECT_UPLOAD` | `true` — upload manuscripts browser→Blob directly (required for files over ~4.5 MB) |
 | `CRON_SECRET` | random string, 16+ characters — Vercel sends this as a Bearer token to `/api/cron/*`; without it the cron routes return 503 |
 
-> The `/mail` viewer is public when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true` — it exposes activation codes and password-reset links to anyone with the URL. Enable it only on a testing/preview deployment, not a production site with real users.
+> The `/mail` viewer is public when `NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true` — it exposes activation codes and password-reset links to anyone with the URL. It's hard-blocked whenever `NODE_ENV=production` regardless of the flag, so it only ever works on local/dev/preview deployments.
 
 > **Uploads on Vercel:** set `STORAGE_DRIVER=blob`, connect a Blob store, and set `NUXT_PUBLIC_DIRECT_UPLOAD=true` so the browser uploads straight to Blob (bypassing Vercel's ~4.5 MB serverless request-body limit). Do **not** enable `multipart` on the client — single PUT is enough for manuscript sizes. Redeploy after changing any of these. DOC/DOCX conversion and in-browser DOC preview are disabled on Vercel (no LibreOffice/Pandoc) — PDFs preview/download directly; DOC/DOCX are download-only.
 
-`BETTER_AUTH_URL` must match the public site URL exactly (scheme + host, no trailing slash). On Vercel, `auth.ts` also trusts `japr.vercel.app` and `*.vercel.app` preview hosts via Better Auth `allowedHosts`.
+`BETTER_AUTH_URL` must match the public site URL exactly (scheme + host, no trailing slash). On Vercel, `auth.ts` derives its base URL via Better Auth `allowedHosts`, currently scoped to `japr.vercel.app` only — preview deploys are not in the allow-list (add a team-scoped pattern there if you need them).
 
 If Google OAuth is enabled, add `https://japr.vercel.app/api/auth/callback/google` to Google Cloud authorized redirect URIs.
 

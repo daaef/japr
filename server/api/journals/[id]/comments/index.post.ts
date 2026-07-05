@@ -1,6 +1,9 @@
 import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { journalComments } from '#server/db/schema'
+import { findJournalByParam } from '#server/utils/journal-resolve'
+import { isPubliclyVisibleJournal } from '#server/utils/journal-visibility'
+import { resolveJournalViewerRole } from '#server/utils/journal-viewer-role'
 import { requireSession } from '#server/utils/session'
 import { commentCreateSchema } from '#shared/validation/categories'
 
@@ -13,11 +16,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing journal id.' })
   }
 
-  const journal = await db.query.journals.findFirst({
-    where: (table, { eq }) => eq(table.id, id)
-  })
+  const journal = await findJournalByParam(id)
 
-  if (!journal) {
+  if (!journal || !journal.isActive) {
+    throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
+  }
+
+  const viewerRole = await resolveJournalViewerRole(event, journal)
+
+  if (viewerRole === 'public' && !isPubliclyVisibleJournal(journal)) {
     throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 

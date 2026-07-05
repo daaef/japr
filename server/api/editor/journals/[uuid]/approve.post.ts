@@ -10,6 +10,7 @@ import { getJournalById } from '#server/utils/submissions'
 import { sendDecisionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 const bodySchema = z.object({
   comment: z.string().trim().max(2000).optional().nullable()
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
   const completedReviews = await db.query.reviewers.findMany({
     where: (table, { and, eq }) => and(
       eq(table.journalId, journal.id),
-      eq(table.status, MANUSCRIPT_STATUS.REVIEWED)
+      eq(table.status, REVIEWER_STATUS.REVIEWED)
     )
   })
 

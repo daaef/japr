@@ -64,7 +64,7 @@ function toPlainText(html: string) {
  * unescaped names/titles/letters become an HTML/script-injection vector in
  * outgoing mail. Safe for both text and double-quoted attribute contexts.
  */
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

@@ -49,6 +49,12 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  // Public contact form (app/pages/contact.vue renders it under the public layout,
+  // no auth middleware) — visitors submit this before ever having a session.
+  if (path === '/api/contact') {
+    return
+  }
+
   // Session for token generation is enforced inside onBeforeGenerateToken; upload-completed
   // callbacks from Vercel Blob are verified via x-vercel-signature instead.
   if (path === '/api/files/upload-token') {

@@ -1,5 +1,5 @@
 import { mkdtemp, writeFile, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { readMultipartFormData } from 'h3'
 import {
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const tempDir = await mkdtemp(join(tmpdir(), 'japr-preview-'))
-  const tempPath = join(tempDir, fileField.filename)
+  const tempPath = join(tempDir, basename(fileField.filename))
 
   try {
     await writeFile(tempPath, Buffer.from(fileField.data))

@@ -5,10 +5,14 @@ import { notifications } from '#server/db/schema'
 import { requireSession } from '#server/utils/session'
 
 function escapeCsvField(value: string) {
-  if (value.includes('"') || value.includes(',') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
+  // Prefix values starting with =, +, -, or @ so spreadsheet apps (Excel, Sheets)
+  // don't interpret them as formulas when the CSV is opened.
+  const guarded = /^[=+\-@]/.test(value) ? `'${value}` : value
+
+  if (guarded.includes('"') || guarded.includes(',') || guarded.includes('\n')) {
+    return `"${guarded.replace(/"/g, '""')}"`
   }
-  return value
+  return guarded
 }
 
 export default defineEventHandler(async (event) => {
