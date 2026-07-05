@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
 import type { EditorDashboardSummary } from '#shared/types/dashboard'
 
 definePageMeta({
-  middleware: ['auth', 'role'],
-  requiredRoles: ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor']
+  middleware: ['auth', 'role', 'copy-desk-redirect'],
+  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
 })
 
 const { data: currentUser } = useCurrentUser()
@@ -35,23 +36,11 @@ const defaultEditorSummary = (): EditorDashboardSummary => ({
   }
 })
 
-const isCopyDeskOnly = computed(() => {
-  const roles = currentUser.value.roles
-  return roles.includes('copy_desk_editor')
-    && !roles.some(role => ['admin', 'editor_in_chief', 'managing_editor'].includes(role))
-})
-
 const isSeniorEditor = computed(() =>
   currentUser.value.roles.some(role => ['admin', 'editor_in_chief', 'managing_editor'].includes(role))
 )
 
 const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] ?? 'there')
-
-watch(isCopyDeskOnly, (value) => {
-  if (value) {
-    navigateTo('/editor/copy-desk')
-  }
-}, { immediate: true })
 
 const {
   data: summaryData,

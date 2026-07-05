@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { MANUSCRIPT_STATUS_LABELS, MANUSCRIPT_STATUSES, type ManuscriptStatus } from '#shared/constants/manuscriptStatus'
+import { ADMIN_ROLES } from '#shared/constants/roles'
 import type { AdminDashboardSummary } from '#shared/types/dashboard'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin']
+  requiredRoles: ADMIN_ROLES
 })
 
 const { data: currentUser } = useCurrentUser()
@@ -80,7 +82,7 @@ async function sendTestEmail() {
     })
     testEmailMessage.value = `Test email sent to ${result.recipient}.`
   } catch (error) {
-    testEmailError.value = error instanceof Error ? error.message : 'Unable to send test email.'
+    testEmailError.value = extractApiErrorMessage(error, 'Unable to send test email.')
   } finally {
     sendingTestEmail.value = false
   }

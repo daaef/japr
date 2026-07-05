@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
@@ -43,7 +45,7 @@ async function runCompare() {
     )
     compareResult.value = result.comparison
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to compare versions.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to compare versions.')
   } finally {
     compareLoading.value = false
   }
@@ -126,6 +128,8 @@ async function runCompare() {
       <h2 class="text-lg font-semibold text-toned">
         Diff result
       </h2>
+      <!-- Safe only because the server's diff_prettyHtml HTML-escapes the diffed text
+           before wrapping it in <ins>/<del> — see compareVersionTexts in versions.ts. -->
       <div
         class="prose mt-4 max-w-none text-sm"
         v-html="compareResult.html"

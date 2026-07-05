@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ADMIN_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin']
+  requiredRoles: ADMIN_ROLES
 })
 
 const route = useRoute()
@@ -61,7 +64,7 @@ async function saveUser() {
     await refresh()
     message.value = 'User updated.'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to update user.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to update user.')
   }
 }
 

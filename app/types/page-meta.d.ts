@@ -1,6 +1,6 @@
 declare module '#app' {
   interface PageMeta {
-    requiredRoles?: string[]
+    requiredRoles?: readonly string[]
   }
 }
 

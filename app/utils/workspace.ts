@@ -29,6 +29,10 @@ export function resolveWorkspacePath(roles: string[], options?: { hasInterests?:
     return '/editor'
   }
 
+  if (roles.includes('copy_desk_editor')) {
+    return '/editor/copy-desk'
+  }
+
   if (roles.includes('associate_editor') || roles.includes('external_reviewer') || roles.includes('desk_editor')) {
     return '/reviewer'
   }
@@ -38,10 +42,6 @@ export function resolveWorkspacePath(roles: string[], options?: { hasInterests?:
       return '/author/interests'
     }
     return '/author'
-  }
-
-  if (roles.includes('copy_desk_editor')) {
-    return '/editor/copy-desk'
   }
 
   return '/'

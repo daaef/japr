@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { REVIEWER_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin', 'associate_editor', 'external_reviewer', 'desk_editor']
+  requiredRoles: REVIEWER_ROLES
 })
 
 const route = useRoute()
@@ -107,7 +110,7 @@ async function acceptInvite() {
     await refresh()
     actionMessage.value = 'Invitation accepted.'
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to accept this invitation.'
+    actionError.value = extractApiErrorMessage(error, 'Unable to accept this invitation.')
   } finally {
     actionLoading.value = false
   }
@@ -128,7 +131,7 @@ async function declineInvite() {
     await refresh()
     actionMessage.value = 'Invitation declined.'
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to decline this invitation.'
+    actionError.value = extractApiErrorMessage(error, 'Unable to decline this invitation.')
   } finally {
     actionLoading.value = false
   }
@@ -151,7 +154,7 @@ async function declineWithComment() {
     declineComment.value = ''
     actionMessage.value = 'Invitation declined with comment.'
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to decline with comment.'
+    actionError.value = extractApiErrorMessage(error, 'Unable to decline with comment.')
   } finally {
     actionLoading.value = false
   }
@@ -185,7 +188,7 @@ async function requestChange() {
     changeForm.comment = ''
     actionMessage.value = 'Change request sent to the author.'
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to request changes.'
+    actionError.value = extractApiErrorMessage(error, 'Unable to request changes.')
   } finally {
     actionLoading.value = false
   }
@@ -205,7 +208,7 @@ async function requestExtension() {
     extensionReason.value = ''
     actionMessage.value = 'Deadline extension request sent to the editors.'
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to request deadline extension.'
+    actionError.value = extractApiErrorMessage(error, 'Unable to request deadline extension.')
   } finally {
     actionLoading.value = false
   }
@@ -240,7 +243,7 @@ async function submitReview() {
     await refresh()
     actionMessage.value = 'Review submitted.'
   } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to submit this review.'
+    actionError.value = extractApiErrorMessage(error, 'Unable to submit this review.')
   } finally {
     actionLoading.value = false
   }

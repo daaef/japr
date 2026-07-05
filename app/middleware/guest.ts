@@ -1,12 +1,12 @@
-import { fetchCurrentUser } from '~/composables/useCurrentUser'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 import { resolveWorkspacePath } from '~/utils/workspace'
 
 export default defineNuxtRouteMiddleware(async () => {
-  const me = await fetchCurrentUser()
+  const { data: me } = await useCurrentUser()
 
-  if (me?.authenticated) {
-    return navigateTo(resolveWorkspacePath(me.roles, {
-      hasInterests: me.hasInterests
+  if (me.value.authenticated) {
+    return navigateTo(resolveWorkspacePath(me.value.roles, {
+      hasInterests: me.value.hasInterests
     }))
   }
 })

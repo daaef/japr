@@ -1,14 +1,16 @@
 <script setup lang="ts">
+import { EDITOR_ROLES } from '#shared/constants/roles'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin', 'editor_in_chief', 'managing_editor']
+  requiredRoles: EDITOR_ROLES
 })
 </script>
 
 <template>
   <JournalQueueList
-    title="Declined / Rejected"
-    api-url="/api/editor/journals/rejected"
+    title="Declined"
+    api-url="/api/editor/journals/declined"
     detail-path-prefix="/editor/journals"
     empty-message="No declined manuscripts."
   />

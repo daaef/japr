@@ -1,18 +1,34 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+import { signUpSchema } from '#shared/validation/auth'
+
 definePageMeta({
   layout: 'auth',
   middleware: ['guest']
 })
 
-const form = reactive({
-  fullname: '',
-  username: '',
-  institution: '',
-  email: '',
-  country: '',
-  password: '',
-  confirmPassword: ''
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(signUpSchema),
+  initialValues: {
+    fullname: '',
+    username: '',
+    institution: '',
+    email: '',
+    country: '',
+    password: '',
+    confirmPassword: ''
+  }
 })
+
+const [fullname, fullnameAttrs] = defineField('fullname')
+const [username, usernameAttrs] = defineField('username')
+const [institution, institutionAttrs] = defineField('institution')
+const [email, emailAttrs] = defineField('email')
+const [country, countryAttrs] = defineField('country')
+const [password, passwordAttrs] = defineField('password')
+const [confirmPassword, confirmPasswordAttrs] = defineField('confirmPassword')
 
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -21,26 +37,26 @@ const loading = ref(false)
 
 const inputClass = 'block w-full bg-[#F9FAFB] rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6'
 
-async function submit() {
+const submit = handleSubmit(async (values) => {
   errorMessage.value = ''
   loading.value = true
 
   try {
     await $fetch('/api/auth/sign-up', {
       method: 'POST',
-      body: { ...form }
+      body: values
     })
 
     await navigateTo({
       path: '/auth/success-activation',
-      query: { email: form.email }
+      query: { email: values.email }
     })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to create this account.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to create this account.')
   } finally {
     loading.value = false
   }
-}
+})
 </script>
 
 <template>
@@ -54,7 +70,7 @@ async function submit() {
             alt="JAPR"
           >
           <h2 class="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Welcome back!
+            Create your account
           </h2>
         </div>
 
@@ -67,12 +83,13 @@ async function submit() {
             <div class="mt-2">
               <input
                 id="fullname"
-                v-model="form.fullname"
+                v-model="fullname"
+                v-bind="fullnameAttrs"
                 type="text"
-                required
                 placeholder="Enter your full name"
                 :class="inputClass"
               >
+              <p v-if="errors.fullname" class="mt-1 text-sm text-red-600">{{ errors.fullname }}</p>
             </div>
           </div>
 
@@ -81,12 +98,13 @@ async function submit() {
             <div class="mt-2">
               <input
                 id="username"
-                v-model="form.username"
+                v-model="username"
+                v-bind="usernameAttrs"
                 type="text"
-                required
                 placeholder="Enter your Username"
                 :class="inputClass"
               >
+              <p v-if="errors.username" class="mt-1 text-sm text-red-600">{{ errors.username }}</p>
             </div>
           </div>
 
@@ -95,12 +113,13 @@ async function submit() {
             <div class="mt-2">
               <input
                 id="institution"
-                v-model="form.institution"
+                v-model="institution"
+                v-bind="institutionAttrs"
                 type="text"
-                required
                 placeholder="Enter your Institution"
                 :class="inputClass"
               >
+              <p v-if="errors.institution" class="mt-1 text-sm text-red-600">{{ errors.institution }}</p>
             </div>
           </div>
 
@@ -109,13 +128,14 @@ async function submit() {
             <div class="mt-2">
               <input
                 id="email"
-                v-model="form.email"
+                v-model="email"
+                v-bind="emailAttrs"
                 type="email"
                 autocomplete="email"
-                required
                 placeholder="name@example.com"
                 :class="inputClass"
               >
+              <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
             </div>
           </div>
 
@@ -124,9 +144,11 @@ async function submit() {
             <div class="mt-2">
               <CountrySelect
                 id="country"
-                v-model="form.country"
+                v-model="country"
+                v-bind="countryAttrs"
                 variant="auth"
               />
+              <p v-if="errors.country" class="mt-1 text-sm text-red-600">{{ errors.country }}</p>
             </div>
           </div>
 
@@ -135,10 +157,10 @@ async function submit() {
             <div class="mt-2 relative max-w-sm">
               <input
                 id="password"
-                v-model="form.password"
+                v-model="password"
+                v-bind="passwordAttrs"
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="new-password"
-                required
                 placeholder="••••••••••"
                 :class="[inputClass, 'pr-10']"
               >
@@ -150,6 +172,7 @@ async function submit() {
                 <i class="ph" :class="showPassword ? 'ph-eye-slash' : 'ph-eye'" />
               </button>
             </div>
+            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
           </div>
 
           <div>
@@ -157,10 +180,10 @@ async function submit() {
             <div class="mt-2 relative max-w-sm">
               <input
                 id="confirm_password"
-                v-model="form.confirmPassword"
+                v-model="confirmPassword"
+                v-bind="confirmPasswordAttrs"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 autocomplete="new-password"
-                required
                 placeholder="••••••••••"
                 :class="[inputClass, 'pr-10']"
               >
@@ -172,15 +195,7 @@ async function submit() {
                 <i class="ph" :class="showConfirmPassword ? 'ph-eye-slash' : 'ph-eye'" />
               </button>
             </div>
-          </div>
-
-          <div class="text-sm leading-6">
-            <NuxtLink
-              to="/auth/forgot-password"
-              class="font-semibold text-secondary-900 hover:text-secondary-700"
-            >
-              Forgot password?
-            </NuxtLink>
+            <p v-if="errors.confirmPassword" class="mt-1 text-sm text-red-600">{{ errors.confirmPassword }}</p>
           </div>
 
           <div

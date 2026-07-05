@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { REVIEWER_ROLES } from '#shared/constants/roles'
 import type { ReviewerDashboardSummary } from '#shared/types/dashboard'
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin', 'associate_editor', 'external_reviewer', 'desk_editor']
+  requiredRoles: REVIEWER_ROLES
 })
 
 const { data: currentUser } = useCurrentUser()

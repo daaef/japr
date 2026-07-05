@@ -19,22 +19,20 @@ const props = defineProps<{
 }>()
 
 const page = ref(1)
-const pageSize = 10
 
-const { data, pending } = await useFetch<{ reviews: ReviewRow[] }>(props.apiUrl, {
-  default: () => ({ reviews: [] })
+const { data, pending, error, refresh } = await useFetch<{
+  reviews: ReviewRow[]
+  meta: { total: number, page: number, pageSize: number, pageCount: number }
+}>(props.apiUrl, {
+  query: computed(() => ({ page: page.value })),
+  default: () => ({ reviews: [], meta: { total: 0, page: 1, pageSize: 20, pageCount: 1 } })
 })
 
 const reviews = computed(() => data.value?.reviews ?? [])
-const pageCount = computed(() => Math.max(1, Math.ceil(reviews.value.length / pageSize)))
-const visibleReviews = computed(() => {
-  const start = (page.value - 1) * pageSize
-  return reviews.value.slice(start, start + pageSize)
-})
 
-watch(reviews, () => {
-  page.value = 1
-})
+function goToPage(nextPage: number) {
+  page.value = nextPage
+}
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -55,10 +53,22 @@ function formatDate(value?: string | null) {
       <div class="card mt-24 overflow-hidden">
         <div class="card-header">
           <h4 class="mb-0">
-            {{ title }} ({{ reviews.length }})
+            {{ title }} ({{ data?.meta.total ?? 0 }})
           </h4>
         </div>
-        <div class="card-body p-0 overflow-x-auto">
+        <div
+          v-if="error"
+          class="p-24"
+        >
+          <DashboardSummaryError
+            :message="`Unable to load ${title.toLowerCase()}.`"
+            @retry="refresh"
+          />
+        </div>
+        <div
+          v-else
+          class="card-body p-0 overflow-x-auto"
+        >
           <div
             v-if="pending"
             class="p-24 text-13 text-gray-500"
@@ -83,7 +93,7 @@ function formatDate(value?: string | null) {
             </thead>
             <tbody>
               <tr
-                v-for="review in visibleReviews"
+                v-for="review in reviews"
                 :key="review.id"
               >
                 <td>
@@ -133,30 +143,16 @@ function formatDate(value?: string | null) {
           </table>
         </div>
         <div
-          v-if="reviews.length > pageSize"
-          class="card-footer flex-between flex-wrap gap-12"
+          v-if="data?.meta.total"
+          class="card-footer"
         >
-          <span class="text-13 text-gray-600">
-            Page {{ page }} of {{ pageCount }}
-          </span>
-          <div class="d-flex gap-2">
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              :disabled="page <= 1"
-              @click="page -= 1"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              :disabled="page >= pageCount"
-              @click="page += 1"
-            >
-              Next
-            </button>
-          </div>
+          <AppPagination
+            :page="data.meta.page"
+            :total-pages="data.meta.pageCount"
+            :total="data.meta.total"
+            :page-size="data.meta.pageSize"
+            @change="goToPage"
+          />
         </div>
       </div>
     </div>

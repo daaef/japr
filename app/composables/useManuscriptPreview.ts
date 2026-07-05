@@ -1,3 +1,5 @@
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 type PreviewMeta = {
   type: 'html' | 'pdf'
   html?: string
@@ -68,19 +70,7 @@ export function useManuscriptPreview(
 
       previewError.value = 'Preview not available for this file type.'
     } catch (error) {
-      if (error && typeof error === 'object') {
-        const fetchError = error as {
-          data?: { statusMessage?: string }
-          statusMessage?: string
-          message?: string
-        }
-        previewError.value = fetchError.data?.statusMessage
-          ?? fetchError.statusMessage
-          ?? fetchError.message
-          ?? 'Unable to load manuscript preview.'
-      } else {
-        previewError.value = 'Unable to load manuscript preview.'
-      }
+      previewError.value = extractApiErrorMessage(error, 'Unable to load manuscript preview.')
     } finally {
       previewPending.value = false
     }

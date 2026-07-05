@@ -11,16 +11,8 @@ const accepted = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
-watch(() => currentUser.value, (userData) => {
-  if (userData?.user?.reviewPolicyAccepted) {
-    const roles = userData.roles || []
-    if (roles.some(role => ['associate_editor', 'external_reviewer', 'desk_editor'].includes(role))) {
-      navigateTo('/reviewer')
-      return
-    }
-    navigateTo('/author/submit')
-  }
-}, { immediate: true })
+// The "already accepted" redirect away from this page now lives in the `auth`
+// middleware (paired with its existing "not accepted yet -> here" direction).
 
 async function handleAccept() {
   if (!accepted.value) {

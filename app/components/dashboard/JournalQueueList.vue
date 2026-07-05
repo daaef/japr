@@ -18,7 +18,7 @@ const props = defineProps<{
 
 const page = ref(1)
 
-const { data, pending, refresh } = await useFetch<{
+const { data, pending, error, refresh } = await useFetch<{
   journals: JournalRow[]
   meta: { total: number, page: number, pageSize: number, pageCount: number }
 }>(props.apiUrl, {
@@ -58,7 +58,19 @@ function formatDate(value?: string) {
             </h4>
           </div>
         </div>
-        <div class="card-body p-0 overflow-x-auto scroll-sm scroll-sm-horizontal">
+        <div
+          v-if="error"
+          class="p-24"
+        >
+          <DashboardSummaryError
+            :message="`Unable to load ${title.toLowerCase()}.`"
+            @retry="refresh"
+          />
+        </div>
+        <div
+          v-else
+          class="card-body p-0 overflow-x-auto scroll-sm scroll-sm-horizontal"
+        >
           <div
             v-if="pending"
             class="p-24 text-13 text-gray-500"

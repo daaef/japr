@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
 import { authClient } from '~~/lib/auth-client'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+import { resetPasswordSchema } from '#shared/validation/auth'
 
 definePageMeta({
   layout: 'auth',
@@ -9,14 +13,17 @@ definePageMeta({
 const route = useRoute()
 const token = computed(() => typeof route.query.token === 'string' ? route.query.token : '')
 
-const resetForm = reactive({
-  password: ''
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(resetPasswordSchema),
+  initialValues: { password: '' }
 })
+
+const [password, passwordAttrs] = defineField('password')
 
 const errorMessage = ref('')
 const loading = ref(false)
 
-async function resetPassword() {
+const resetPassword = handleSubmit(async (values) => {
   if (!token.value) {
     await navigateTo('/auth/forgot-password')
     return
@@ -28,7 +35,7 @@ async function resetPassword() {
   try {
     const { error } = await authClient.resetPassword({
       token: token.value,
-      newPassword: resetForm.password
+      newPassword: values.password
     })
 
     if (error) {
@@ -38,11 +45,11 @@ async function resetPassword() {
 
     await navigateTo('/auth/success-reset')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to reset your password.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to reset your password.')
   } finally {
     loading.value = false
   }
-}
+})
 
 onMounted(() => {
   if (!token.value) {
@@ -71,11 +78,12 @@ onMounted(() => {
           <div>
             <label class="block text-sm font-medium text-gray-900">New password</label>
             <input
-              v-model="resetForm.password"
+              v-model="password"
+              v-bind="passwordAttrs"
               type="password"
-              required
               class="form-control mt-2"
             >
+            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
           </div>
 
           <div

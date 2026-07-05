@@ -1,4 +1,4 @@
-import { fetchCurrentUser } from '~/composables/useCurrentUser'
+import { useCurrentUser } from '~/composables/useCurrentUser'
 
 const elevatedRoles = [
   'admin',
@@ -17,15 +17,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  const me = await fetchCurrentUser()
+  const { data: me } = await useCurrentUser()
 
-  if (!me.authenticated || !me.roles.includes('author')) {
+  if (!me.value.authenticated || !me.value.roles.includes('author')) {
     return
   }
 
-  const hasElevatedRole = me.roles.some(role => elevatedRoles.includes(role))
+  const hasElevatedRole = me.value.roles.some(role => elevatedRoles.includes(role))
 
-  if (hasElevatedRole || me.hasInterests) {
+  if (hasElevatedRole || me.value.hasInterests) {
     return
   }
 

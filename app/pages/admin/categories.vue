@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { ADMIN_ROLES } from '#shared/constants/roles'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin']
+  requiredRoles: ADMIN_ROLES
 })
 
 type SubSubNode = { id: string, name: string }
@@ -31,9 +33,7 @@ const subSubForm = reactive({
   name: ''
 })
 
-const message = ref('')
-const errorMessage = ref('')
-const saving = ref(false)
+const { loading: saving, message, error: errorMessage, run: runAction, clear: clearFeedback } = useActionHandler()
 
 const { data, refresh } = await useFetch<{ categories: CategoryNode[] }>('/api/categories', {
   query: { includeInactive: '1' },
@@ -58,32 +58,19 @@ watch(() => subSubForm.categoryId, () => {
   subSubForm.subCategoryId = ''
 })
 
-function clearFeedback() {
-  message.value = ''
-  errorMessage.value = ''
-}
-
-async function createCategory() {
-  clearFeedback()
-  saving.value = true
-
-  try {
+function createCategory() {
+  return runAction(async () => {
     await $fetch('/api/categories', {
       method: 'POST',
       body: form
     })
     form.name = ''
     form.description = ''
-    message.value = 'Category created.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to create category.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Category created.', 'Unable to create category.')
 }
 
-async function createSubCategory() {
+function createSubCategory() {
   clearFeedback()
 
   if (!subForm.categoryId) {
@@ -91,24 +78,17 @@ async function createSubCategory() {
     return
   }
 
-  saving.value = true
-
-  try {
+  return runAction(async () => {
     await $fetch(`/api/categories/${subForm.categoryId}/subcategories`, {
       method: 'POST',
       body: { name: subForm.name }
     })
     subForm.name = ''
-    message.value = 'Sub-category created.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to create sub-category.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Sub-category created.', 'Unable to create sub-category.')
 }
 
-async function createSubSubCategory() {
+function createSubSubCategory() {
   clearFeedback()
 
   if (!subSubForm.subCategoryId) {
@@ -116,21 +96,14 @@ async function createSubSubCategory() {
     return
   }
 
-  saving.value = true
-
-  try {
+  return runAction(async () => {
     await $fetch(`/api/subcategories/${subSubForm.subCategoryId}/sub-subcategories`, {
       method: 'POST',
       body: { name: subSubForm.name }
     })
     subSubForm.name = ''
-    message.value = 'Sub-subcategory created.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to create sub-subcategory.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Sub-subcategory created.', 'Unable to create sub-subcategory.')
 }
 
 function startEditCategory(category: CategoryNode) {
@@ -145,11 +118,8 @@ function cancelEditCategory() {
   editingCategoryId.value = ''
 }
 
-async function saveCategory(id: string) {
-  clearFeedback()
-  saving.value = true
-
-  try {
+function saveCategory(id: string) {
+  return runAction(async () => {
     await $fetch(`/api/categories/${id}`, {
       method: 'PATCH',
       body: {
@@ -159,31 +129,20 @@ async function saveCategory(id: string) {
       }
     })
     editingCategoryId.value = ''
-    message.value = 'Category updated.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to update category.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Category updated.', 'Unable to update category.')
 }
 
-async function toggleCategoryStatus(category: CategoryNode) {
-  clearFeedback()
-  saving.value = true
+function toggleCategoryStatus(category: CategoryNode) {
+  const successMessage = category.isActive ? 'Category disabled.' : 'Category enabled.'
 
-  try {
+  return runAction(async () => {
     await $fetch(`/api/categories/${category.id}`, {
       method: 'PATCH',
       body: { isActive: !category.isActive }
     })
-    message.value = category.isActive ? 'Category disabled.' : 'Category enabled.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to update category status.'
-  } finally {
-    saving.value = false
-  }
+  }, successMessage, 'Unable to update category status.')
 }
 
 function startEditSub(sub: SubNode) {
@@ -196,43 +155,28 @@ function cancelEditSub() {
   editingSubId.value = ''
 }
 
-async function saveSub(id: string) {
-  clearFeedback()
-  saving.value = true
-
-  try {
+function saveSub(id: string) {
+  return runAction(async () => {
     await $fetch(`/api/subcategories/${id}`, {
       method: 'PATCH',
       body: { name: subDraft.name }
     })
     editingSubId.value = ''
-    message.value = 'Sub-category updated.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to update sub-category.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Sub-category updated.', 'Unable to update sub-category.')
 }
 
-async function deleteSub(sub: SubNode) {
+function deleteSub(sub: SubNode) {
   clearFeedback()
 
   if (!confirm(`Delete sub-category "${sub.name}" and all its sub-subcategories?`)) {
     return
   }
 
-  saving.value = true
-
-  try {
+  return runAction(async () => {
     await $fetch(`/api/subcategories/${sub.id}`, { method: 'DELETE' })
-    message.value = 'Sub-category deleted.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to delete sub-category.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Sub-category deleted.', 'Unable to delete sub-category.')
 }
 
 function startEditSubSub(child: SubSubNode) {
@@ -245,43 +189,28 @@ function cancelEditSubSub() {
   editingSubSubId.value = ''
 }
 
-async function saveSubSub(id: string) {
-  clearFeedback()
-  saving.value = true
-
-  try {
+function saveSubSub(id: string) {
+  return runAction(async () => {
     await $fetch(`/api/sub-subcategories/${id}`, {
       method: 'PATCH',
       body: { name: subSubDraft.name }
     })
     editingSubSubId.value = ''
-    message.value = 'Sub-subcategory updated.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to update sub-subcategory.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Sub-subcategory updated.', 'Unable to update sub-subcategory.')
 }
 
-async function deleteSubSub(child: SubSubNode) {
+function deleteSubSub(child: SubSubNode) {
   clearFeedback()
 
   if (!confirm(`Delete sub-subcategory "${child.name}"?`)) {
     return
   }
 
-  saving.value = true
-
-  try {
+  return runAction(async () => {
     await $fetch(`/api/sub-subcategories/${child.id}`, { method: 'DELETE' })
-    message.value = 'Sub-subcategory deleted.'
     await refresh()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to delete sub-subcategory.'
-  } finally {
-    saving.value = false
-  }
+  }, 'Sub-subcategory deleted.', 'Unable to delete sub-subcategory.')
 }
 </script>
 

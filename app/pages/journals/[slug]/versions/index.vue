@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
@@ -43,7 +45,7 @@ async function revertVersion(versionId: string) {
     await refresh()
     message.value = 'Reverted successfully. A new version was created.'
   } catch (error) {
-    message.value = error instanceof Error ? error.message : 'Unable to revert version.'
+    message.value = extractApiErrorMessage(error, 'Unable to revert version.')
   } finally {
     revertLoading.value = ''
   }

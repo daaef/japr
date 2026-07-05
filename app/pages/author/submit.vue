@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { z } from 'zod'
 import { JOURNAL_LICENSE_OPTIONS } from '#shared/constants/journalLicenses'
+import { AUTHOR_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+import { journalCreateSchema } from '#shared/validation/journals'
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['author', 'admin']
+  requiredRoles: AUTHOR_ROLES
 })
 
 const router = useRouter()
@@ -12,19 +18,51 @@ const { data: currentUser, refresh: refreshCurrentUser } = useCurrentUser()
 const languages = ['American English', 'British English', 'French']
 const fieldClass = 'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
 
-const form = reactive({
-  author: '',
-  title: '',
-  abstract: '',
-  institution: '',
-  metaKeywords: '',
-  country: '',
-  journalLanguage: '',
-  categoryId: '',
-  subCategoryId: '',
-  subSubCategoryId: '',
-  license: ''
+// journalCreateSchema.categoryId/subCategoryId/subSubCategoryId are `.uuid()`, which
+// rejects the '' a native <select> holds before anything is chosen — allow '' through
+// so "not selected yet" isn't reported as a format error.
+const optionalUuidField = z.union([z.literal(''), z.string().uuid()]).optional()
+
+const submitFormSchema = journalCreateSchema
+  .omit({ description: true, journalUrl: true, journalFormat: true, agree: true, accept: true })
+  .extend({
+    // Required on this form even though the shared (server-facing) schema treats them
+    // as optional — other journalCreateSchema consumers don't need the same strictness.
+    institution: z.string().trim().min(1, 'Institution is required.'),
+    metaKeywords: z.string().trim().min(1, 'Keywords are required.'),
+    categoryId: z.string().uuid('Please select a category.'),
+    subCategoryId: optionalUuidField,
+    subSubCategoryId: optionalUuidField
+  })
+
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(submitFormSchema),
+  initialValues: {
+    author: '',
+    title: '',
+    abstract: '',
+    institution: '',
+    metaKeywords: '',
+    country: '',
+    journalLanguage: undefined,
+    categoryId: '',
+    subCategoryId: '',
+    subSubCategoryId: '',
+    license: ''
+  }
 })
+
+const [author, authorAttrs] = defineField('author')
+const [title, titleAttrs] = defineField('title')
+const [abstract, abstractAttrs] = defineField('abstract')
+const [institution, institutionAttrs] = defineField('institution')
+const [metaKeywords, metaKeywordsAttrs] = defineField('metaKeywords')
+const [country, countryAttrs] = defineField('country')
+const [journalLanguage, journalLanguageAttrs] = defineField('journalLanguage')
+const [categoryId, categoryIdAttrs] = defineField('categoryId')
+const [subCategoryId, subCategoryIdAttrs] = defineField('subCategoryId')
+const [subSubCategoryId, subSubCategoryIdAttrs] = defineField('subSubCategoryId')
+const [license, licenseAttrs] = defineField('license')
 
 const agreePolicy = ref(false)
 const reviewPolicyAccepted = ref(false)
@@ -73,29 +111,29 @@ const { data: categoryData } = await useFetch<{
 })
 
 const availableSubCategories = computed(() => {
-  const category = categoryData.value.categories.find(item => item.id === form.categoryId)
+  const category = categoryData.value.categories.find(item => item.id === categoryId.value)
   return category?.subCategories ?? []
 })
 
 const availableSubSubCategories = computed(() => {
-  const subCategory = availableSubCategories.value.find(item => item.id === form.subCategoryId)
+  const subCategory = availableSubCategories.value.find(item => item.id === subCategoryId.value)
   return subCategory?.subSubCategories ?? []
 })
 
-watch(() => form.categoryId, () => {
-  form.subCategoryId = ''
-  form.subSubCategoryId = ''
+watch(categoryId, () => {
+  subCategoryId.value = ''
+  subSubCategoryId.value = ''
 })
 
-watch(() => form.subCategoryId, () => {
-  form.subSubCategoryId = ''
+watch(subCategoryId, () => {
+  subSubCategoryId.value = ''
 })
 
 watch(
   () => currentUser.value?.user,
   (user) => {
-    if (user && !form.author) {
-      form.author = user.name || ''
+    if (user && !author.value) {
+      author.value = user.name || ''
     }
     reviewPolicyAccepted.value = !!user?.reviewPolicyAccepted
   },
@@ -112,6 +150,9 @@ const canSubmit = computed(() => {
   return agreePolicy.value && policyOk && !!selectedFile.value
 })
 
+// Keep in sync with the server's MAX_FILE_SIZE_MB default (server/utils/files.ts).
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+
 function handleFileSelection(file: File | null) {
   selectedFile.value = file
   previewContent.value = null
@@ -119,6 +160,13 @@ function handleFileSelection(file: File | null) {
 
   if (!file) {
     fileNameMessage.value = ''
+    return
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    selectedFile.value = null
+    fileNameMessage.value = `File too large: ${file.name} (max 10MB)`
+    fileNameClass.value = 'px-4 py-2 text-sm font-medium text-gray-100 rounded-md bg-red-600'
     return
   }
 
@@ -167,11 +215,7 @@ async function uploadFile() {
   try {
     uploadedFile.value = await uploadManuscript(selectedFile.value)
   } catch (error) {
-    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
-    errorMessage.value = fetchError.data?.statusMessage
-      ?? fetchError.statusMessage
-      ?? fetchError.message
-      ?? 'Unable to upload the manuscript file.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to upload the manuscript file.')
   } finally {
     uploadLoading.value = false
   }
@@ -214,7 +258,7 @@ async function openPreview() {
       url: response.url
     }
   } catch (error) {
-    previewError.value = error instanceof Error ? error.message : 'Preview generation failed'
+    previewError.value = extractApiErrorMessage(error, 'Preview generation failed')
   } finally {
     previewLoading.value = false
   }
@@ -273,7 +317,7 @@ function describeValidationError(error: unknown): string | null {
   }
 }
 
-async function createSubmission() {
+const createSubmission = handleSubmit(async (values) => {
   if (!agreePolicy.value) {
     errorMessage.value = 'Please confirm that you have not published this article elsewhere.'
     return
@@ -285,7 +329,7 @@ async function createSubmission() {
     return
   }
 
-  if (availableSubCategories.value.length > 0 && !form.subCategoryId) {
+  if (availableSubCategories.value.length > 0 && !values.subCategoryId) {
     errorMessage.value = 'Please select a sub-category.'
     return
   }
@@ -311,18 +355,18 @@ async function createSubmission() {
     const response = await $fetch<{ journal: { id: string } }>('/api/journals', {
       method: 'POST',
       body: {
-        title: form.title,
-        author: form.author,
-        description: form.abstract,
-        abstract: form.abstract,
-        country: form.country,
-        institution: form.institution || null,
-        journalLanguage: form.journalLanguage,
-        categoryId: form.categoryId || null,
-        subCategoryId: form.subCategoryId || null,
-        subSubCategoryId: form.subSubCategoryId || null,
-        metaKeywords: form.metaKeywords || null,
-        license: form.license || null,
+        title: values.title,
+        author: values.author,
+        description: values.abstract,
+        abstract: values.abstract,
+        country: values.country,
+        institution: values.institution || null,
+        journalLanguage: values.journalLanguage,
+        categoryId: values.categoryId || null,
+        subCategoryId: values.subCategoryId || null,
+        subSubCategoryId: values.subSubCategoryId || null,
+        metaKeywords: values.metaKeywords || null,
+        license: values.license || null,
         journalUrl: uploadedFile.value.fileKey,
         journalFormat: uploadedFile.value.journalFormat,
         agree: agreePolicy.value,
@@ -333,12 +377,12 @@ async function createSubmission() {
     await navigateTo(`/author/submissions/${response.journal.id}`)
   } catch (error) {
     errorMessage.value = describeValidationError(error)
-      ?? (error instanceof Error ? error.message : 'Unable to create the manuscript.')
+      ?? extractApiErrorMessage(error, 'Unable to create the manuscript.')
   } finally {
     loading.value = false
     showLoadingOverlay.value = false
   }
-}
+})
 </script>
 
 <template>
@@ -371,14 +415,13 @@ async function createSubmission() {
               <div class="mt-2">
                 <input
                   id="author"
-                  v-model="form.author"
+                  v-model="author"
+                  v-bind="authorAttrs"
                   type="text"
-                  required
-                  minlength="3"
-                  maxlength="255"
                   placeholder="John Smith, Jane Doe, Robert Johnson"
                   :class="fieldClass"
                 >
+                <p v-if="errors.author" class="mt-1 text-sm text-red-600">{{ errors.author }}</p>
               </div>
             </div>
 
@@ -387,14 +430,13 @@ async function createSubmission() {
               <div class="mt-2">
                 <input
                   id="title"
-                  v-model="form.title"
+                  v-model="title"
+                  v-bind="titleAttrs"
                   type="text"
-                  required
-                  minlength="5"
-                  maxlength="255"
                   placeholder="Enter your manuscript title"
                   :class="fieldClass"
                 >
+                <p v-if="errors.title" class="mt-1 text-sm text-red-600">{{ errors.title }}</p>
               </div>
             </div>
 
@@ -403,14 +445,13 @@ async function createSubmission() {
               <div class="mt-2">
                 <textarea
                   id="abstract"
-                  v-model="form.abstract"
+                  v-model="abstract"
+                  v-bind="abstractAttrs"
                   rows="3"
-                  required
-                  minlength="50"
-                  maxlength="12000"
                   placeholder="Brief summary of your research (150-300 words)"
                   :class="fieldClass"
                 />
+                <p v-if="errors.abstract" class="mt-1 text-sm text-red-600">{{ errors.abstract }}</p>
               </div>
             </div>
 
@@ -419,12 +460,13 @@ async function createSubmission() {
               <div class="mt-2">
                 <input
                   id="institution"
-                  v-model="form.institution"
+                  v-model="institution"
+                  v-bind="institutionAttrs"
                   type="text"
-                  required
                   placeholder="Your institution or organization"
                   :class="fieldClass"
                 >
+                <p v-if="errors.institution" class="mt-1 text-sm text-red-600">{{ errors.institution }}</p>
               </div>
             </div>
 
@@ -433,12 +475,13 @@ async function createSubmission() {
               <div class="mt-2">
                 <input
                   id="keywords"
-                  v-model="form.metaKeywords"
+                  v-model="metaKeywords"
+                  v-bind="metaKeywordsAttrs"
                   type="text"
-                  required
                   placeholder="renewable energy, sustainability, climate change"
                   :class="fieldClass"
                 >
+                <p v-if="errors.metaKeywords" class="mt-1 text-sm text-red-600">{{ errors.metaKeywords }}</p>
               </div>
             </div>
 
@@ -511,10 +554,11 @@ async function createSubmission() {
               <div class="mt-2">
                 <CountrySelect
                   id="country"
-                  v-model="form.country"
+                  v-model="country"
+                  v-bind="countryAttrs"
                   variant="public"
-                  required
                 />
+                <p v-if="errors.country" class="mt-1 text-sm text-red-600">{{ errors.country }}</p>
               </div>
             </div>
 
@@ -523,8 +567,8 @@ async function createSubmission() {
               <div class="mt-2">
                 <select
                   id="journal_language"
-                  v-model="form.journalLanguage"
-                  required
+                  v-model="journalLanguage"
+                  v-bind="journalLanguageAttrs"
                   :class="fieldClass"
                 >
                   <option value="" disabled>
@@ -538,6 +582,7 @@ async function createSubmission() {
                     {{ language }}
                   </option>
                 </select>
+                <p v-if="errors.journalLanguage" class="mt-1 text-sm text-red-600">{{ errors.journalLanguage }}</p>
               </div>
             </div>
 
@@ -546,8 +591,8 @@ async function createSubmission() {
               <div class="mt-2">
                 <select
                   id="category_id"
-                  v-model="form.categoryId"
-                  required
+                  v-model="categoryId"
+                  v-bind="categoryIdAttrs"
                   :class="fieldClass"
                 >
                   <option value="" disabled>
@@ -561,6 +606,7 @@ async function createSubmission() {
                     {{ category.categoryName || category.name }}
                   </option>
                 </select>
+                <p v-if="errors.categoryId" class="mt-1 text-sm text-red-600">{{ errors.categoryId }}</p>
               </div>
             </div>
 
@@ -572,8 +618,8 @@ async function createSubmission() {
               <div class="mt-2">
                 <select
                   id="subcategory_id"
-                  v-model="form.subCategoryId"
-                  required
+                  v-model="subCategoryId"
+                  v-bind="subCategoryIdAttrs"
                   :class="fieldClass"
                 >
                   <option value="" disabled>
@@ -598,7 +644,8 @@ async function createSubmission() {
               <div class="mt-2">
                 <select
                   id="subsubcategory_id"
-                  v-model="form.subSubCategoryId"
+                  v-model="subSubCategoryId"
+                  v-bind="subSubCategoryIdAttrs"
                   :class="fieldClass"
                 >
                   <option value="">
@@ -620,18 +667,19 @@ async function createSubmission() {
               <div class="mt-2">
                 <select
                   id="license"
-                  v-model="form.license"
+                  v-model="license"
+                  v-bind="licenseAttrs"
                   :class="fieldClass"
                 >
                   <option value="">
                     No license selected
                   </option>
                   <option
-                    v-for="license in JOURNAL_LICENSE_OPTIONS"
-                    :key="license.id"
-                    :value="license.label"
+                    v-for="licenseOption in JOURNAL_LICENSE_OPTIONS"
+                    :key="licenseOption.id"
+                    :value="licenseOption.label"
                   >
-                    {{ license.label }}
+                    {{ licenseOption.label }}
                   </option>
                 </select>
               </div>
@@ -726,91 +774,67 @@ async function createSubmission() {
     </form>
 
     <!-- Document Preview Modal -->
-    <div
-      v-if="showPreviewModal"
-      class="fixed inset-0 z-[2000] bg-gray-600 bg-opacity-50"
-      role="dialog"
-      aria-modal="true"
-      @click.self="closePreviewModal"
+    <UModal
+      :open="showPreviewModal"
+      title="Document Preview"
+      :ui="{ content: 'max-w-6xl' }"
+      @update:open="(value) => { if (!value) closePreviewModal() }"
     >
-      <div class="flex items-center justify-center w-full h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-auto my-8 flex flex-col max-h-[70vh] overflow-y-auto">
-          <div class="flex items-center justify-between flex-shrink-0 p-6 border-b">
-            <h3 class="text-xl font-semibold text-gray-900">
-              Document Preview
-            </h3>
-            <button
-              type="button"
-              class="flex-shrink-0 text-2xl text-gray-400 hover:text-gray-600"
-              @click="closePreviewModal"
-            >
-              ×
-            </button>
+      <template #body>
+        <div
+          class="overflow-y-auto rounded-lg border bg-gray-50 p-6"
+          style="max-height: 65vh;"
+        >
+          <div
+            v-if="previewLoading"
+            class="text-center py-12"
+          >
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            <p class="mt-4 text-gray-600 text-lg">
+              Generating preview...
+            </p>
           </div>
-          <div class="flex-1 p-6 overflow-y-auto border rounded-lg m-4 bg-gray-50">
-            <div
-              v-if="previewLoading"
-              class="text-center py-12"
-            >
-              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-              <p class="mt-4 text-gray-600 text-lg">
-                Generating preview...
-              </p>
-            </div>
-            <iframe
-              v-else-if="previewContent?.type === 'pdf' && previewContent.url"
-              :src="previewContent.url"
-              class="w-full border-0"
-              style="height: 60vh;"
-              title="Document preview"
-            />
-            <iframe
-              v-else-if="previewContent?.type === 'html' && previewContent.html"
-              :srcdoc="previewContent.html"
-              class="w-full border-0"
-              style="height: 60vh;"
-              title="Document preview"
-            />
-            <div
-              v-else-if="previewError"
-              class="text-center py-12 text-red-600"
-            >
-              {{ previewError }}
-            </div>
-          </div>
-          <div class="flex items-center justify-end flex-shrink-0 p-6 border-t bg-gray-50">
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-              @click="closePreviewModal"
-            >
-              Close Preview
-            </button>
+          <iframe
+            v-else-if="previewContent?.type === 'pdf' && previewContent.url"
+            :src="previewContent.url"
+            class="w-full border-0"
+            style="height: 60vh;"
+            title="Document preview"
+          />
+          <iframe
+            v-else-if="previewContent?.type === 'html' && previewContent.html"
+            :srcdoc="previewContent.html"
+            class="w-full border-0"
+            style="height: 60vh;"
+            title="Document preview"
+          />
+          <div
+            v-else-if="previewError"
+            class="text-center py-12 text-red-600"
+          >
+            {{ previewError }}
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="outline"
+          label="Close Preview"
+          @click="closePreviewModal"
+        />
+      </template>
+    </UModal>
 
     <!-- Review Policy Modal -->
-    <div
-      v-if="showReviewPolicyModal"
-      class="fixed inset-0 z-[50000] bg-gray-600 bg-opacity-50 flex items-center justify-center p-4"
-      @click.self="declineReviewPolicy"
+    <UModal
+      :open="showReviewPolicyModal"
+      title="JAPR Review Policy"
+      :ui="{ content: 'max-w-4xl' }"
+      @update:open="(value) => { if (!value) declineReviewPolicy() }"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-auto my-8 flex flex-col max-h-[calc(100vh-10rem)]">
-        <div class="flex items-center justify-between flex-shrink-0 p-6 border-b">
-          <h3 class="text-xl font-semibold text-gray-900">
-            JAPR Review Policy
-          </h3>
-          <button
-            type="button"
-            class="flex-shrink-0 text-2xl text-gray-400 hover:text-gray-600"
-            @click="declineReviewPolicy"
-          >
-            ×
-          </button>
-        </div>
-        <div class="flex-1 p-6 overflow-y-auto prose max-w-none text-sm text-gray-600">
+      <template #body>
+        <div class="prose max-w-none text-sm text-gray-600">
           <section>
             <h2 class="text-lg font-semibold text-gray-900">
               1. Peer Review Process
@@ -830,24 +854,20 @@ async function createSubmission() {
             </ul>
           </section>
         </div>
-        <div class="flex items-center justify-end flex-shrink-0 p-6 border-t gap-x-4 bg-gray-50">
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md shadow-sm hover:bg-red-500"
-            @click="declineReviewPolicy"
-          >
-            Decline
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md shadow-sm hover:bg-green-500"
-            @click="acceptReviewPolicy"
-          >
-            Accept
-          </button>
-        </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <UButton
+          color="error"
+          label="Decline"
+          @click="declineReviewPolicy"
+        />
+        <UButton
+          color="success"
+          label="Accept"
+          @click="acceptReviewPolicy"
+        />
+      </template>
+    </UModal>
 
     <!-- Loading Overlay -->
     <div

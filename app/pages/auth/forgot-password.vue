@@ -1,25 +1,32 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
 import { authClient } from '~~/lib/auth-client'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+import { forgotPasswordSchema } from '#shared/validation/auth'
 
 definePageMeta({
   layout: 'auth',
   middleware: ['guest']
 })
 
-const form = reactive({
-  email: ''
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(forgotPasswordSchema),
+  initialValues: { email: '' }
 })
+
+const [email, emailAttrs] = defineField('email')
 
 const errorMessage = ref('')
 const loading = ref(false)
 
-async function submit() {
+const submit = handleSubmit(async (values) => {
   errorMessage.value = ''
   loading.value = true
 
   try {
     const { error } = await authClient.requestPasswordReset({
-      email: form.email,
+      email: values.email,
       redirectTo: `${useRuntimeConfig().public.baseUrl}/auth/reset-password`
     })
 
@@ -30,14 +37,14 @@ async function submit() {
 
     await navigateTo({
       path: '/auth/success-reset-request',
-      query: { email: form.email }
+      query: { email: values.email }
     })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to send reset email.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to send reset email.')
   } finally {
     loading.value = false
   }
-}
+})
 </script>
 
 <template>
@@ -64,11 +71,12 @@ async function submit() {
             <label for="email" class="block text-sm font-medium text-gray-900">Email</label>
             <input
               id="email"
-              v-model="form.email"
+              v-model="email"
+              v-bind="emailAttrs"
               type="email"
-              required
               class="form-control mt-2"
             >
+            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
           </div>
 
           <div
