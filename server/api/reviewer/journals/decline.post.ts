@@ -3,7 +3,7 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
-import { syncJournalReviewStatus } from '#server/utils/journalWorkflow'
+import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireSession } from '#server/utils/session'
 import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewInvitationTokenSchema } from '#shared/validation/reviews'
@@ -37,9 +37,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Invitation not found.' })
   }
 
-  if (reviewer.isAccepted === false || reviewer.status === REVIEWER_STATUS.DECLINED) {
+  // Idempotent: an already-declined invitation is a no-op, not an error.
+  if (reviewer.status === REVIEWER_STATUS.DECLINED) {
     return { ok: true }
   }
+
+  assertReviewerStatus(
+    reviewer.status,
+    [REVIEWER_STATUS.PENDING, REVIEWER_STATUS.IN_PROGRESS],
+    'declining this review'
+  )
 
   await db
     .update(reviewers)

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { readBody } from 'h3'
 import { z } from 'zod'
 import { db } from '#server/db/client'
-import { journalComments, reviewers } from '#server/db/schema'
+import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
 import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
@@ -39,6 +39,10 @@ export default defineEventHandler(async (event) => {
     'declining this review'
   )
 
+  // The decline reason lives on reviewers.comment (editor-visible via the reviewer
+  // assignment) only — it must never reach journalComments, which is a public/
+  // author-visible feed joined with the commenter's real name and would otherwise
+  // deanonymize a reviewer's identity (B1).
   await db.update(reviewers).set({
     isAccepted: false,
     comment: body.comment,
@@ -46,12 +50,6 @@ export default defineEventHandler(async (event) => {
     reviewSubmittedAt: new Date(),
     updatedAt: new Date()
   }).where(eq(reviewers.id, reviewer.id))
-
-  await db.insert(journalComments).values({
-    userId: session.user.id,
-    journalId: journal.id,
-    comment: body.comment
-  })
 
   const approvalStatus = await syncJournalReviewStatus(journal.id)
 
