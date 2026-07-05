@@ -1,4 +1,4 @@
-import { inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { getValidatedQuery } from 'h3'
 import { journals } from '#server/db/schema'
 import { requireReviewer } from '#server/utils/permissions'
@@ -12,6 +12,6 @@ export default defineEventHandler(async (event) => {
   return listReviewerAssignments(
     session.user.id,
     query,
-    inArray(journals.approvalStatus, [MANUSCRIPT_STATUS.APPROVED, MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT])
+    eq(journals.approvalStatus, MANUSCRIPT_STATUS.DECLINED)
   )
 })

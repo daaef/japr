@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+import { activationSchema } from '#shared/validation/auth'
+
 definePageMeta({
   layout: 'auth',
   middleware: ['guest']
@@ -8,16 +13,22 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const showMailViewer = computed(() => config.public.enableMailViewer === true)
 
-const form = reactive({
-  email: typeof route.query.email === 'string' ? route.query.email : '',
-  code: typeof route.query.code === 'string' ? route.query.code : ''
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(activationSchema),
+  initialValues: {
+    email: typeof route.query.email === 'string' ? route.query.email : '',
+    code: typeof route.query.code === 'string' ? route.query.code : ''
+  }
 })
+
+const [email, emailAttrs] = defineField('email')
+const [code, codeAttrs] = defineField('code')
 
 const errorMessage = ref('')
 const loading = ref(false)
 const resent = computed(() => route.query.resent === '1')
 
-async function submit() {
+const submit = handleSubmit(async (values) => {
   errorMessage.value = ''
   loading.value = true
 
@@ -25,8 +36,8 @@ async function submit() {
     await $fetch('/api/auth/activate', {
       method: 'POST',
       body: {
-        email: form.email,
-        code: form.code
+        email: values.email,
+        code: values.code
       }
     })
 
@@ -35,11 +46,11 @@ async function submit() {
       query: { activated: '1' }
     })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to activate this account.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to activate this account.')
   } finally {
     loading.value = false
   }
-}
+})
 </script>
 
 <template>
@@ -58,7 +69,7 @@ async function submit() {
           Enter the six-digit code from your email.
           <template v-if="showMailViewer">
             <NuxtLink
-              :to="{ path: '/mail', query: form.email ? { to: form.email } : undefined }"
+              :to="{ path: '/mail', query: email ? { to: email } : undefined }"
               class="font-medium text-primary-600 hover:text-primary-700"
             >
               Open the mail inbox
@@ -81,21 +92,23 @@ async function submit() {
           <div>
             <label class="block text-sm font-medium text-gray-900">Email</label>
             <input
-              v-model="form.email"
+              v-model="email"
+              v-bind="emailAttrs"
               type="email"
-              required
               class="form-control mt-2"
             >
+            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-900">Activation code</label>
             <input
-              v-model="form.code"
+              v-model="code"
+              v-bind="codeAttrs"
               type="text"
               maxlength="6"
-              required
               class="form-control mt-2 tracking-[0.25em]"
             >
+            <p v-if="errors.code" class="mt-1 text-sm text-red-600">{{ errors.code }}</p>
           </div>
 
           <div

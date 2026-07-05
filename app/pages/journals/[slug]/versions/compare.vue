@@ -126,6 +126,8 @@ async function runCompare() {
       <h2 class="text-lg font-semibold text-toned">
         Diff result
       </h2>
+      <!-- Safe only because the server's diff_prettyHtml HTML-escapes the diffed text
+           before wrapping it in <ins>/<del> — see compareVersionTexts in versions.ts. -->
       <div
         class="prose mt-4 max-w-none text-sm"
         v-html="compareResult.html"

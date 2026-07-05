@@ -105,7 +105,15 @@ const passwordMessage = ref('')
 const passwordError = ref('')
 const loading = ref(false)
 const passwordLoading = ref(false)
-const authorInputClass = 'block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
+
+const isAuthorPublicLayout = computed(() => Boolean(props.authorPublicLayout) && props.role === 'author')
+
+const inputClass = computed(() =>
+  isAuthorPublicLayout.value
+    ? 'block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
+    : 'form-control fw-medium text-15'
+)
+const countrySelectVariant = computed(() => (isAuthorPublicLayout.value ? 'public' : 'dashboard'))
 
 function buildSettingsPayload(): SettingsPayload {
   const payload: SettingsPayload = {
@@ -269,7 +277,7 @@ async function changePassword() {
                   v-model="form.fullname"
                   type="text"
                   autocomplete="name"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
               </div>
             </div>
@@ -284,7 +292,7 @@ async function changePassword() {
                   v-model="form.username"
                   type="text"
                   autocomplete="username"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
               </div>
             </div>
@@ -299,7 +307,7 @@ async function changePassword() {
                   v-model="form.institution"
                   type="text"
                   autocomplete="organization"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
               </div>
             </div>
@@ -321,7 +329,7 @@ async function changePassword() {
                   id="author-settings-interests"
                   :value="authorInterestLabels"
                   type="text"
-                  :class="[authorInputClass, 'bg-gray-50 text-gray-600']"
+                  :class="[inputClass, 'bg-gray-50 text-gray-600']"
                   disabled
                 >
               </div>
@@ -335,7 +343,7 @@ async function changePassword() {
                 <CountrySelect
                   id="author-settings-country"
                   v-model="form.country"
-                  variant="public"
+                  :variant="countrySelectVariant"
                 />
               </div>
             </div>
@@ -350,7 +358,7 @@ async function changePassword() {
                   v-model="form.email"
                   type="email"
                   autocomplete="email"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
               </div>
             </div>
@@ -365,7 +373,7 @@ async function changePassword() {
                   v-model="passwordForm.currentPassword"
                   type="password"
                   autocomplete="current-password"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
                 <p class="mt-1 text-xs text-gray-500">
                   Leave blank if you don't want to change your password.
@@ -383,7 +391,7 @@ async function changePassword() {
                   v-model="passwordForm.newPassword"
                   type="password"
                   autocomplete="new-password"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
               </div>
             </div>
@@ -398,7 +406,7 @@ async function changePassword() {
                   v-model="passwordForm.confirmPassword"
                   type="password"
                   autocomplete="new-password"
-                  :class="authorInputClass"
+                  :class="inputClass"
                 >
               </div>
             </div>
@@ -440,7 +448,7 @@ async function changePassword() {
             <input
               id="settings-fullname"
               v-model="form.fullname"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
           <div class="col-md-6">
@@ -451,7 +459,7 @@ async function changePassword() {
             <input
               id="settings-username"
               v-model="form.username"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
           <div class="col-12">
@@ -464,7 +472,7 @@ async function changePassword() {
               v-model="form.email"
               type="email"
               autocomplete="email"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
           <div class="col-md-6">
@@ -475,7 +483,7 @@ async function changePassword() {
             <CountrySelect
               id="settings-country"
               v-model="form.country"
-              variant="dashboard"
+              :variant="countrySelectVariant"
             />
           </div>
           <div class="col-md-6">
@@ -486,7 +494,7 @@ async function changePassword() {
             <input
               id="settings-institution"
               v-model="form.institution"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
 
@@ -711,7 +719,7 @@ async function changePassword() {
               v-model="passwordForm.currentPassword"
               type="password"
               autocomplete="current-password"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
           <div class="col-md-6">
@@ -724,7 +732,7 @@ async function changePassword() {
               v-model="passwordForm.newPassword"
               type="password"
               autocomplete="new-password"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
           <div class="col-md-6">
@@ -737,7 +745,7 @@ async function changePassword() {
               v-model="passwordForm.confirmPassword"
               type="password"
               autocomplete="new-password"
-              class="form-control fw-medium text-15"
+              :class="inputClass"
             >
           </div>
           <div class="col-12">

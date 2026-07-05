@@ -7,8 +7,8 @@ definePageMeta({
 
 <template>
   <JournalQueueList
-    title="Declined / Rejected"
-    api-url="/api/editor/journals/rejected"
+    title="Declined"
+    api-url="/api/editor/journals/declined"
     detail-path-prefix="/editor/journals"
     empty-message="No declined manuscripts."
   />

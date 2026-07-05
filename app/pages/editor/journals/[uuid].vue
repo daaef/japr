@@ -14,113 +14,117 @@ const canEditManuscript = computed(() =>
   )
 )
 
-const { data: detailData, refresh: refreshDetail } = await useFetch<{
-  journal: {
-    id: string
-    title: string
-    abstract: string | null
-    description: string
-    approvalStatus: string
-    author: string | null
-    country: string | null
-    institution: string | null
-    journalLanguage: string | null
-    journalFormat: string | null
-    slug: string
-    createdAt: string
-    updatedAt: string
-    copyEditStatus: string | null
-    editorDecisionComment: string | null
-  }
-  category: { name: string } | null
-  subCategory: { name: string } | null
-  subSubCategory: { name: string } | null
-  versions: Array<{
-    id: string
-    versionNumber: string
-    title: string
-    changesSummary: string | null
-    createdAt: string
-    status: string
-  }>
-  reviewers: Array<{
-    id: string
-    fullname: string
-    status: string
-    recommendation: string | null
-    comment: string | null
-    rating: number | null
-    assignedAt: string | null
-    reviewDeadline: string | null
-    deadlineExtensionRequested: boolean
-    deadlineExtensionReason: string | null
-    deadlineExtendedAt: string | null
-    reviewSubmittedAt: string | null
-  }>
-}>(() => `/api/editor/journals/${uuid.value}`, {
-  key: computed(() => `editor-journal-${uuid.value}`),
-  default: () => ({
+const [
+  { data: detailData, refresh: refreshDetail },
+  { data: suggestionsData, refresh: refreshSuggestions },
+  { data: reviewBundle, refresh: refreshReviews }
+] = await Promise.all([
+  useFetch<{
     journal: {
-      id: '',
-      title: '',
-      abstract: null,
-      description: '',
-      approvalStatus: 'pending',
-      author: null,
-      country: null,
-      institution: null,
-      journalLanguage: null,
-      journalFormat: null,
-      slug: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      copyEditStatus: null,
-      editorDecisionComment: null
-    },
-    category: null,
-    subCategory: null,
-    subSubCategory: null,
-    versions: [],
-    reviewers: []
+      id: string
+      title: string
+      abstract: string | null
+      description: string
+      approvalStatus: string
+      author: string | null
+      country: string | null
+      institution: string | null
+      journalLanguage: string | null
+      journalFormat: string | null
+      slug: string
+      createdAt: string
+      updatedAt: string
+      copyEditStatus: string | null
+      editorDecisionComment: string | null
+    }
+    category: { name: string } | null
+    subCategory: { name: string } | null
+    subSubCategory: { name: string } | null
+    versions: Array<{
+      id: string
+      versionNumber: string
+      title: string
+      changesSummary: string | null
+      createdAt: string
+      status: string
+    }>
+    reviewers: Array<{
+      id: string
+      fullname: string
+      status: string
+      recommendation: string | null
+      comment: string | null
+      rating: number | null
+      assignedAt: string | null
+      reviewDeadline: string | null
+      deadlineExtensionRequested: boolean
+      deadlineExtensionReason: string | null
+      deadlineExtendedAt: string | null
+      reviewSubmittedAt: string | null
+    }>
+  }>(() => `/api/editor/journals/${uuid.value}`, {
+    key: computed(() => `editor-journal-${uuid.value}`),
+    default: () => ({
+      journal: {
+        id: '',
+        title: '',
+        abstract: null,
+        description: '',
+        approvalStatus: 'pending',
+        author: null,
+        country: null,
+        institution: null,
+        journalLanguage: null,
+        journalFormat: null,
+        slug: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        copyEditStatus: null,
+        editorDecisionComment: null
+      },
+      category: null,
+      subCategory: null,
+      subSubCategory: null,
+      versions: [],
+      reviewers: []
+    })
+  }),
+  useFetch<{
+    suggestions: Array<{
+      id: string
+      fullname: string
+      country: string | null
+      specialization: string | null
+      matchScore: number
+    }>
+  }>(() => `/api/editor/journals/${uuid.value}/regional-assignment`, {
+    default: () => ({
+      suggestions: []
+    })
+  }),
+  useFetch<{
+    reviews: Array<{
+      id: string
+      fullname: string
+      status: string
+      recommendation: string | null
+      rating: number | null
+      comment: string | null
+      criteriaRatings?: {
+        originality: number
+        methodology: number
+        significance: number
+        clarity: number
+        literatureReview: number
+        dataAnalysis: number
+      } | null
+    }>
+  }>(() => `/api/editor/journals/${uuid.value}/enhanced-review`, {
+    default: () => ({
+      reviews: []
+    })
   })
-})
-
-const { data: suggestionsData, refresh: refreshSuggestions } = await useFetch<{
-  suggestions: Array<{
-    id: string
-    fullname: string
-    country: string | null
-    specialization: string | null
-    matchScore: number
-  }>
-}>(() => `/api/editor/journals/${uuid.value}/regional-assignment`, {
-  default: () => ({
-    suggestions: []
-  })
-})
-
-const { data: reviewBundle, refresh: refreshReviews } = await useFetch<{
-  reviews: Array<{
-    id: string
-    fullname: string
-    status: string
-    recommendation: string | null
-    rating: number | null
-    comment: string | null
-    criteriaRatings?: {
-      originality: number
-      methodology: number
-      significance: number
-      clarity: number
-      literatureReview: number
-      dataAnalysis: number
-    } | null
-  }>
-}>(() => `/api/editor/journals/${uuid.value}/enhanced-review`, {
-  default: () => ({
-    reviews: []
-  })
-})
+])
 
 const {
   previewTitle,
@@ -135,21 +139,18 @@ const {
 const selectedReviewerIds = ref<string[]>([])
 const approveComment = ref('')
 const revisionDetails = ref('')
-const rejectReason = ref('')
-const actionLoading = ref(false)
-const actionMessage = ref('')
-const actionError = ref('')
+const declineReason = ref('')
+const noticeComment = ref('')
+const noticeDeclineReason = ref('')
+
+const { loading: actionLoading, message: actionMessage, error: actionError, run: runAction } = useActionHandler()
 
 async function refreshAll() {
   await Promise.all([refreshDetail(), refreshSuggestions(), refreshReviews()])
 }
 
-async function assignReviewers() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function assignReviewers() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/assign-reviewers`, {
       method: 'POST',
       body: {
@@ -157,18 +158,10 @@ async function assignReviewers() {
         reviewerUserIds: selectedReviewerIds.value
       }
     })
-
     await refreshAll()
-    actionMessage.value = 'Reviewer assignments updated.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to assign reviewers.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Reviewer assignments updated.', 'Unable to assign reviewers.')
 }
 
-const noticeComment = ref('')
-const noticeDeclineReason = ref('')
 const showReadyForNotice = computed(() => detailData.value.journal.approvalStatus === 'ready_for_managing_editor_notice')
 const showReviewedActions = computed(() => detailData.value.journal.approvalStatus === 'reviewed')
 const showDeskReviewActions = computed(() => ['desk_review', 'pending'].includes(detailData.value.journal.approvalStatus))
@@ -180,66 +173,35 @@ const pendingExtensionRequests = computed(() =>
   detailData.value.reviewers.filter(reviewer => reviewer.deadlineExtensionRequested)
 )
 
-async function sendToReview() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function sendToReview() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/send-to-review`, { method: 'POST' })
     await refreshAll()
-    actionMessage.value = 'Manuscript sent to peer review.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to send manuscript to review.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Manuscript sent to peer review.', 'Unable to send manuscript to review.')
 }
 
-async function deskReject() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
-    await $fetch(`/api/editor/journals/${uuid.value}/desk-reject`, {
+function deskDecline() {
+  return runAction(async () => {
+    await $fetch(`/api/editor/journals/${uuid.value}/desk-decline`, {
       method: 'POST',
-      body: { reason: rejectReason.value }
+      body: { reason: declineReason.value }
     })
     await refreshAll()
-    actionMessage.value = 'Manuscript desk rejected.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to desk reject this manuscript.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Manuscript desk declined.', 'Unable to desk decline this manuscript.')
 }
 
-async function approveForPublication() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function approveForPublication() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/approve-for-publication`, {
       method: 'POST',
       body: { comment: approveComment.value || null }
     })
     await refreshAll()
-    actionMessage.value = 'Manuscript marked ready for publication.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to approve this manuscript for publication.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Manuscript marked ready for publication.', 'Unable to approve this manuscript for publication.')
 }
 
-async function approveExtension(reviewerId: string) {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function approveExtension(reviewerId: string) {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/approve-extension`, {
       method: 'POST',
       body: {
@@ -248,118 +210,63 @@ async function approveExtension(reviewerId: string) {
       }
     })
     await refreshAll()
-    actionMessage.value = 'Reviewer deadline extension approved.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to approve deadline extension.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Reviewer deadline extension approved.', 'Unable to approve deadline extension.')
 }
 
-async function sendApprovalNotice() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function sendApprovalNotice() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/send-approval-notice`, {
       method: 'POST',
       body: { comment: noticeComment.value || null }
     })
-
     await refreshAll()
-    actionMessage.value = 'Approval notice sent to the author.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to send approval notice.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Approval notice sent to the author.', 'Unable to send approval notice.')
 }
 
-async function sendDeclineNotice() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function sendDeclineNotice() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/send-decline-notice`, {
       method: 'POST',
       body: { reason: noticeDeclineReason.value }
     })
-
     await refreshAll()
-    actionMessage.value = 'Decline notice sent to the author.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to send decline notice.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Decline notice sent to the author.', 'Unable to send decline notice.')
 }
 
-async function approve() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function approve() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/approve`, {
       method: 'POST',
       body: {
         comment: approveComment.value || null
       }
     })
-
     await refreshAll()
-    actionMessage.value = 'Manuscript approved.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to approve this manuscript.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Manuscript approved.', 'Unable to approve this manuscript.')
 }
 
-async function requestRevisions() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
+function requestRevisions() {
+  return runAction(async () => {
     await $fetch(`/api/editor/journals/${uuid.value}/request-revisions`, {
       method: 'POST',
       body: {
         details: revisionDetails.value
       }
     })
-
     await refreshAll()
-    actionMessage.value = 'Revision request sent.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to request revisions.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Revision request sent.', 'Unable to request revisions.')
 }
 
-async function reject() {
-  actionLoading.value = true
-  actionMessage.value = ''
-  actionError.value = ''
-
-  try {
-    await $fetch(`/api/editor/journals/${uuid.value}/reject`, {
+function declineManuscript() {
+  return runAction(async () => {
+    await $fetch(`/api/editor/journals/${uuid.value}/decline`, {
       method: 'POST',
       body: {
-        reason: rejectReason.value
+        reason: declineReason.value
       }
     })
-
     await refreshAll()
-    actionMessage.value = 'Manuscript declined.'
-  } catch (error) {
-    actionError.value = error instanceof Error ? error.message : 'Unable to decline this manuscript.'
-  } finally {
-    actionLoading.value = false
-  }
+  }, 'Manuscript declined.', 'Unable to decline this manuscript.')
 }
 </script>
 
@@ -556,19 +463,19 @@ async function reject() {
                 Send to review
               </button>
             </div>
-            <label class="h6 mb-8 fw-semibold">Desk rejection reason</label>
+            <label class="h6 mb-8 fw-semibold">Desk decline reason</label>
             <textarea
-              v-model="rejectReason"
+              v-model="declineReason"
               rows="3"
               class="form-control fw-medium text-15 mb-12"
             />
             <button
               type="button"
               class="btn btn-danger rounded-pill py-9"
-              :disabled="actionLoading || rejectReason.trim().length < 5"
-              @click="deskReject"
+              :disabled="actionLoading || declineReason.trim().length < 5"
+              @click="deskDecline"
             >
-              Desk reject
+              Desk decline
             </button>
           </div>
 
@@ -703,7 +610,7 @@ async function reject() {
           <div class="mb-20">
             <label class="h6 mb-8 fw-semibold">Decline reason</label>
             <textarea
-              v-model="rejectReason"
+              v-model="declineReason"
               rows="4"
               class="form-control fw-medium text-15"
             />
@@ -711,7 +618,7 @@ async function reject() {
               type="button"
               class="btn btn-danger rounded-pill py-9 mt-12"
               :disabled="actionLoading"
-              @click="reject"
+              @click="declineManuscript"
             >
               Decline manuscript
             </button>

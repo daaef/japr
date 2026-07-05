@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
 import { authClient } from '~~/lib/auth-client'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 import { resolveWorkspacePath } from '~/utils/workspace'
+import { signInSchema } from '#shared/validation/auth'
 
 definePageMeta({
   layout: 'auth',
@@ -10,10 +14,13 @@ definePageMeta({
 const route = useRoute()
 const { data: currentUser, refresh } = useCurrentUser()
 
-const form = reactive({
-  email: '',
-  password: ''
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(signInSchema),
+  initialValues: { email: '', password: '' }
 })
+
+const [email, emailAttrs] = defineField('email')
+const [password, passwordAttrs] = defineField('password')
 
 const showPassword = ref(false)
 const errorMessage = ref('')
@@ -55,9 +62,9 @@ async function signInWithGoogle() {
       callbackURL: redirect
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Google sign-in is unavailable.'
+    const message = extractApiErrorMessage(error, 'Google sign-in is unavailable.')
     if (message.toLowerCase().includes('activate')) {
-      await redirectToActivation(form.email)
+      await redirectToActivation(email.value ?? '')
       return
     }
     errorMessage.value = message
@@ -66,20 +73,20 @@ async function signInWithGoogle() {
   }
 }
 
-async function submit() {
+const submit = handleSubmit(async (values) => {
   errorMessage.value = ''
   loading.value = true
 
   try {
     const { error } = await authClient.signIn.email({
-      email: form.email,
-      password: form.password
+      email: values.email,
+      password: values.password
     })
 
     if (error) {
       const message = error.message || 'Unable to sign in.'
       if (message.toLowerCase().includes('activate')) {
-        await redirectToActivation(form.email)
+        await redirectToActivation(values.email)
         return
       }
       errorMessage.value = message
@@ -105,7 +112,7 @@ async function submit() {
   } finally {
     loading.value = false
   }
-}
+})
 </script>
 
 <template>
@@ -139,12 +146,14 @@ async function submit() {
             <div class="mt-2">
               <input
                 id="email"
-                v-model="form.email"
+                v-model="email"
+                v-bind="emailAttrs"
                 type="email"
                 autocomplete="email"
                 placeholder="name@example.com"
                 class="block w-full bg-[#F9FAFB] rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
               >
+              <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
             </div>
           </div>
 
@@ -153,7 +162,8 @@ async function submit() {
             <div class="mt-2 relative">
               <input
                 id="password"
-                v-model="form.password"
+                v-model="password"
+                v-bind="passwordAttrs"
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="current-password"
                 placeholder="••••••••••"
@@ -167,6 +177,7 @@ async function submit() {
                 <i class="ph" :class="showPassword ? 'ph-eye-slash' : 'ph-eye'" />
               </button>
             </div>
+            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
           </div>
 
           <div class="text-sm leading-6">

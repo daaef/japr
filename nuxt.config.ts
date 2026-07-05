@@ -2,7 +2,6 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
-    '@pinia/nuxt',
     '@vee-validate/nuxt',
     '@nuxt/image'
   ],
@@ -45,6 +44,10 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-01-15',
+
+  routeRules: {
+    '/login': { redirect: { to: '/auth/login', statusCode: 301 } }
+  },
 
   app: {
     head: {

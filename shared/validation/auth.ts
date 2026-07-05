@@ -26,6 +26,19 @@ export const activationSchema = z.object({
   code: z.string().trim().length(6)
 })
 
+export const signInSchema = z.object({
+  email: z.email(),
+  password: z.string().min(1, 'Password is required.')
+})
+
+export const forgotPasswordSchema = z.object({
+  email: z.email()
+})
+
+export const resetPasswordSchema = z.object({
+  password: passwordSchema
+})
+
 export const reviewPolicySchema = z.object({
   accepted: z.literal(true)
 })

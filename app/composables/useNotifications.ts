@@ -122,7 +122,6 @@ export function useNotifications() {
   onMounted(() => {
     refreshUnreadCount()
     connectStream()
-    startPolling()
   })
 
   onBeforeUnmount(() => {

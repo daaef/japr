@@ -76,6 +76,9 @@ export function compareVersionTexts(left: string, right: string) {
   const diffs = dmp.diff_main(left, right)
   dmp.diff_cleanupSemantic(diffs)
 
+  // diff_prettyHtml HTML-escapes the diffed text as part of building its <ins>/<del>
+  // markup — that escaping is what makes it safe for the client to render this `html`
+  // via v-html (see versions/compare.vue). Don't swap in a diff renderer that skips it.
   return {
     diffs,
     html: dmp.diff_prettyHtml(diffs)

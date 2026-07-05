@@ -37,15 +37,13 @@ useHead({
   link: [
     { rel: 'stylesheet', href: '/assets/css/bootstrap.min.css' },
     { rel: 'stylesheet', href: '/assets/css/main.css' },
-    { rel: 'stylesheet', href: '/assets/css/journal-dashboard-overrides.css' },
-    { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css' }
+    { rel: 'stylesheet', href: '/assets/css/journal-dashboard-overrides.css' }
   ],
   script: [
     { src: '/assets/js/jquery-3.7.1.min.js', defer: true },
     { src: '/assets/js/boostrap.bundle.min.js', defer: true },
     { src: '/assets/js/phosphor-icon.js', defer: true },
-    { src: '/assets/js/main.js', defer: true },
-    { src: 'https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js', defer: true }
+    { src: '/assets/js/main.js', defer: true }
   ]
 })
 
