@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals, users } from '#server/db/schema'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
+import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -76,6 +77,9 @@ export default defineEventHandler(async (event) => {
       message: body.reason
     }
   })
+
+  // Reviewers who completed a review never learned the outcome (F13d).
+  await notifyReviewersOfFinalDecision(journal.id, MANUSCRIPT_STATUS.DECLINED)
 
   return { ok: true }
 })

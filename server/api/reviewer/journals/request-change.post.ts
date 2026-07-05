@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
       current_value: currentValue,
       suggested_change: change.suggestedChange,
       comment: change.comment ?? null,
-      editor_id: session.user.id,
+      reviewer_id: session.user.id,
       status: 'pending',
       timestamp
     })
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
     data: {
       title: 'Changes requested',
       journalId: journal.id,
-      message: `An editor requested changes to ${journal.title}.`,
+      message: `A reviewer requested changes to ${journal.title}.`,
       changes: body.changes
     }
   })

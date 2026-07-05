@@ -80,10 +80,17 @@ export const ALLOWED_MANUSCRIPT_TRANSITIONS: Record<ManuscriptStatus, Manuscript
   [MANUSCRIPT_STATUS.IN_PROGRESS]: [
     MANUSCRIPT_STATUS.UNDER_PEER_REVIEW,
     MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE,
+    // A single-reviewer manuscript where that reviewer declines goes straight from
+    // in-progress to reviewed (0 completed reviews, but the only reviewer responded) —
+    // syncJournalReviewStatus already produces this; the table just didn't allow it (F11).
+    MANUSCRIPT_STATUS.REVIEWED,
     MANUSCRIPT_STATUS.CHANGES_REQUESTED
   ],
   [MANUSCRIPT_STATUS.UNDER_PEER_REVIEW]: [
     MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE,
+    // Reachable when the completed reviewer count stays under the notice threshold but
+    // every remaining reviewer ends up declining — all responses are terminal (F11).
+    MANUSCRIPT_STATUS.REVIEWED,
     MANUSCRIPT_STATUS.CHANGES_REQUESTED
   ],
   [MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE]: [
@@ -96,7 +103,13 @@ export const ALLOWED_MANUSCRIPT_TRANSITIONS: Record<ManuscriptStatus, Manuscript
     MANUSCRIPT_STATUS.APPROVED,
     MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT,
     MANUSCRIPT_STATUS.DECLINED,
-    MANUSCRIPT_STATUS.CHANGES_REQUESTED
+    MANUSCRIPT_STATUS.CHANGES_REQUESTED,
+    // F10 now lets an editor assign-reviewers while stuck at reviewed with too few
+    // completed reviews; the newly-added pending reviewer moves the auto-computed status
+    // back to in-progress/under_peer_review, so the table must legalize that reverse
+    // edge instead of the engine silently disagreeing with it (F11).
+    MANUSCRIPT_STATUS.IN_PROGRESS,
+    MANUSCRIPT_STATUS.UNDER_PEER_REVIEW
   ],
   [MANUSCRIPT_STATUS.APPROVED]: [
     MANUSCRIPT_STATUS.PUBLISHED

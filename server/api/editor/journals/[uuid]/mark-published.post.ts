@@ -26,6 +26,16 @@ export default defineEventHandler(async (event) => {
     'publishing'
   )
 
+  // The copy-desk hand-off (approve-for-publication.post.ts) is what actually queues a
+  // manuscript for copy desk; without this check, mark-published could publish an
+  // approved manuscript that was never handed off (F12).
+  if (journal.copyEditStatus !== 'ready_for_publication') {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'This manuscript must be approved for publication by an editor before copy desk can publish it.'
+    })
+  }
+
   await db.update(journals).set({
     approvalStatus: MANUSCRIPT_STATUS.PUBLISHED,
     copyEditStatus: 'published',

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "reviewers_journal_user_idx" ON "reviewers" USING btree ("journal_id","user_id");

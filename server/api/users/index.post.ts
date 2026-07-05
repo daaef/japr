@@ -13,35 +13,43 @@ export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, payload => userCreateSchema.parse(payload))
 
   const password = await hashPassword(body.password)
-  const inserted = await db.insert(users).values({
-    name: body.fullname,
-    fullname: body.fullname,
-    username: body.username,
-    email: body.email,
-    emailVerified: true,
-    emailVerifiedAt: new Date(),
-    passwordHash: password,
-    country: body.country ?? null,
-    institution: body.institution ?? null,
-    isActive: true
-  }).returning()
 
-  const user = inserted[0]!
+  // users/accounts/userRoles commit together (B7) — a crash mid-sequence must not leave a
+  // user row with no credential row (unable to log in) or missing roles (unable to do
+  // anything after logging in).
+  const user = await db.transaction(async (tx) => {
+    const inserted = await tx.insert(users).values({
+      name: body.fullname,
+      fullname: body.fullname,
+      username: body.username,
+      email: body.email,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      passwordHash: password,
+      country: body.country ?? null,
+      institution: body.institution ?? null,
+      isActive: true
+    }).returning()
 
-  await db.insert(accounts).values({
-    id: randomUUID(),
-    userId: user.id,
-    accountId: user.id,
-    providerId: 'credential',
-    password
-  })
+    const createdUser = inserted[0]!
 
-  for (const roleId of body.roleIds) {
-    await db.insert(userRoles).values({
-      userId: user.id,
-      roleId
+    await tx.insert(accounts).values({
+      id: randomUUID(),
+      userId: createdUser.id,
+      accountId: createdUser.id,
+      providerId: 'credential',
+      password
     })
-  }
+
+    for (const roleId of body.roleIds) {
+      await tx.insert(userRoles).values({
+        userId: createdUser.id,
+        roleId
+      })
+    }
+
+    return createdUser
+  })
 
   await logAdminAction(event, {
     action: 'create',

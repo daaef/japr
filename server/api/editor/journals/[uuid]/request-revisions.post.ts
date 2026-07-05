@@ -40,11 +40,16 @@ export default defineEventHandler(async (event) => {
     'requesting revisions'
   )
 
+  // Append, don't overwrite — reviewer request-change may have already added
+  // field-level entries to this same array; replacing it would destroy them (F9).
+  const existingChangeRequests = Array.isArray(journal.changeRequests) ? [...journal.changeRequests] : []
+  existingChangeRequests.push({ details: body.details, createdAt: new Date().toISOString() })
+
   await db
     .update(journals)
     .set({
       approvalStatus: MANUSCRIPT_STATUS.CHANGES_REQUESTED,
-      changeRequests: [{ details: body.details, createdAt: new Date().toISOString() }],
+      changeRequests: existingChangeRequests,
       editorDecisionComment: body.details,
       editorDecisionDate: new Date(),
       updatedAt: new Date()

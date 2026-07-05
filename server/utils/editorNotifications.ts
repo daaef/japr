@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { roles, userRoles, users } from '#server/db/schema'
-import { sendAllReviewsCompleteEmail, sendEmail, sendReviewResponseEmail, sendRevisionUploadedEmail } from '#server/utils/email'
+import { sendAllReviewsCompleteEmail, sendChangeResolvedEmail, sendEmail, sendReviewResponseEmail, sendRevisionUploadedEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
 
@@ -163,9 +163,56 @@ export async function notifyEditorsRevisionUploaded(journalId: string) {
     .innerJoin(users, eq(userRoles.userId, users.id))
     .where(inArray(userRoles.roleId, editorRoles.map(role => role.id)))
 
+  // Every sibling notifyEditors* helper here also raises an in-app notification —
+  // this one previously sent email only, so editors relying on the in-app feed never
+  // learned a revision had landed (F13b).
+  await createNotifications(editorUsers.map(editor => ({
+    userId: editor.id,
+    type: 'revision-uploaded',
+    data: {
+      title: 'Revision uploaded',
+      message: `A revision was uploaded for ${journal.title}.`,
+      journalId: journal.id
+    }
+  })))
+
   await Promise.all(editorUsers.map(editor =>
     sendIfEmailAllowed(editor.id, 'manuscript_status', () =>
       sendRevisionUploadedEmail(editor.email, editor.fullname, journal.title)
+    ).catch(() => undefined)
+  ))
+}
+
+export async function notifyEditorsChangesResolved(journalId: string) {
+  const journal = await db.query.journals.findFirst({
+    where: (table, { eq }) => eq(table.id, journalId)
+  })
+
+  if (!journal) {
+    return
+  }
+
+  const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, editorRoleNames))
+  const editorUsers = await db
+    .select({ id: users.id, email: users.email, fullname: users.fullname })
+    .from(userRoles)
+    .innerJoin(users, eq(userRoles.userId, users.id))
+    .where(inArray(userRoles.roleId, editorRoles.map(role => role.id)))
+
+  await createNotifications(editorUsers.map(editor => ({
+    userId: editor.id,
+    type: 'change-resolved',
+    data: {
+      title: 'Author update submitted',
+      message: `The author updated ${journal.title} in response to change requests.`,
+      journalId: journal.id
+    }
+  })))
+
+  await Promise.all(editorUsers.map(editor =>
+    sendIfEmailAllowed(editor.id, 'manuscript_status', () =>
+      sendChangeResolvedEmail(editor.email, editor.fullname, journal.title)
     ).catch(() => undefined)
   ))
 }

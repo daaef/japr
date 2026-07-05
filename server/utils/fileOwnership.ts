@@ -3,6 +3,8 @@ import { db } from '#server/db/client'
 import { files } from '#server/db/schema'
 import { deleteStoredFile } from '#server/utils/files'
 
+type DbOrTransaction = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
+
 export const FILE_STATUS = {
   PENDING: 'pending',
   ATTACHED: 'attached'
@@ -44,9 +46,14 @@ export async function verifyPendingUpload(storageKey: string, ownerId: string) {
   }
 }
 
-/** Call only after verifyPendingUpload has already passed for this storageKey/owner. */
-export async function markFileAttached(storageKey: string, journalId: string) {
-  await db.update(files)
+/**
+ * Call only after verifyPendingUpload has already passed for this storageKey/owner.
+ * Accepts an optional transaction so callers that also write the owning row (journal
+ * create, revision) can keep both writes atomic (B7) instead of the file being marked
+ * attached while the journal/version insert that references it fails.
+ */
+export async function markFileAttached(storageKey: string, journalId: string, executor: DbOrTransaction = db) {
+  await executor.update(files)
     .set({ status: FILE_STATUS.ATTACHED, journalId })
     .where(eq(files.storageKey, storageKey))
 }

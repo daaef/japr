@@ -4,6 +4,7 @@ import { db } from '#server/db/client'
 import { journals, manuscriptVersions } from '#server/db/schema'
 import { getUserRoles } from '#server/utils/session'
 import { isEditorialProfileRole, isReviewerRole } from '#server/utils/permissions'
+import { getNextVersionNumber } from '#server/utils/versionNumbering'
 
 const dmp = new DiffMatchPatch()
 
@@ -94,8 +95,7 @@ export async function revertToVersion(journalId: string, versionId: string, user
     where: (table, { eq }) => eq(table.journalId, journalId)
   })
 
-  const nextMinor = existing.length + 1
-  const versionNumber = `${Math.floor(nextMinor / 10) || 1}.${nextMinor % 10}`
+  const versionNumber = getNextVersionNumber(existing)
 
   const inserted = await db.insert(manuscriptVersions).values({
     journalId,

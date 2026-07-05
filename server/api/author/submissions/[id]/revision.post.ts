@@ -8,6 +8,7 @@ import { markFileAttached, verifyPendingUpload } from '#server/utils/fileOwnersh
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { createNotification } from '#server/utils/notifications'
 import { requireAuthor } from '#server/utils/permissions'
+import { getNextVersionNumber } from '#server/utils/versionNumbering'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 
@@ -19,10 +20,6 @@ const bodySchema = z.object({
   journalUrl: z.string().trim().optional().nullable(),
   journalFormat: z.string().trim().optional().nullable()
 })
-
-function getNextVersionNumber(versionCount: number) {
-  return `1.${versionCount}`
-}
 
 export default defineEventHandler(async (event) => {
   const session = await requireAuthor(event)
@@ -53,35 +50,41 @@ export default defineEventHandler(async (event) => {
     await verifyPendingUpload(body.journalUrl, session.user.id)
   }
 
-  const versions = await db.query.manuscriptVersions.findMany({
-    where: (table, { eq }) => eq(table.journalId, journal.id)
-  })
-
-  await db
-    .update(journals)
-    .set({
-      approvalStatus: MANUSCRIPT_STATUS.PENDING,
-      editorDecisionComment: body.changesSummary,
-      journalUrl: body.journalUrl ?? journal.journalUrl,
-      journalFormat: body.journalFormat ?? journal.journalFormat,
-      updatedAt: new Date()
+  // Update, file-attach, and version-insert happen atomically (B7) — a crash mid-sequence
+  // must not leave the journal pointing at a file that was never attached, or attach a
+  // file with no version row recording it. Reading the existing versions inside the same
+  // transaction also keeps the next version number (B17) consistent with the insert.
+  await db.transaction(async (tx) => {
+    const versions = await tx.query.manuscriptVersions.findMany({
+      where: (table, { eq }) => eq(table.journalId, journal.id)
     })
-    .where(eq(journals.id, journal.id))
 
-  if (body.journalUrl) {
-    await markFileAttached(body.journalUrl, journal.id)
-  }
+    await tx
+      .update(journals)
+      .set({
+        approvalStatus: MANUSCRIPT_STATUS.PENDING,
+        editorDecisionComment: body.changesSummary,
+        journalUrl: body.journalUrl ?? journal.journalUrl,
+        journalFormat: body.journalFormat ?? journal.journalFormat,
+        updatedAt: new Date()
+      })
+      .where(eq(journals.id, journal.id))
 
-  await db.insert(manuscriptVersions).values({
-    journalId: journal.id,
-    versionNumber: getNextVersionNumber(versions.length),
-    title: body.title ?? journal.title,
-    abstract: body.abstract ?? journal.abstract ?? '',
-    content: body.content,
-    changesSummary: body.changesSummary,
-    createdBy: session.user.id,
-    parentVersionId: versions.at(-1)?.id,
-    status: 'submitted'
+    if (body.journalUrl) {
+      await markFileAttached(body.journalUrl, journal.id, tx)
+    }
+
+    await tx.insert(manuscriptVersions).values({
+      journalId: journal.id,
+      versionNumber: getNextVersionNumber(versions),
+      title: body.title ?? journal.title,
+      abstract: body.abstract ?? journal.abstract ?? '',
+      content: body.content,
+      changesSummary: body.changesSummary,
+      createdBy: session.user.id,
+      parentVersionId: versions.at(-1)?.id,
+      status: 'submitted'
+    })
   })
 
   await createNotification({

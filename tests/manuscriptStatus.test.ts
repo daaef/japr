@@ -66,3 +66,17 @@ test('canTransitionManuscriptStatus follows the allowed transition table', () =>
     ]
   )
 })
+
+test('canTransitionManuscriptStatus allows the auto-engine transitions syncJournalReviewStatus can actually produce (F11)', () => {
+  // A single assigned reviewer who declines without ever completing a review: 0
+  // completed reviews, but the only reviewer's response is terminal.
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.IN_PROGRESS, MANUSCRIPT_STATUS.REVIEWED), true)
+  // Under review with <2 completed reviews, and every remaining reviewer ends up declining.
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.UNDER_PEER_REVIEW, MANUSCRIPT_STATUS.REVIEWED), true)
+  // F10 lets an editor assign-reviewers while stuck at reviewed; the new pending
+  // reviewer moves the computed status back to in-progress/under_peer_review.
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.IN_PROGRESS), true)
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.UNDER_PEER_REVIEW), true)
+  // Still disallowed: the auto-engine never produces these, and it must stay that way.
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE), false)
+})

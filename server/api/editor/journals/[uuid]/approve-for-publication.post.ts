@@ -2,12 +2,9 @@ import { eq } from 'drizzle-orm'
 import { readValidatedBody } from 'h3'
 import { z } from 'zod'
 import { db } from '#server/db/client'
-import { journals, users } from '#server/db/schema'
-import { createNotification } from '#server/utils/notifications'
+import { journals } from '#server/db/schema'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
-import { sendDecisionEmail } from '#server/utils/email'
-import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 
@@ -47,24 +44,12 @@ export default defineEventHandler(async (event) => {
     })
     .where(eq(journals.id, journal.id))
 
-  const author = await db.query.users.findFirst({
-    where: eq(users.id, journal.userId)
-  })
-
-  if (author) {
-    await sendIfEmailAllowed(author.id, 'manuscript_status', () =>
-      sendDecisionEmail(author.email, author.fullname, journal.title, MANUSCRIPT_STATUS.APPROVED)
-    ).catch(() => undefined)
-    await createNotification({
-      userId: author.id,
-      type: 'published',
-      data: {
-        title: 'Manuscript approved for publication',
-        journalId: journal.id,
-        message: `${journal.title} has been approved for publication.`
-      }
-    })
-  }
+  // Deliberately no author notification/email here (F13d) — this is an internal
+  // editor-to-copy-desk hand-off, not a decision. The author was already told the
+  // manuscript was approved (approve.post.ts / send-approval-notice.post.ts); re-telling
+  // them again here, and a third time when mark-published actually publishes it, was the
+  // "up to 3 approval notifications" the review flagged. copyEditStatus is internal
+  // bookkeeping the author has no visibility into and no action to take on.
 
   return { ok: true }
 })

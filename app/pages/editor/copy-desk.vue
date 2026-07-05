@@ -37,7 +37,7 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
     </div>
     <JournalQueueList
       title="Copy desk"
-      api-url="/api/editor/journals/approved"
+      api-url="/api/editor/journals/copy-desk"
       detail-path-prefix="/editor/journals"
       empty-message="No manuscripts are currently in the copy desk queue."
     >
