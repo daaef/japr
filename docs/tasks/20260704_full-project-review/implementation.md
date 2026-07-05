@@ -372,11 +372,32 @@ C2/C3 touches every route guard; verify no wrong-layout flash on hard refresh).
 
 ## Phase 6 — Design-system unification (D1–D13) — largest, do last, incremental
 
-Target system: **Nuxt UI v4** (installed, themed). Retirement targets: Bootstrap 5 + jQuery +
-toastr + Preline. Migrate shared atoms first (each propagates to ~14 queue pages via the
-thin-wrapper architecture); layouts last. Do NOT "fix" ambiguous utility classes like `w-40`
-piecemeal — they flip meaning (D2 collision) only when the theme sheet leaves a layout, so fix
-them as part of removing that layout's Bootstrap sheet.
+**Hard requirement (updated 2026-07-06, explicit human directive — supersedes any softer
+language below and in `plan.md`'s original Phase 6 write-up): Nuxt UI v4 becomes the *only* UI
+system in this app, full stop.** Bootstrap 5, jQuery (+ jQuery UI, jquery-jvectormap), toastr,
+and Preline are not "reduced" or "mostly retired" — they are deleted, on every route including
+`author`, with no marketing-shell or "keep this one page as-is" exception. Nuxt UI is itself
+Tailwind-based, so ordinary Tailwind utility classes stay; what's banned is any competing
+component library, hand-rolled widget that reimplements a Nuxt UI primitive, or third-party
+CSS/JS plugin.
+
+**Verification gate for the whole phase (in addition to the per-step gates below):**
+
+```sh
+grep -rniE "bootstrap|jquery|toastr|preline" app/ nuxt.config.ts package.json
+```
+
+must return **zero** hits, and none of these paths may still exist:
+`public/assets/css/bootstrap.min.css`, `public/assets/js/jquery-3.7.1.min.js`,
+`public/assets/{css,js}/jquery-ui*`, `public/assets/{css,js}/jquery-jvectormap*`,
+`app/assets/journal/sass/**`, `app/plugins/preline.client.ts`. `package.json` must not list
+`preline`. Do not mark Phase 6 (or its `changelog.md` entry) done until this gate is green —
+this is the literal definition of done, not step 10's nice-to-have.
+
+Target system: **Nuxt UI v4** (installed, themed). Migrate shared atoms first (each propagates
+to ~14 queue pages via the thin-wrapper architecture); layouts last. Do NOT "fix" ambiguous
+utility classes like `w-40` piecemeal — they flip meaning (D2 collision) only when the theme
+sheet leaves a layout, so fix them as part of removing that layout's Bootstrap sheet.
 
 Order (each its own commit, verify visually before the next):
 1. Freeze: no new Bootstrap/Preline/theme-class code.
@@ -388,9 +409,14 @@ Order (each its own commit, verify visually before the next):
    shared `USkeleton` loading + error + empty states (D9).
 4. Layout migration, one role at a time (start with editor — most pages, all thin wrappers):
    rebuild the shell in Vue + Nuxt UI, drop that layout's `bootstrap.min.css`, theme `main.css`,
-   jQuery, and `main.js`. This dissolves the D2 collision for that tree.
-5. Author-role decision (D5): recommend the shared dashboard shell; if the marketing style is
-   intentional, document it and share atoms anyway.
+   jQuery, and `main.js`. This dissolves the D2 collision for that tree. Repeat for admin,
+   reviewer, auth, and public layouts — none may keep a Bootstrap/jQuery `<link>`/`<script>` by
+   the end of this step.
+5. **Author-role (D5): mandatory migration, not a decision point.** Retire the `layout: 'public'`
+   marketing shell + ad-hoc blue/indigo Tailwind entirely; author adopts the same dashboard shell
+   and shared Nuxt UI atoms (badge/button/pagination/table) as editor/reviewer/admin. Any
+   author-specific visual identity must come from Nuxt UI theme tokens (`app.config.ts` color
+   aliases), never a second component set or a second CSS sheet.
 6. Token sweep (D6): raw grays/accents → Nuxt UI semantic tokens; kill hex literals; focus rings →
    `primary`; fix `border-[px]`, `w-25s`, `font-manrope`.
 7. Dark mode (D10): adopt via semantic tokens during the sweep, or explicitly disable color mode;
@@ -400,11 +426,15 @@ Order (each its own commit, verify visually before the next):
    `querySelectorAll` mutations with Vue state.
 9. Responsive (D12): replace escaped-selector home-hero CSS with template utilities; card-collapse
    for queue tables on small screens.
-10. Cleanup (D13): delete `app/assets/journal/sass/**`, Preline (plugin + dep) once its 2 usages
-    move to `UAccordion`/`UNavigationMenu`, then the Bootstrap assets in `public/assets/`.
+10. Cleanup (D13) — the finish line, not optional polish: delete `app/assets/journal/sass/**`,
+    remove the `preline` plugin file and its npm dependency (its 2 usages already moved to
+    `UAccordion`/`UNavigationMenu` in step 4), delete every Bootstrap/jQuery/jQuery-UI/jvectormap
+    file under `public/assets/`, and re-run the phase's verification gate above to confirm zero
+    hits before this phase is considered closed.
 
 **Gate:** full gate + per-role visual pass (each dashboard + public + auth) before deleting any
-legacy CSS for that tree. Use the `/run` skill (or `pnpm dev`) to drive each role and confirm.
+legacy CSS for that tree, plus the zero-hits grep above. Use the `/run` skill (or `pnpm dev`) to
+drive each role and confirm.
 
 ---
 
