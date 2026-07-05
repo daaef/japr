@@ -38,7 +38,8 @@ export function toAuthorReviewerView<T extends AuthorReviewerSource>(
   }
 }
 
-export function sanitizeJournalForAuthor<T extends { reviewers?: unknown, changeRequests?: unknown }>(journal: T) {
+export function sanitizeJournalForAuthor<T extends { reviewers?: unknown, changeRequests?: unknown, journalUrl?: unknown }>(journal: T) {
+  const { journalUrl, ...rest } = journal
   const reviewerLabels = Array.isArray(journal.reviewers)
     ? journal.reviewers.map((_, index) => ({ id: `Reviewer ${index + 1}` }))
     : []
@@ -56,9 +57,12 @@ export function sanitizeJournalForAuthor<T extends { reviewers?: unknown, change
     : journal.changeRequests
 
   return {
-    ...journal,
+    ...rest,
     reviewers: reviewerLabels,
-    changeRequests: scrubbedChangeRequests
+    changeRequests: scrubbedChangeRequests,
+    // The raw storage key never leaves the server for non-editors; the owner UI only
+    // needs to know a file exists to render the (separately authz'd) download button.
+    hasManuscriptFile: Boolean(journalUrl)
   }
 }
 

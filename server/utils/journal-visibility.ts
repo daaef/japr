@@ -26,22 +26,29 @@ function anonymizeReviewerList(reviewers: unknown): Array<{ id: string }> {
 }
 
 /** Strips co-reviewer identities and the editor-only rating field from a reviewer's own view. */
-function sanitizeJournalForReviewer<T extends { reviewers?: unknown, reviewersRatings?: unknown }>(journal: T) {
+function sanitizeJournalForReviewer<T extends { reviewers?: unknown, reviewersRatings?: unknown, journalUrl?: unknown }>(journal: T) {
+  const { journalUrl, ...rest } = journal
   return {
-    ...journal,
+    ...rest,
     reviewers: anonymizeReviewerList(journal.reviewers),
-    reviewersRatings: []
+    reviewersRatings: [],
+    // The raw storage key never leaves the server for non-editors; downloads go through
+    // the authz'd /api/journals/[id]/download endpoint, which re-queries the row itself.
+    hasManuscriptFile: Boolean(journalUrl)
   }
 }
 
 // Single source of truth for the public exclusion list — the "no per-endpoint copy-pasted
 // column list" list lives here, in this one destructuring statement, not duplicated.
-type PublicExcludedKey = 'reviewers' | 'reviewersRatings' | 'createdBy' | 'updatedBy' | 'approvedBy' | 'declinedBy' | 'searchVector'
+type PublicExcludedKey = 'reviewers' | 'reviewersRatings' | 'createdBy' | 'updatedBy' | 'approvedBy' | 'declinedBy' | 'searchVector' | 'journalUrl' | 'journalFormat'
 
 /** The canonical public projection — never leak reviewer identities or internal editorial metadata. */
-function projectJournalForPublic<T extends Record<PublicExcludedKey, unknown>>(journal: T): Omit<T, PublicExcludedKey> {
-  const { reviewers, reviewersRatings, createdBy, updatedBy, approvedBy, declinedBy, searchVector, ...rest } = journal
-  return rest
+function projectJournalForPublic<T extends Record<PublicExcludedKey, unknown>>(journal: T): Omit<T, PublicExcludedKey> & { hasManuscriptFile: boolean } {
+  const { reviewers, reviewersRatings, createdBy, updatedBy, approvedBy, declinedBy, searchVector, journalUrl, journalFormat, ...rest } = journal
+  // Public viewers still need to know a file exists: the public journal page shows an
+  // authenticated-user Download button for approved manuscripts (served by the authz'd
+  // download endpoint) — but they never get the storage key itself.
+  return { ...rest, hasManuscriptFile: Boolean(journalUrl) }
 }
 
 /**

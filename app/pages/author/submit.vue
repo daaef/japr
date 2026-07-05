@@ -244,6 +244,35 @@ function declineReviewPolicy() {
   errorMessage.value = 'You must accept the review policy to submit manuscripts.'
 }
 
+function describeValidationError(error: unknown): string | null {
+  const fetchError = error as { data?: { statusMessage?: string, data?: { name?: string, message?: string } } }
+  if (fetchError.data?.statusMessage !== 'Validation Error' || fetchError.data?.data?.name !== 'ZodError') {
+    return null
+  }
+
+  try {
+    const issues: unknown = JSON.parse(fetchError.data.data.message ?? '[]')
+    if (!Array.isArray(issues) || issues.length === 0) {
+      return null
+    }
+
+    // Only trust entries that actually look like a Zod issue (string `message`) — a
+    // shape we didn't anticipate should fall back to the generic error, not render
+    // "value: undefined" to the user.
+    const messages = issues
+      .filter((issue): issue is { path?: unknown, message: string } =>
+        typeof issue === 'object' && issue !== null && typeof (issue as { message?: unknown }).message === 'string')
+      .map((issue) => {
+        const path = Array.isArray(issue.path) ? issue.path.join('.') : 'value'
+        return `${path}: ${issue.message}`
+      })
+
+    return messages.length > 0 ? messages.join('; ') : null
+  } catch {
+    return null
+  }
+}
+
 async function createSubmission() {
   if (!agreePolicy.value) {
     errorMessage.value = 'Please confirm that you have not published this article elsewhere.'
@@ -303,7 +332,8 @@ async function createSubmission() {
 
     await navigateTo(`/author/submissions/${response.journal.id}`)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to create the manuscript.'
+    errorMessage.value = describeValidationError(error)
+      ?? (error instanceof Error ? error.message : 'Unable to create the manuscript.')
   } finally {
     loading.value = false
     showLoadingOverlay.value = false
@@ -344,6 +374,8 @@ async function createSubmission() {
                   v-model="form.author"
                   type="text"
                   required
+                  minlength="3"
+                  maxlength="255"
                   placeholder="John Smith, Jane Doe, Robert Johnson"
                   :class="fieldClass"
                 >
@@ -358,6 +390,8 @@ async function createSubmission() {
                   v-model="form.title"
                   type="text"
                   required
+                  minlength="5"
+                  maxlength="255"
                   placeholder="Enter your manuscript title"
                   :class="fieldClass"
                 >
@@ -372,6 +406,8 @@ async function createSubmission() {
                   v-model="form.abstract"
                   rows="3"
                   required
+                  minlength="50"
+                  maxlength="12000"
                   placeholder="Brief summary of your research (150-300 words)"
                   :class="fieldClass"
                 />

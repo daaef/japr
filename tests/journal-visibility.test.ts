@@ -21,6 +21,8 @@ function buildJournal(overrides: Record<string, unknown> = {}) {
     approvedBy: { userId: 'editor-user-id' },
     declinedBy: null,
     searchVector: 'policy review searchable text',
+    journalUrl: 'manuscripts/tz4a98xxat96iws9zmbrgj3a.pdf',
+    journalFormat: '.pdf',
     changeRequests: [
       { field: 'title', suggested_change: 'New title', editor_id: 'editor-user-id', status: 'pending' }
     ],
@@ -39,10 +41,27 @@ test('isPubliclyVisibleJournal is true only for active, non-draft, publicly-list
 test('projectJournalForViewer("public") strips reviewer identities and internal editorial metadata', () => {
   const projected = projectJournalForViewer(buildJournal(), 'public')
 
-  for (const key of ['reviewers', 'reviewersRatings', 'createdBy', 'updatedBy', 'approvedBy', 'declinedBy', 'searchVector']) {
+  for (const key of ['reviewers', 'reviewersRatings', 'createdBy', 'updatedBy', 'approvedBy', 'declinedBy', 'searchVector', 'journalUrl', 'journalFormat']) {
     assert.equal(Object.hasOwn(projected, key), false, `expected "${key}" to be stripped`)
   }
   assert.equal(projected.title, 'Policy Review')
+})
+
+test('projectJournalForViewer never exposes the storage key to non-editors, only a file indicator', () => {
+  for (const role of ['public', 'owner', 'reviewer'] as const) {
+    const projected = projectJournalForViewer(buildJournal(), role)
+
+    assert.equal(Object.hasOwn(projected, 'journalUrl'), false, `expected "${role}" projection to strip journalUrl`)
+    assert.equal(projected.hasManuscriptFile, true, `expected "${role}" projection to indicate the file exists`)
+  }
+})
+
+test('projectJournalForViewer reports hasManuscriptFile: false when no file is attached', () => {
+  for (const role of ['public', 'owner', 'reviewer'] as const) {
+    const projected = projectJournalForViewer(buildJournal({ journalUrl: null }), role)
+
+    assert.equal(projected.hasManuscriptFile, false, `expected "${role}" projection to report no file`)
+  }
 })
 
 test('projectJournalForViewer("owner") anonymizes reviewers and scrubs changeRequests actor ids', () => {
@@ -67,4 +86,5 @@ test('projectJournalForViewer("editor") returns the row unchanged', () => {
   const projected = projectJournalForViewer(journal, 'editor')
 
   assert.equal(projected, journal)
+  assert.equal(projected.journalUrl, 'manuscripts/tz4a98xxat96iws9zmbrgj3a.pdf')
 })
