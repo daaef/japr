@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ADMIN_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin']
+  requiredRoles: ADMIN_ROLES
 })
 
 const form = reactive({
@@ -64,7 +67,7 @@ async function createUser() {
     await refresh()
     message.value = 'User created.'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to create user.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to create user.')
   } finally {
     loading.value = false
   }

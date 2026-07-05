@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ADMIN_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin']
+  requiredRoles: ADMIN_ROLES
 })
 
 type AuditLogRow = {
@@ -85,7 +88,7 @@ async function cleanupLogs() {
     cleanupMessage.value = `Deleted ${result.deletedCount} old audit logs.`
     await refresh()
   } catch (cleanupFailure) {
-    cleanupError.value = cleanupFailure instanceof Error ? cleanupFailure.message : 'Unable to clean audit logs.'
+    cleanupError.value = extractApiErrorMessage(cleanupFailure, 'Unable to clean audit logs.')
   } finally {
     cleaning.value = false
   }

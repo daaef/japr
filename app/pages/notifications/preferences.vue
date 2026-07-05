@@ -2,6 +2,7 @@
 import type { NotificationPreferences } from '#shared/validation/notifications'
 import { hasEditorRole } from '#shared/constants/roles'
 import { defaultNotificationPreferences } from '#shared/validation/notifications'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
   middleware: ['auth']
@@ -57,7 +58,7 @@ async function save() {
     await refreshNuxtData('current-user')
     successMessage.value = 'Notification preferences updated successfully.'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to save preferences.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to save preferences.')
   } finally {
     saving.value = false
   }

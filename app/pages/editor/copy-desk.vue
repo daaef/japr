@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin', 'copy_desk_editor', 'editor_in_chief', 'managing_editor']
+  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
 })
 
 const publishingId = ref<string | null>(null)
@@ -20,7 +23,7 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
     // Published manuscripts leave the approved/copy-desk queue.
     await refresh()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to publish this manuscript.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to publish this manuscript.')
   } finally {
     publishingId.value = null
   }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { AUTHOR_ROLES } from '#shared/constants/roles'
+
 interface AuthorSubmission {
   id: string
   title: string
@@ -13,7 +15,7 @@ interface AuthorSubmission {
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['author', 'admin']
+  requiredRoles: AUTHOR_ROLES
 })
 
 const { data: currentUser } = useCurrentUser()

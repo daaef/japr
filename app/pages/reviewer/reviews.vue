@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { REVIEWER_ROLES } from '#shared/constants/roles'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['admin', 'associate_editor', 'external_reviewer', 'desk_editor']
+  requiredRoles: REVIEWER_ROLES
 })
 
 await navigateTo('/reviewer/pending', { replace: true })

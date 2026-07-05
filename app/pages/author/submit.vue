@@ -3,12 +3,13 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { JOURNAL_LICENSE_OPTIONS } from '#shared/constants/journalLicenses'
+import { AUTHOR_ROLES } from '#shared/constants/roles'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 import { journalCreateSchema } from '#shared/validation/journals'
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['author', 'admin']
+  requiredRoles: AUTHOR_ROLES
 })
 
 const router = useRouter()
@@ -214,11 +215,7 @@ async function uploadFile() {
   try {
     uploadedFile.value = await uploadManuscript(selectedFile.value)
   } catch (error) {
-    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
-    errorMessage.value = fetchError.data?.statusMessage
-      ?? fetchError.statusMessage
-      ?? fetchError.message
-      ?? 'Unable to upload the manuscript file.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to upload the manuscript file.')
   } finally {
     uploadLoading.value = false
   }
@@ -261,7 +258,7 @@ async function openPreview() {
       url: response.url
     }
   } catch (error) {
-    previewError.value = error instanceof Error ? error.message : 'Preview generation failed'
+    previewError.value = extractApiErrorMessage(error, 'Preview generation failed')
   } finally {
     previewLoading.value = false
   }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
 import type { EditorDashboardSummary } from '#shared/types/dashboard'
 
 definePageMeta({
   middleware: ['auth', 'role', 'copy-desk-redirect'],
-  requiredRoles: ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor']
+  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
 })
 
 const { data: currentUser } = useCurrentUser()

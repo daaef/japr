@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth']
 })
@@ -29,7 +31,7 @@ async function respond() {
 
     await navigateTo(action.value === 'accept' ? '/reviewer/in-progress' : '/reviewer/declined-invitations')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : `Unable to ${action.value} this invitation.`
+    errorMessage.value = extractApiErrorMessage(error, `Unable to ${action.value} this invitation.`)
   } finally {
     loading.value = false
   }

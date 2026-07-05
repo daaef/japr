@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { AUTHOR_ROLES } from '#shared/constants/roles'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['author', 'admin']
+  requiredRoles: AUTHOR_ROLES
 })
 
 await navigateTo('/notifications', { replace: true })

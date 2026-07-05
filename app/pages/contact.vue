@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   layout: 'public'
 })
@@ -49,7 +51,7 @@ async function submit() {
     form.message = ''
     form.privacyAccepted = false
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to send your message.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to send your message.')
   } finally {
     loading.value = false
   }

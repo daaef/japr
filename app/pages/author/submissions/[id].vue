@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { AUTHOR_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['author', 'admin']
+  requiredRoles: AUTHOR_ROLES
 })
 
 const route = useRoute()
@@ -148,11 +151,7 @@ async function uploadFile() {
     uploadedFile.value = await uploadManuscript(fileInput.value.files[0] as File)
     successMessage.value = uploadedFile.value ? `Uploaded ${uploadedFile.value.originalName}.` : ''
   } catch (error) {
-    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
-    errorMessage.value = fetchError.data?.statusMessage
-      ?? fetchError.statusMessage
-      ?? fetchError.message
-      ?? 'Unable to upload this revision file.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to upload this revision file.')
   } finally {
     actionLoading.value = false
   }
@@ -179,7 +178,7 @@ async function submitRevision() {
     await Promise.all([refresh(), refreshFeedback()])
     successMessage.value = 'Revision submitted and returned to the editorial queue.'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to submit this revision.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to submit this revision.')
   } finally {
     actionLoading.value = false
   }
@@ -203,7 +202,7 @@ async function submitChangeRequestUpdates() {
     await Promise.all([refresh(), refreshFeedback()])
     successMessage.value = 'Change request updates submitted.'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to submit change request updates.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to submit change request updates.')
   } finally {
     actionLoading.value = false
   }

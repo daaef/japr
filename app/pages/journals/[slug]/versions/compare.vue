@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
 
@@ -43,7 +45,7 @@ async function runCompare() {
     )
     compareResult.value = result.comparison
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to compare versions.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to compare versions.')
   } finally {
     compareLoading.value = false
   }

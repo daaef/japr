@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { AUTHOR_ROLES } from '#shared/constants/roles'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ['author', 'admin']
+  requiredRoles: AUTHOR_ROLES
 })
 
 type Category = {
@@ -93,20 +96,7 @@ function removeCategory(categoryId: string) {
 }
 
 function formatSaveError(error: unknown) {
-  if (error && typeof error === 'object') {
-    const fetchError = error as {
-      data?: { statusMessage?: string, message?: string }
-      statusMessage?: string
-      message?: string
-    }
-    return fetchError.data?.statusMessage
-      ?? fetchError.data?.message
-      ?? fetchError.statusMessage
-      ?? fetchError.message
-      ?? 'Unable to save interests.'
-  }
-
-  return 'Unable to save interests.'
+  return extractApiErrorMessage(error, 'Unable to save interests.')
 }
 
 async function save() {

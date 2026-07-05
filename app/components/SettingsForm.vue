@@ -4,6 +4,7 @@ import { PREFERRED_REVIEW_TYPE_OPTIONS } from '#shared/constants/preferredReview
 import { RESEARCH_INTEREST_OPTIONS } from '#shared/constants/researchInterests'
 import type { userSettingsSchema } from '#shared/validation/users'
 import type { z } from 'zod'
+import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 type SettingsRole = 'author' | 'editor' | 'reviewer' | 'admin'
 type SettingsPayload = z.infer<typeof userSettingsSchema>
@@ -159,7 +160,7 @@ async function saveSettings() {
     await refresh()
     message.value = props.authorPublicLayout ? 'Account updated.' : 'Settings saved.'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Unable to save settings.'
+    errorMessage.value = extractApiErrorMessage(error, 'Unable to save settings.')
   } finally {
     loading.value = false
   }
