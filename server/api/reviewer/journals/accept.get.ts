@@ -1,11 +1,10 @@
-import { and, eq } from 'drizzle-orm'
 import { getQuery } from 'h3'
 import { db } from '#server/db/client'
-import { reviewers } from '#server/db/schema'
-import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
 import { getCurrentUserContext } from '#server/utils/session'
-import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
+// Deliberately non-mutating (F5) and no longer skips the reviewPolicyAccepted gate
+// that accept.post.ts enforces (F6): this only validates the token/session and hands
+// off to the confirm page, which calls accept.post.ts to actually record the response.
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const token = String(query.token ?? '')
@@ -23,25 +22,22 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Invitation not found.' })
   }
 
+  const confirmPath = `/reviewer/invitations/respond?token=${encodeURIComponent(token)}&action=accept`
+
   if (!context.authenticated) {
-    return sendRedirect(event, `/auth/login?redirect=${encodeURIComponent(`/api/reviewer/journals/accept?token=${token}`)}`)
+    return sendRedirect(event, `/auth/login?redirect=${encodeURIComponent(confirmPath)}`)
   }
 
   if (reviewer.userId !== context.user!.id) {
     throw createError({ statusCode: 403, statusMessage: 'This invitation belongs to another user.' })
   }
 
-  if (reviewer.isAccepted === true) {
-    return sendRedirect(event, '/reviewer/reviews')
-  }
+  const journal = await db.query.journals.findFirst({
+    where: (table, { eq }) => eq(table.id, reviewer.journalId),
+    columns: { title: true }
+  })
 
-  await db.update(reviewers).set({
-    isAccepted: true,
-    status: REVIEWER_STATUS.IN_PROGRESS,
-    updatedAt: new Date()
-  }).where(and(eq(reviewers.id, reviewer.id), eq(reviewers.userId, context.user!.id)))
-
-  await notifyEditorsOfReviewResponse(reviewer.journalId, context.user!.id, 'accepted')
-
-  return sendRedirect(event, '/reviewer/reviews')
+  return sendRedirect(event, journal
+    ? `${confirmPath}&title=${encodeURIComponent(journal.title)}`
+    : confirmPath)
 })

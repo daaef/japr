@@ -1,5 +1,5 @@
 import { getRouterParam, readValidatedBody } from 'h3'
-import { assertVersionAccess, revertToVersion } from '#server/services/versions'
+import { assertVersionWriteAccess, revertToVersion } from '#server/services/versions'
 import { requireSession } from '#server/utils/session'
 import { versionRevertSchema } from '#shared/validation/versions'
 
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing journal id.' })
   }
 
-  await assertVersionAccess(session.user.id, journalId)
+  await assertVersionWriteAccess(session.user.id, journalId)
   const version = await revertToVersion(journalId, body.versionId, session.user.id)
 
   return { version }

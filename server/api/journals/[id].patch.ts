@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm'
 import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
+import { projectJournalForViewer } from '#server/utils/journal-visibility'
+import { resolveJournalViewerRole } from '#server/utils/journal-viewer-role'
 import { checkUserPermission } from '#server/utils/permissions'
 import { requireSession } from '#server/utils/session'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -58,5 +60,8 @@ export default defineEventHandler(async (event) => {
     .where(eq(journals.id, id))
     .returning()
 
-  return { journal: updated[0] }
+  const updatedJournal = updated[0]!
+  const viewerRole = await resolveJournalViewerRole(event, updatedJournal)
+
+  return { journal: projectJournalForViewer(updatedJournal, viewerRole) }
 })
