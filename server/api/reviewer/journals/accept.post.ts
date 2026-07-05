@@ -3,6 +3,7 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
+import { assertReviewerStatus } from '#server/utils/journalWorkflow'
 import { requireSession } from '#server/utils/session'
 import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewInvitationTokenSchema } from '#shared/validation/reviews'
@@ -45,9 +46,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Invitation not found.' })
   }
 
-  if (reviewer.isAccepted === true) {
+  // Idempotent: an already-accepted invitation is a no-op, not an error.
+  if (reviewer.status === REVIEWER_STATUS.IN_PROGRESS) {
     return { ok: true }
   }
+
+  assertReviewerStatus(reviewer.status, [REVIEWER_STATUS.PENDING], 'accepting this review')
 
   await db
     .update(reviewers)

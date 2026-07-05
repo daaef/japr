@@ -16,7 +16,7 @@ const { data, pending, refresh } = await useFetch<{
     description: string
     approvalStatus: string
     editorDecisionComment: string | null
-    journalUrl: string | null
+    hasManuscriptFile: boolean
     updatedAt: string
   }
   versions: Array<{
@@ -45,7 +45,7 @@ const { data, pending, refresh } = await useFetch<{
       description: '',
       approvalStatus: 'pending',
       editorDecisionComment: null,
-      journalUrl: null,
+      hasManuscriptFile: false,
       updatedAt: new Date().toISOString()
     },
     versions: [],
@@ -91,7 +91,7 @@ const { data: feedbackData, refresh: refreshFeedback } = await useFetch<{
   })
 })
 
-const hasManuscriptFile = computed(() => Boolean(data.value.journal.journalUrl))
+const hasManuscriptFile = computed(() => data.value.journal.hasManuscriptFile)
 
 const {
   previewTitle,
@@ -236,7 +236,7 @@ const showRevisionForm = computed(() =>
         </div>
 
         <div
-          v-if="data.journal.journalUrl"
+          v-if="hasManuscriptFile"
           class="mt-6"
         >
           <a

@@ -7,7 +7,7 @@ import { isEditorialProfileRole, isReviewerRole } from '#server/utils/permission
 
 const dmp = new DiffMatchPatch()
 
-export async function assertVersionAccess(userId: string, journalId: string) {
+async function loadJournalAndRoleNames(userId: string, journalId: string) {
   const journal = await db.query.journals.findFirst({
     where: (table, { eq }) => eq(table.id, journalId)
   })
@@ -17,7 +17,12 @@ export async function assertVersionAccess(userId: string, journalId: string) {
   }
 
   const roles = await getUserRoles(userId)
-  const roleNames = roles.map(role => role.name)
+  return { journal, roleNames: roles.map(role => role.name) }
+}
+
+/** Read access: owner, editors/admin, or any reviewer assigned to this manuscript. */
+export async function assertVersionAccess(userId: string, journalId: string) {
+  const { journal, roleNames } = await loadJournalAndRoleNames(userId, journalId)
 
   if (roleNames.includes('admin') || roleNames.some(isEditorialProfileRole)) {
     return journal
@@ -35,6 +40,25 @@ export async function assertVersionAccess(userId: string, journalId: string) {
     if (assignment) {
       return journal
     }
+  }
+
+  throw createError({ statusCode: 403, statusMessage: 'Access denied.' })
+}
+
+/**
+ * Write access: owner or editors/admin only. Reverting a version mutates
+ * journals.title/abstract/description, so a reviewer's read-only access to
+ * versions (assertVersionAccess) must not also grant this (B3).
+ */
+export async function assertVersionWriteAccess(userId: string, journalId: string) {
+  const { journal, roleNames } = await loadJournalAndRoleNames(userId, journalId)
+
+  if (roleNames.includes('admin') || roleNames.some(isEditorialProfileRole)) {
+    return journal
+  }
+
+  if (journal.userId === userId) {
+    return journal
   }
 
   throw createError({ statusCode: 403, statusMessage: 'Access denied.' })

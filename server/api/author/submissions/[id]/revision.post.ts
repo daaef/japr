@@ -5,6 +5,7 @@ import { db } from '#server/db/client'
 import { journals, manuscriptVersions } from '#server/db/schema'
 import { notifyEditorsRevisionUploaded } from '#server/utils/editorNotifications'
 import { markFileAttached, verifyPendingUpload } from '#server/utils/fileOwnership'
+import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { createNotification } from '#server/utils/notifications'
 import { requireAuthor } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -37,6 +38,14 @@ export default defineEventHandler(async (event) => {
   if (!journal || journal.userId !== session.user.id) {
     throw createError({ statusCode: 404, statusMessage: 'Submission not found.' })
   }
+
+  // CHANGES_REQUESTED is the only status ALLOWED_MANUSCRIPT_TRANSITIONS lets a revision
+  // move out of (into pending/in-progress) — see shared/constants/manuscriptStatus.ts.
+  assertManuscriptStatus(
+    journal.approvalStatus,
+    [MANUSCRIPT_STATUS.CHANGES_REQUESTED],
+    'submitting a revision'
+  )
 
   // A journalUrl the caller never had a token for (arbitrary or guessed) is rejected
   // before it's saved onto this manuscript.
