@@ -20,7 +20,7 @@ type JournalDetail = {
   approvalStatus: string
   publishedAt: string | null
   metaKeywords: string | null
-  journalUrl: string | null
+  hasManuscriptFile: boolean
   categoryName: string | null
   createdAt: string
   userId: string
@@ -140,7 +140,7 @@ useHead({
         <div class="grid lg:grid-cols-[1fr_350px] gap-8">
           <div class="space-y-6">
             <div
-              v-if="isAuthor && data.journal.journalUrl"
+              v-if="isAuthor && data.journal.hasManuscriptFile"
               class="bg-white rounded-xl border border-gray-200 shadow-sm"
             >
               <div class="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5 border-b border-gray-100">
@@ -184,7 +184,7 @@ useHead({
               </h3>
               <div class="space-y-3">
                 <a
-                  v-if="currentUser?.authenticated && data.journal.journalUrl"
+                  v-if="currentUser?.authenticated && data.journal.hasManuscriptFile"
                   :href="`/api/journals/${journalId}/download`"
                   class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >

@@ -1,78 +1,74 @@
 # Changelog — full-project-review remediation
 
-> Note: this file currently only tracks Phase 2, because it was branched from `main` before
-> Phase 1's `changelog.md` (on the unmerged `fix/manuscript-storage-privacy` branch) landed there.
-> When both branches merge, this file will need its two versions combined by hand — a one-file
-> textual merge, not a code conflict.
+## Phase 1 — Manuscript storage privacy (F1) — landed 2026-07-04
 
-## Phase 2 — Review-flow & blind-review guards (F2, F3, F4, F5, F6, F7, B1, B3, B4) — landed 2026-07-05
-
-Branch: `fix/review-flow-guards-2` (off `main`, independent of Phase 1's unmerged branch). All
-steps 2.1–2.8 implemented. Gate: `pnpm lint` (0 errors, 6 pre-existing warnings) ·
-`pnpm typecheck` clean · `pnpm test` 39/39 pass (4 new tests in `tests/reviewFlowGuards.test.ts`).
+Branch: `fix/manuscript-storage-privacy`. Steps 1.1, 1.2 (verification), and 1.4 implemented;
+Step 1.3 is an open 🛑 STOP awaiting a human decision (see below).
 
 ### What landed
 
-- **F2** — `server/api/author/submissions/[id]/revision.post.ts`: added
-  `assertManuscriptStatus(journal.approvalStatus, [MANUSCRIPT_STATUS.CHANGES_REQUESTED], ...)`
-  right after the ownership check. Confirmed against `ALLOWED_MANUSCRIPT_TRANSITIONS` that
-  `CHANGES_REQUESTED` is the only status that legitimately transitions into `pending`/`in-progress`
-  (what this endpoint sets), so the allow-list isn't widened beyond the transition table.
-- **F3/F4** — `decline.post.ts`: dropped the `reviewer.isAccepted === false` short-circuit (which
-  made every fresh PENDING decline a silent no-op, since `isAccepted` is never set at assignment
-  time) in favor of an explicit idempotent check on `status === DECLINED` plus
-  `assertReviewerStatus(status, [PENDING, IN_PROGRESS], ...)`. A `reviewed` reviewer can no longer
-  be "declined" after the fact.
-- **F7** — `accept.post.ts`: same pattern — idempotent on `status === IN_PROGRESS`, otherwise
-  `assertReviewerStatus(status, [PENDING], ...)`. Closes the `declined → in-progress` hole.
-- **F5/F6** — `accept.get.ts`/`decline.get.ts` no longer mutate anything. Each now only validates
-  the token exists, resolves the current session (redirecting unauthenticated visitors to
-  `/auth/login` with the confirm page as the post-login target), confirms the invitation belongs
-  to the caller, and redirects to a new confirm page:
-  `/reviewer/invitations/respond?token=...&action=accept|decline[&title=...]` (title is looked up
-  from the reviewer's `journalId` in the same query, so the confirm page needs no extra fetch/API
-  surface). **`app/pages/reviewer/invitations/respond.vue`** (new) renders the prompt and calls
-  the existing `accept.post.ts`/`decline.post.ts` — which inherits the POST-only rate limiter and,
-  for accept, the `reviewPolicyAccepted` gate `accept.get.ts` used to bypass. On success it
-  navigates to `/reviewer/in-progress` (accept, fixes F14's dead-end) or
-  `/reviewer/declined-invitations` (decline — no F-code demanded a specific target; chosen because
-  it's the page already built to list declined invitations). `assign-reviewers.post.ts`'s emailed
-  links are unchanged (`/api/reviewer/journals/accept|decline?token=...`); the redirect now happens
-  server-side inside the GET handler.
-- **B1** — `decline-with-comment.post.ts`: removed the `db.insert(journalComments)` call. The
-  decline reason already lives on `reviewers.comment` (editor-visible via the reviewer
-  assignment); `journalComments` is joined with `users.fullname` and returned to **any** viewer by
-  the session-exempt `comments/index.get.ts` (a general public discussion feed on the journal
-  page), so writing it there deanonymized the declining reviewer. Verified no editor UI reads a
-  decline reason from `journalComments` — the only page consuming that endpoint is the public
-  `journals/[slug].vue` comment feed; a separate, unrelated `journalComments` insert in
-  `send-decline-notice.post.ts` records the *editor's own* identity for an *editor* decision and
-  was left untouched. Audited the local dev DB for rows matching this leak's shape
-  (`journal_comments.comment = reviewers.comment` for a `declined` reviewer, same user+journal):
-  **0 rows**. Production wasn't reachable from this environment — same caveat as Phase 1's blob
-  count.
-- **B4** — `server/api/journals/[id].patch.ts` now resolves the viewer role
-  (`resolveJournalViewerRole`) and returns `projectJournalForViewer(updatedJournal, viewerRole)`
-  instead of the raw updated row, matching `[id].get.ts`.
-- **B3** — `server/services/versions.ts`: split `assertVersionAccess` (unchanged: owner, editors/
-  admin, or any assigned reviewer — read-only endpoints keep this) from a new
-  `assertVersionWriteAccess` (owner or editors/admin only, no reviewer branch). Factored the
-  shared "load journal + role names" step into a private `loadJournalAndRoleNames` helper to avoid
-  duplicating the DB calls. `versions/revert.post.ts` now calls `assertVersionWriteAccess`; the
-  three read endpoints (`index.get.ts`, `[versionId].get.ts`, `compare.post.ts`) still call
-  `assertVersionAccess`, so reviewer read access to versions is unchanged.
-- **Tests** — new `tests/reviewFlowGuards.test.ts` (4 tests) exercises `assertManuscriptStatus`/
-  `assertReviewerStatus` directly with the exact allow-lists used in `revision.post.ts`,
-  `decline.post.ts`, `accept.post.ts`, and `decline-with-comment.post.ts`.
+- **`server/utils/journal-visibility.ts`** — `journalUrl` and `journalFormat` added to
+  `PublicExcludedKey` and destructured out of `projectJournalForPublic`;
+  `sanitizeJournalForReviewer` now strips `journalUrl`. All three non-editor projections
+  (`public`, `owner`, `reviewer`) expose `hasManuscriptFile: Boolean(journalUrl)` instead of the
+  raw storage key. Editor projection unchanged (raw row).
+- **`server/utils/submissions.ts`** — `sanitizeJournalForAuthor` strips `journalUrl` and adds
+  `hasManuscriptFile` (flows through `getAuthorSubmissionDetails` → author endpoints and
+  `projectJournalForViewer('owner')`).
+- **`app/pages/journals/[slug].vue`** — type + both `v-if` read sites (`:143`, `:187`) now use
+  `journal.hasManuscriptFile`; download still goes through `/api/journals/[id]/download`.
+- **`app/pages/author/submissions/[id].vue`** — type, `useFetch` default, `hasManuscriptFile`
+  computed, and the download-button `v-if` read the boolean. The revision-POST body still sends
+  `journalUrl: uploadedFile.fileKey` (client→server write site, intentionally kept — the server
+  verifies ownership of that key).
+- **`tests/journal-visibility.test.ts`** — `buildJournal` now carries `journalUrl`/`journalFormat`;
+  new assertions: no `journalUrl` key in `public`/`owner`/`reviewer` output,
+  `hasManuscriptFile === true` when a key exists and `false` when null, `editor` output keeps the
+  raw `journalUrl`, and the public projection also strips `journalFormat`.
+
+### In-plan decision resolved by evidence (Step 1.1.2 parenthetical)
+
+The plan left "does public need a file indicator?" open pending confirmation of the published-file
+download path. Confirmed: there is no separate published-file endpoint — the public page's
+Download button (`app/pages/journals/[slug].vue:187`) renders for any authenticated viewer of an
+approved journal and `server/api/journals/[id]/download.get.ts:39` grants exactly that access
+(`isApproved`). Without an indicator that button would regress, so the **public projection also
+gets `hasManuscriptFile`** (boolean only, never the key).
+
+### Verified
+
+- `download.get.ts` and `doc-preview/[uuid].get.ts` / `doc-preview/[uuid]/file.get.ts` all read
+  `journalUrl` from fresh DB rows (`findJournalByParam` / `getJournalById`), not projections —
+  unaffected (Step 1.2).
+- Additional projection consumers checked: `server/utils/journalQuery.ts:96` (public listings —
+  now also stops leaking the key) and `server/api/reviewer/journals/[uuid]/enhanced-review.get.ts`
+  (reviewer). No page consuming either reads `journalUrl`.
+- Gate: `pnpm lint` (0 errors, 6 pre-existing warnings) · `pnpm typecheck` clean ·
+  `pnpm test` 37/37 pass. Grep proof: the only `journalUrl` left in `app/` are the two
+  request-body write sites (`author/submit.vue:297`, `author/submissions/[id].vue`).
 
 ### Not verified
 
-- No test DB in this repo's `tsx --test` setup (all existing tests are pure-function unit tests,
-  confirmed by grepping for `db/client` imports in `tests/` — none). `assertVersionAccess`/
-  `assertVersionWriteAccess` and the endpoint wiring itself (route handlers, the new confirm page,
-  the redirect chain) are untested beyond typecheck — no live-DB integration test or browser
-  smoke test of the accept/decline/revision/revert flows.
-- B4's fix reuses `projectJournalForViewer`, which already has per-role identity-stripping
-  coverage in `tests/journal-visibility.test.ts` from Phase 1 — no new duplicate test was added
-  since the code path is identical to the already-tested one, not new logic.
-- Production `journalComments` row count for the B1 audit is unknown (no production DB access).
+- No runtime smoke test (no browser drive of the public page / author submission page).
+- Production data untouched and unmeasured — see the open STOP.
+
+### 🛑 Open STOP — Step 1.3 (unguessable keys + existing blobs)
+
+Evidence gathered, decision belongs to Afekhide:
+
+1. **`addRandomSuffix: true` is NOT a safe flag-flip on the direct-upload path.**
+   `upload-token.post.ts:33` records ownership (`recordUploadedFile`) against the **client's
+   pre-computed pathname** at token-mint time; with a random suffix the final blob key would
+   differ, so `verifyPendingUpload` (which looks up the exact key the client later submits,
+   `fileOwnership.ts:34-45`) would 403 every attach. Adopting it requires moving/re-recording
+   ownership in `handleUpload`'s `onUploadCompleted` callback (final pathname), not just the flag.
+   The server-mediated path (`files.ts:85-89`) currently ignores `put()`'s return value, so it
+   would also need to start using the returned pathname. Note: keys already embed
+   cuid2/`crypto.randomUUID()` ids, so the suffix is defense-in-depth only.
+2. **`@vercel/blob` version: 2.5.0** (`^2.5.0` in package.json).
+3. **Blob census:** local dev DB has 9 journals, all with `journal_url`, all local-driver seed
+   data (no real Vercel blobs locally). The count of real production blobs must be read from the
+   production DB/Blob store — no access from this environment.
+
+Decision needed: (a) whether to implement the `onUploadCompleted`-based random-suffix flow,
+(b) whether/how to migrate existing production blobs and/or adopt Vercel Blob private access.
