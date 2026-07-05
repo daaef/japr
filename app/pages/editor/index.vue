@@ -2,7 +2,7 @@
 import type { EditorDashboardSummary } from '#shared/types/dashboard'
 
 definePageMeta({
-  middleware: ['auth', 'role'],
+  middleware: ['auth', 'role', 'copy-desk-redirect'],
   requiredRoles: ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor']
 })
 
@@ -35,23 +35,11 @@ const defaultEditorSummary = (): EditorDashboardSummary => ({
   }
 })
 
-const isCopyDeskOnly = computed(() => {
-  const roles = currentUser.value.roles
-  return roles.includes('copy_desk_editor')
-    && !roles.some(role => ['admin', 'editor_in_chief', 'managing_editor'].includes(role))
-})
-
 const isSeniorEditor = computed(() =>
   currentUser.value.roles.some(role => ['admin', 'editor_in_chief', 'managing_editor'].includes(role))
 )
 
 const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] ?? 'there')
-
-watch(isCopyDeskOnly, (value) => {
-  if (value) {
-    navigateTo('/editor/copy-desk')
-  }
-}, { immediate: true })
 
 const {
   data: summaryData,

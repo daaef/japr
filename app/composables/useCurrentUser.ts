@@ -43,44 +43,28 @@ const defaultCurrentUser = (): CurrentUserPayload => ({
   hasInterests: false
 })
 
+// /api/me never throws for "not logged in" — it always resolves 200 with
+// `authenticated: false` (see server/api/me.get.ts). So a thrown error here is a real
+// failure (network, 500, ...), not a normal logged-out state — let it propagate so
+// useAsyncData's own `error` ref reflects it instead of masquerading as a logout.
 export async function fetchCurrentUser(): Promise<CurrentUserPayload> {
-  try {
-    if (import.meta.server) {
-      return await useRequestFetch()<CurrentUserPayload>('/api/me')
-    }
-
-    return await $fetch<CurrentUserPayload>('/api/me')
-  } catch {
-    return defaultCurrentUser()
+  if (import.meta.server) {
+    return useRequestFetch()<CurrentUserPayload>('/api/me')
   }
+
+  return $fetch<CurrentUserPayload>('/api/me')
 }
 
+// Returns the useAsyncData() handle as-is (not destructured) so it stays awaitable:
+// route middleware can `await useCurrentUser()` to resolve the current user before
+// making a redirect decision, while components can keep destructuring synchronously.
+// Both calls share the same 'current-user' cache/in-flight request.
 export function useCurrentUser() {
-  const { data: state, pending, refresh } = useAsyncData(
+  return useAsyncData(
     'current-user',
     () => fetchCurrentUser(),
     {
       default: () => defaultCurrentUser()
     }
   )
-
-  const error = ref<Error | null>(null)
-
-  const customRefresh = async () => {
-    try {
-      const result = await refresh()
-      return result
-    } catch (err) {
-      error.value = err instanceof Error ? err : new Error(String(err))
-      throw err
-    }
-  }
-
-  return {
-    data: state,
-    pending: pending,
-    error: readonly(error),
-    refresh: customRefresh,
-    execute: customRefresh
-  }
 }

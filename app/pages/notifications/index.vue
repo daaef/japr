@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 const { applyRoleLayout } = useRoleLayout()
-applyRoleLayout()
+await applyRoleLayout()
 
 const statusFilter = ref<'all' | 'unread' | 'read'>('all')
 const typeFilter = ref('all')

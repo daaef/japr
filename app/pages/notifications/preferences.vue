@@ -8,7 +8,7 @@ definePageMeta({
 })
 
 const { applyRoleLayout } = useRoleLayout()
-applyRoleLayout()
+await applyRoleLayout()
 const { data: currentUser, refresh } = useCurrentUser()
 
 const isEditor = computed(() => hasEditorRole(currentUser.value.roles))
