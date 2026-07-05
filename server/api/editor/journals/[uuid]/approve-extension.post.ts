@@ -3,6 +3,9 @@ import { readBody } from 'h3'
 import { z } from 'zod'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
+import { sendJournalStatusChangeEmail } from '#server/utils/email'
+import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
+import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
 import { buildApprovedExtension, getDefaultReviewDeadline } from '#server/utils/reviewerDeadlines'
 import { getJournalById } from '#server/utils/submissions'
@@ -42,6 +45,31 @@ export default defineEventHandler(async (event) => {
     ...extension,
     updatedAt: new Date()
   }).where(eq(reviewers.id, reviewer.id))
+
+  // The reviewer asked for more time (request-extension.post.ts) and previously never
+  // heard back at all once an editor approved it (F13c).
+  const reviewerUser = await db.query.users.findFirst({
+    where: (table, { eq: eqFn }) => eqFn(table.id, reviewer.userId),
+    columns: { email: true, fullname: true }
+  })
+
+  if (reviewerUser) {
+    const message = `Your review deadline for ${journal.title} was extended by ${body.extensionDays} day(s), to ${extension.reviewDeadline.toLocaleDateString()}.`
+
+    await createNotification({
+      userId: reviewer.userId,
+      type: 'review-extension-approved',
+      data: {
+        title: 'Extension approved',
+        journalId: journal.id,
+        message
+      }
+    })
+
+    await sendIfEmailAllowed(reviewer.userId, 'review_assignment', () =>
+      sendJournalStatusChangeEmail(reviewerUser.email, reviewerUser.fullname, journal.title, message)
+    ).catch(() => undefined)
+  }
 
   return { ok: true }
 })

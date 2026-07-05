@@ -44,14 +44,14 @@ export function sanitizeJournalForAuthor<T extends { reviewers?: unknown, change
     ? journal.reviewers.map((_, index) => ({ id: `Reviewer ${index + 1}` }))
     : []
 
-  // changeRequests entries carry the acting editor/reviewer's raw user id (editor_id) —
+  // changeRequests entries carry the acting reviewer's raw user id (reviewer_id) —
   // strip it before this ever reaches the author it was written about.
   const scrubbedChangeRequests = Array.isArray(journal.changeRequests)
     ? journal.changeRequests.map((request) => {
         if (!request || typeof request !== 'object') {
           return request
         }
-        const { editor_id: _editorId, ...rest } = request as Record<string, unknown>
+        const { reviewer_id: _reviewerId, ...rest } = request as Record<string, unknown>
         return rest
       })
     : journal.changeRequests

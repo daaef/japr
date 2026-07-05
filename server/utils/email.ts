@@ -361,7 +361,7 @@ export async function sendChangeRequestedEmail(to: string, name: string, submiss
     html: buildJournalEmail(
       'Changes requested',
       `<h1>Hello, ${escapeHtml(name)}</h1>
-       <p>An editor requested changes to "${escapeHtml(submissionTitle)}".</p>
+       <p>A reviewer requested changes to "${escapeHtml(submissionTitle)}".</p>
        <pre style="white-space:pre-wrap;font-family:Arial,sans-serif;">${escapeHtml(details)}</pre>`
     )
   })

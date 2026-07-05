@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { notifyAuthorOfManuscriptStatus } from '#server/utils/manuscriptStatusNotifications'
-import { MANUSCRIPT_STATUS, REVIEW_STAGE_STATUSES, isManuscriptStatus, type ManuscriptStatus } from '#shared/constants/manuscriptStatus'
+import { MANUSCRIPT_STATUS, REVIEW_STAGE_STATUSES, canTransitionManuscriptStatus, isManuscriptStatus, type ManuscriptStatus } from '#shared/constants/manuscriptStatus'
 import { REVIEWER_STATUS, isReviewerStatus, type ReviewerStatus } from '#shared/constants/reviewerStatus'
 
 export type WorkflowStatus =
@@ -69,6 +69,16 @@ export async function syncJournalReviewStatus(journalId: string): Promise<Manusc
   // No real transition — don't rewrite the row or re-notify the author.
   if (approvalStatus === journal.approvalStatus) {
     return approvalStatus
+  }
+
+  // The engine must defer to the transition table (F11), not the other way around — if a
+  // future change to getReviewWorkflowStatus computes a status ALLOWED_MANUSCRIPT_TRANSITIONS
+  // doesn't sanction, that's a bug to surface, not a transition to perform silently.
+  if (!canTransitionManuscriptStatus(journal.approvalStatus, approvalStatus)) {
+    console.error(
+      `syncJournalReviewStatus: computed status "${approvalStatus}" is not an allowed transition from "${journal.approvalStatus}" for journal ${journalId}; leaving status unchanged.`
+    )
+    return journal.approvalStatus
   }
 
   await db

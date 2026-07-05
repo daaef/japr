@@ -24,7 +24,7 @@ function buildJournal(overrides: Record<string, unknown> = {}) {
     journalUrl: 'manuscripts/tz4a98xxat96iws9zmbrgj3a.pdf',
     journalFormat: '.pdf',
     changeRequests: [
-      { field: 'title', suggested_change: 'New title', editor_id: 'editor-user-id', status: 'pending' }
+      { field: 'title', suggested_change: 'New title', reviewer_id: 'reviewer-user-id', status: 'pending' }
     ],
     ...overrides
   }
@@ -69,7 +69,7 @@ test('projectJournalForViewer("owner") anonymizes reviewers and scrubs changeReq
 
   assert.deepEqual(projected.reviewers, [{ id: 'Reviewer 1' }, { id: 'Reviewer 2' }])
   const [request] = projected.changeRequests as Array<Record<string, unknown>>
-  assert.equal(Object.hasOwn(request, 'editor_id'), false)
+  assert.equal(Object.hasOwn(request, 'reviewer_id'), false)
   // owner keeps internal metadata other than reviewer identity — not a public projection
   assert.equal(Object.hasOwn(projected, 'createdBy'), true)
 })

@@ -6,6 +6,7 @@ import { journalComments, journals, users } from '#server/db/schema'
 import { sendDecisionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
+import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -79,6 +80,9 @@ export default defineEventHandler(async (event) => {
       message: body.reason
     }
   })
+
+  // Reviewers who completed a review never learned the outcome (F13d).
+  await notifyReviewersOfFinalDecision(journal.id, MANUSCRIPT_STATUS.DECLINED)
 
   return { ok: true }
 })

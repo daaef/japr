@@ -29,7 +29,11 @@ export async function getAuthSession(event: H3Event) {
 }
 
 export async function requireSession(event: H3Event) {
-  const session = await getAuthSession(event)
+  // The middleware already resolved and stored this for any route it doesn't exempt
+  // (server/middleware/auth.ts) — re-fetching here was a second getSession + users query
+  // per gated request (B13). Exempt routes (no middleware session) still fall through to
+  // a fresh lookup.
+  const session = event.context.session ?? await getAuthSession(event)
 
   if (!session) {
     throw createError({
@@ -70,7 +74,7 @@ export async function getUserRoles(userId: string): Promise<SessionRole[]> {
 }
 
 export async function getCurrentUserContext(event: H3Event) {
-  const session = await getAuthSession(event)
+  const session = event.context.session ?? await getAuthSession(event)
 
   if (!session) {
     return {

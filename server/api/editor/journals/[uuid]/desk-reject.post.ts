@@ -5,6 +5,7 @@ import { db } from '#server/db/client'
 import { journals, users } from '#server/db/schema'
 import { sendDecisionEmail } from '#server/utils/email'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
+import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { requirePermission } from '#server/utils/permissions'
@@ -62,6 +63,10 @@ export default defineEventHandler(async (event) => {
       message: body.reason
     }
   })
+
+  // No-op here in practice (desk rejection happens before reviewers are ever assigned),
+  // kept for consistency with the other decision endpoints (F13d).
+  await notifyReviewersOfFinalDecision(journal.id, MANUSCRIPT_STATUS.DECLINED)
 
   return { ok: true }
 })

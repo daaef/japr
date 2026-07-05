@@ -3,9 +3,7 @@ import { readBody } from 'h3'
 import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
-import { sendChangeResolvedEmail } from '#server/utils/email'
-import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
-import { createNotification } from '#server/utils/notifications'
+import { notifyEditorsChangesResolved } from '#server/utils/editorNotifications'
 import { requireSession } from '#server/utils/session'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -38,7 +36,6 @@ export default defineEventHandler(async (event) => {
   for (const entry of changeRequests) {
     const field = String(entry.field ?? '')
     const status = String(entry.status ?? 'pending')
-    const suggested = String(entry.suggested_change ?? '')
 
     if (!field || status !== 'pending') {
       continue
@@ -49,14 +46,15 @@ export default defineEventHandler(async (event) => {
       continue
     }
 
+    // Any author-submitted value for the field resolves the request (F8) — requiring an
+    // exact match against the reviewer/editor's suggested text left it stuck forever the
+    // moment the author reworded instead of copy-pasting the suggestion verbatim.
     entry.author_update = updatedValue
-    if (updatedValue === suggested) {
-      entry.status = 'resolved'
-      entry.resolved_at = new Date().toISOString()
-      if (field === 'title') patch.title = updatedValue
-      if (field === 'abstract') patch.abstract = updatedValue
-      if (field === 'description') patch.description = updatedValue
-    }
+    entry.status = 'resolved'
+    entry.resolved_at = new Date().toISOString()
+    if (field === 'title') patch.title = updatedValue
+    if (field === 'abstract') patch.abstract = updatedValue
+    if (field === 'description') patch.description = updatedValue
   }
 
   patch.changeRequests = changeRequests
@@ -68,23 +66,9 @@ export default defineEventHandler(async (event) => {
 
   await db.update(journals).set(patch).where(eq(journals.id, journal.id))
 
-  await createNotification({
-    userId: journal.userId,
-    type: 'change-resolved',
-    data: {
-      title: 'Author update submitted',
-      journalId: journal.id,
-      message: `The author updated ${journal.title} in response to change requests.`
-    }
-  })
-
-  await sendIfEmailAllowed(session.user.id, 'manuscript_status', () =>
-    sendChangeResolvedEmail(
-      session.appUser.email,
-      session.appUser.fullname ?? session.appUser.name,
-      journal.title
-    )
-  )
+  // The actor here is the author; the people who need to hear about it are the editors
+  // who raised the change requests, not the author telling themselves (F13a).
+  await notifyEditorsChangesResolved(journal.id)
 
   return { ok: true, journalId: journal.id }
 })

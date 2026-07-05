@@ -1,4 +1,4 @@
-import { count, desc, eq, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, type SQL } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { buildPageMeta, getPagination } from '#server/utils/pagination'
@@ -12,12 +12,14 @@ import type { ManuscriptStatus } from '#shared/constants/manuscriptStatus'
 export async function listJournalsByStatus(
   pagination: { page?: number, pageSize?: number },
   statuses: ManuscriptStatus | ManuscriptStatus[],
-  orderColumn: 'createdAt' | 'updatedAt' = 'createdAt'
+  orderColumn: 'createdAt' | 'updatedAt' = 'createdAt',
+  extraCondition?: SQL
 ) {
   const { page, pageSize, offset } = getPagination(pagination)
-  const whereClause = Array.isArray(statuses)
+  const statusCondition = Array.isArray(statuses)
     ? inArray(journals.approvalStatus, statuses)
     : eq(journals.approvalStatus, statuses)
+  const whereClause = extraCondition ? and(statusCondition, extraCondition) : statusCondition
 
   const [journalRows, totalRows] = await Promise.all([
     db.query.journals.findMany({

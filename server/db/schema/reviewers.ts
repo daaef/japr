@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { journals } from './journals'
 import { users } from './users'
 
@@ -51,5 +51,9 @@ export const reviewers = pgTable('reviewers', {
   userIndex: index('reviewers_user_idx').on(table.userId),
   journalIndex: index('reviewers_journal_idx').on(table.journalId),
   statusIndex: index('reviewers_status_idx').on(table.status),
-  tokenIndex: index('reviewers_token_idx').on(table.token)
+  tokenIndex: index('reviewers_token_idx').on(table.token),
+  // B8: find-then-insert in assign-reviewers.post.ts raced two concurrent assignment
+  // requests into duplicate rows for the same journal+user. The unique index turns that
+  // race into a DB-level onConflict instead of a silent duplicate.
+  journalUserUniqueIndex: uniqueIndex('reviewers_journal_user_idx').on(table.journalId, table.userId)
 }))

@@ -268,3 +268,145 @@ pass (5 new tests: `tests/email.test.ts`, `tests/reviewerStatusEnum.test.ts`).
   `main` once that branch's PR lands.
 - This file's own conflict-resolution history is the reason for this "Integration status" section:
   see the note at the top of this document.
+- **Update, 2026-07-05 (later the same day, start of Phase 4 work):** PR #3
+  (`fix/server-hardening-2` → `main`) has since merged (`cd84a7c`), so `main` now contains
+  Phases 1–3 combined. Phase 4 below branches from that `main`, not from `fix/server-hardening-2`.
+
+---
+
+## Phase 4 — Workflow correctness (F8–F13, B7, B8, B13, B17) — landed 2026-07-05
+
+Branch: `fix/workflow-correctness`, off `main` (post PR #1–#3 merge, so Phases 1–3 are already
+present). Gate: `pnpm lint` (0 errors, the same 6 pre-existing warnings) · `pnpm typecheck` clean ·
+`pnpm test` 53/53 pass (7 new tests: `tests/versions.test.ts`, plus additions to
+`tests/manuscriptStatus.test.ts` and `tests/journalWorkflow.test.ts`).
+
+### What landed
+
+- **F9** — `request-revisions.post.ts` now appends to `changeRequests` instead of overwriting it
+  (it was destroying any field-level entries reviewer `request-change.post.ts` had already
+  appended). `request-change.post.ts`'s entries now record `reviewer_id` instead of the misleading
+  `editor_id` (the value was always the reviewer's own id — this endpoint is reviewer-only via
+  `requireReviewer`; only the key name was wrong), and both the in-app notification and the
+  `sendChangeRequestedEmail` template now say "A reviewer requested changes" instead of "An
+  editor requested changes". `server/utils/submissions.ts`'s privacy-scrub of this field
+  (`sanitizeJournalForAuthor`) was renamed to match; `tests/journal-visibility.test.ts` and
+  `tests/submissions.test.ts` fixtures/assertions updated to the new key.
+- **F8** — `author-update.post.ts` now resolves a change request whenever the author submits any
+  value for that field, not only an exact verbatim match against the reviewer/editor's suggested
+  text. The dead end (any rewording left the manuscript stuck in `changes_requested` forever, with
+  no editor endpoint to force a resolution) is closed by making the author's own submission
+  authoritative — the recommended fix from the plan's two options.
+- **F10** — `assign-reviewers.post.ts` now allows assignment from `reviewed` (previously only
+  `in-progress`/`under_peer_review`), so an editor can recruit a replacement reviewer for a
+  manuscript stuck at `reviewed` with fewer than `MIN_PEER_REVIEWS_FOR_NOTICE` completed reviews
+  (`approve.post.ts` 409s on the count with no other way forward).
+- **F11** — `ALLOWED_MANUSCRIPT_TRANSITIONS` (`shared/constants/manuscriptStatus.ts`) gained four
+  edges the auto-engine (`getReviewWorkflowStatus`) can actually produce but the table previously
+  forbade: `in-progress → reviewed` and `under_peer_review → reviewed` (a lone or last-remaining
+  reviewer declining without ever completing a review — reachable today, independent of this
+  phase's other changes) and `reviewed → in-progress` / `reviewed → under_peer_review` (only
+  reachable after F10's `assign-reviewers`-from-`reviewed` change adds a fresh pending reviewer).
+  `syncJournalReviewStatus` now calls `canTransitionManuscriptStatus` before writing a computed
+  status and leaves the row untouched (logging an error) if the computed transition isn't in the
+  table — the engine defers to the table as the single source of truth going forward instead of
+  silently disagreeing with it. New test in `tests/journalWorkflow.test.ts` drives
+  `getReviewWorkflowStatus` through the concrete reviewer-set scenarios above and asserts every
+  resulting transition is one `canTransitionManuscriptStatus` allows.
+- **F12** — `mark-published.post.ts` now also requires `copyEditStatus === 'ready_for_publication'`
+  (set only by `approve-for-publication.post.ts`), on top of the existing `approvalStatus` check.
+  The copy-desk queue is now served by a new `server/api/editor/journals/copy-desk.get.ts`
+  (`copy-desk.vue`'s `api-url` updated to point at it) that filters on that same column, instead of
+  reusing `/api/editor/journals/approved` — which is also used by the unrelated
+  `editor/approved.vue` page that legitimately needs to see every approved manuscript regardless of
+  copy-desk hand-off, so the filter couldn't be added to that shared endpoint without changing that
+  other page's behavior. `journalQueue.ts`'s `listJournalsByStatus` gained an optional
+  `extraCondition` parameter to support this without duplicating its pagination/count logic.
+- **F13** — four notification gaps:
+  - (a) `author-update.post.ts` was notifying the author about their own action, in text written
+    for an editor ("The author updated X…"). It now calls a new
+    `notifyEditorsChangesResolved(journalId)` (`editorNotifications.ts`) that fans out to editors —
+    the actual audience who raised the change requests.
+  - (b) `notifyEditorsRevisionUploaded` sent email only; it now also raises an in-app
+    `revision-uploaded` notification, matching every sibling `notifyEditors*` helper in that file.
+  - (c) `approve-extension.post.ts` approved a reviewer's deadline extension request but never told
+    the reviewer; it now sends them an in-app `review-extension-approved` notification and a
+    `sendJournalStatusChangeEmail`.
+  - (d) The author could receive up to three approval-adjacent notifications for one continuous
+    decision (approve/send-approval-notice → approve-for-publication → mark-published) while
+    reviewers who completed a review never heard the outcome at all. Removed the redundant
+    author notification/email from `approve-for-publication.post.ts` (its own code comment already
+    called it "the editor's hand-off to the copy desk, not the publication itself" —
+    `copyEditStatus` is internal bookkeeping the author has no visibility into or action on).
+    Added `notifyReviewersOfFinalDecision(journalId, status)`
+    (`manuscriptStatusNotifications.ts`) — notifies only reviewers who actually submitted a review
+    (declined reviewers didn't produce an outcome to hear about) — and wired it into all five
+    decision endpoints: `approve.post.ts`, `send-approval-notice.post.ts` (approvals),
+    `desk-reject.post.ts`, `reject.post.ts`, `send-decline-notice.post.ts` (declines). The
+    `desk-reject.post.ts` call is a no-op in practice today (desk rejection happens before any
+    reviewer is ever assigned) but kept for consistency and in case that ever changes.
+- **B7** — wrapped the remaining un-transacted multi-writes the review flagged: journal create
+  (`journals/index.post.ts`: insert → `markFileAttached` → initial version insert),
+  `revision.post.ts` (update → `markFileAttached` → version insert, same transaction that also
+  carries B17's fix below), `assign-reviewers.post.ts` (reviewer upsert loop + `journals.reviewers`
+  rebuild), and admin user create (`users/index.post.ts`: `users` → `accounts` → `userRoles`
+  inserts). `markFileAttached` (`fileOwnership.ts`) gained an optional `executor` parameter (typed
+  via `Parameters<Parameters<typeof db.transaction>[0]>[0]`, since drizzle's transaction handle
+  isn't structurally assignable to `typeof db`) so it can run against the same transaction as its
+  caller instead of always auto-committing on `db` directly. Side effects (emails, notifications,
+  `logAdminAction`) stay outside every transaction, after it resolves — unchanged ordering, just
+  not holding a DB connection open across network I/O.
+- **B8** — added a unique index `reviewers_journal_user_idx` on `(journal_id, user_id)`
+  (migration `0014_soft_zarek.sql`; queried the local dev DB first — zero existing duplicate
+  `(journal_id, user_id)` or `(journal_id, version_number)` rows, so the migration was safe to
+  generate and apply). `assign-reviewers.post.ts`'s manual find-then-branch (which raced two
+  concurrent assignment requests into duplicate rows) is now a single `insert().onConflictDoUpdate()`
+  against that index; on conflict only `updatedAt` is touched, mirroring the old update branch's
+  behavior (it recomputed `token`/`reviewDeadline` from the existing row's own values, so it was
+  already a no-op except for the timestamp). The denormalized `journals.reviewers` jsonb is now
+  rebuilt from every reviewer row for the journal (read back inside the same transaction), not just
+  the users named in the current request — the old code replaced the column wholesale each call,
+  silently dropping earlier assignees.
+- **B13** — `requireSession` and `getCurrentUserContext` (`session.ts`) now read
+  `event.context.session` (set by `server/middleware/auth.ts:79` for any non-exempt route) via
+  `event.context.session ?? await getAuthSession(event)`, instead of unconditionally calling
+  `getAuthSession` (a fresh `auth.api.getSession` + implicit header round-trip) a second time.
+  Exempt routes (public GETs, `/api/auth/*`, `/api/contact`, `/api/files/upload-token`,
+  `/api/cron/*`, `/api/me`) have no middleware-set session, so the fallback still runs for them.
+  Matches the pattern already used directly in `doc-preview/[uuid].get.ts` and
+  `doc-preview/[uuid]/file.get.ts` (`context.session.user.id`).
+- **B17** — extracted the version-numbering formula into a new, dependency-free
+  `server/utils/versionNumbering.ts` (`getNextVersionNumber`), used by both
+  `revision.post.ts` (previously `1.${row count}`) and `server/services/versions.ts`'s
+  `revertToVersion` (previously `floor(n/10).${n%10}`, which wrapped back to `1.0` at the 10th
+  version) — the two schemes could already disagree on the very same input. The new scheme derives
+  the next number from the highest existing minor number instead of a count, so a gap (e.g. a
+  deleted version) can't produce a duplicate or skipped number. Kept out of `services/versions.ts`
+  itself (which imports `session.ts`, which does a real runtime `import` of `h3`) specifically so
+  `tests/versions.test.ts` can import it under plain `tsx --test` without pulling in that chain —
+  discovered when the first version of this test crashed the whole run with
+  `ERR_MODULE_NOT_FOUND: h3` outside Nuxt's bundler resolution.
+- **Tests** — `tests/versions.test.ts` (new, 5 tests) covers `getNextVersionNumber` directly,
+  including the "no wraparound at the 10th version" and "order-independent" cases the old formulas
+  got wrong. `tests/manuscriptStatus.test.ts` gained a test asserting the four new F11 transition
+  edges (and that the auto-engine still can't jump straight to
+  `ready_for_managing_editor_notice` from `reviewed`). `tests/journalWorkflow.test.ts` gained the
+  cross-check test described under F11. `tests/journal-visibility.test.ts` and
+  `tests/submissions.test.ts` updated for the `editor_id` → `reviewer_id` rename (F9).
+
+### Not verified
+
+- No test DB in this repo's `tsx --test` setup (same constraint noted in Phases 2–3) — every
+  transaction wrap (B7), the `onConflictDoUpdate` upsert (B8), the `event.context.session` reuse
+  (B13), and every notification/email call site are exercised only by typecheck, not a live-DB
+  integration test or a browser smoke test of an actual concurrent-assignment race, a crash
+  mid-transaction, or the copy-desk queue's filtered listing.
+- F11's four new transition edges are justified by tracing `getReviewWorkflowStatus`'s reachable
+  outputs from each `REVIEW_STAGE_STATUSES` starting point by hand (and covered by the new
+  cross-check test), not by exhaustively enumerating every reviewer-set permutation at runtime
+  against a real database.
+- B8's migration (`0014_soft_zarek.sql`) was generated and applied against the local dev DB only,
+  after confirming zero existing duplicate rows there — not run against any deployed environment.
+- F13(d)'s "notify reviewers of final decision" only covers the five decision endpoints reachable
+  from the review-stage statuses this phase touched; it does not audit whether any other manuscript
+  status transition should also notify reviewers.

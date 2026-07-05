@@ -6,6 +6,7 @@ import { journalComments, journals, users } from '#server/db/schema'
 import { sendDecisionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
+import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -35,10 +36,12 @@ export default defineEventHandler(async (event) => {
     'sending an approval notice'
   )
 
+  const finalStatus = body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED
+
   await db
     .update(journals)
     .set({
-      approvalStatus: body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED,
+      approvalStatus: finalStatus,
       editorDecisionComment: body.comment ?? null,
       editorDecisionDate: new Date(),
       approvedAt: new Date(),
@@ -64,7 +67,7 @@ export default defineEventHandler(async (event) => {
         author.email,
         author.fullname,
         journal.title,
-        body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED,
+        finalStatus,
         body.comment ?? 'Your manuscript has been approved for publication by the Managing Editor.'
       )
     ).catch(() => undefined)
@@ -79,6 +82,9 @@ export default defineEventHandler(async (event) => {
       message: `${journal.title} has been approved for publication.`
     }
   })
+
+  // Reviewers who completed a review never learned the outcome (F13d).
+  await notifyReviewersOfFinalDecision(journal.id, finalStatus)
 
   return { ok: true }
 })

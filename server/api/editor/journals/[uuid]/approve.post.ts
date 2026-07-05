@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals, users } from '#server/db/schema'
 import { assertManuscriptStatus, MIN_PEER_REVIEWS_FOR_NOTICE } from '#server/utils/journalWorkflow'
+import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -52,10 +53,12 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const finalStatus = body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED
+
   await db
     .update(journals)
     .set({
-      approvalStatus: body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED,
+      approvalStatus: finalStatus,
       editorDecisionComment: body.comment ?? null,
       editorDecisionDate: new Date(),
       approvedAt: new Date(),
@@ -73,13 +76,7 @@ export default defineEventHandler(async (event) => {
     // Send decision email to author
     try {
       await sendIfEmailAllowed(journal.userId, 'manuscript_status', () =>
-        sendDecisionEmail(
-          author.email,
-          author.fullname,
-          journal.title,
-          body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED,
-          body.comment
-        )
+        sendDecisionEmail(author.email, author.fullname, journal.title, finalStatus, body.comment)
       )
     } catch (error) {
       console.error('Failed to send approval email:', error)
@@ -95,6 +92,9 @@ export default defineEventHandler(async (event) => {
       message: `${journal.title} has been approved.`
     }
   })
+
+  // Reviewers who completed a review never learned the outcome (F13d).
+  await notifyReviewersOfFinalDecision(journal.id, finalStatus)
 
   return { ok: true }
 })

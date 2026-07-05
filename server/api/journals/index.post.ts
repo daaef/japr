@@ -62,46 +62,54 @@ export default defineEventHandler(async (event) => {
   }
 
   const slugBase = slugify(body.title)
-  const inserted = await db.insert(journals).values({
-    title: body.title,
-    author: body.author,
-    slug: `${slugBase}-${Date.now().toString().slice(-6)}`,
-    description: body.description,
-    abstract: body.abstract,
-    institution: body.institution ?? null,
-    country: body.country,
-    journalLanguage: body.journalLanguage,
-    journalUrl: body.journalUrl ?? null,
-    journalFormat: body.journalFormat ?? null,
-    license: body.license ?? null,
-    userId: session.user.id,
-    categoryId: body.categoryId ?? null,
-    subCategoryId: body.subCategoryId ?? null,
-    subSubCategoryId: body.subSubCategoryId ?? null,
-    metaTitle: body.metaTitle ?? null,
-    metaKeywords: body.metaKeywords ?? null,
-    metaDescription: body.metaDescription ?? null,
-    agree: body.agree,
-    accept: body.accept,
-    approvalStatus: MANUSCRIPT_STATUS.DESK_REVIEW,
-    isDraft: false,
-    createdBy: { userId: session.user.id, email: session.user.email }
-  }).returning()
 
-  const journal = inserted[0]!
+  // Insert, file-attach, and initial-version-insert commit together (B7) — a crash
+  // mid-sequence must not leave a journal row with no version history, or a file marked
+  // attached to a journal that doesn't exist.
+  const journal = await db.transaction(async (tx) => {
+    const inserted = await tx.insert(journals).values({
+      title: body.title,
+      author: body.author,
+      slug: `${slugBase}-${Date.now().toString().slice(-6)}`,
+      description: body.description,
+      abstract: body.abstract,
+      institution: body.institution ?? null,
+      country: body.country,
+      journalLanguage: body.journalLanguage,
+      journalUrl: body.journalUrl ?? null,
+      journalFormat: body.journalFormat ?? null,
+      license: body.license ?? null,
+      userId: session.user.id,
+      categoryId: body.categoryId ?? null,
+      subCategoryId: body.subCategoryId ?? null,
+      subSubCategoryId: body.subSubCategoryId ?? null,
+      metaTitle: body.metaTitle ?? null,
+      metaKeywords: body.metaKeywords ?? null,
+      metaDescription: body.metaDescription ?? null,
+      agree: body.agree,
+      accept: body.accept,
+      approvalStatus: MANUSCRIPT_STATUS.DESK_REVIEW,
+      isDraft: false,
+      createdBy: { userId: session.user.id, email: session.user.email }
+    }).returning()
 
-  if (body.journalUrl) {
-    await markFileAttached(body.journalUrl, journal.id)
-  }
+    const createdJournal = inserted[0]!
 
-  await db.insert(manuscriptVersions).values({
-    journalId: journal.id,
-    versionNumber: '1.0',
-    title: journal.title,
-    abstract: journal.abstract ?? '',
-    content: journal.description,
-    createdBy: session.user.id,
-    status: 'submitted'
+    if (body.journalUrl) {
+      await markFileAttached(body.journalUrl, createdJournal.id, tx)
+    }
+
+    await tx.insert(manuscriptVersions).values({
+      journalId: createdJournal.id,
+      versionNumber: '1.0',
+      title: createdJournal.title,
+      abstract: createdJournal.abstract ?? '',
+      content: createdJournal.description,
+      createdBy: session.user.id,
+      status: 'submitted'
+    })
+
+    return createdJournal
   })
 
   // Send confirmation email to author
