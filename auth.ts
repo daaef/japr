@@ -45,8 +45,13 @@ function buildTrustedOrigins(): string[] {
 
 function buildBaseURL() {
   if (process.env.VERCEL_URL) {
+    // Bare `*.vercel.app` used to be trusted here too, so any attacker-deployed
+    // Vercel project could pass as an allowed host for deriving this app's base URL
+    // (used to build links like password resets). Preview-deploy support was dropped
+    // rather than guessed at — add a scoped pattern (e.g. `japr-*-<team>.vercel.app`)
+    // if preview deploys need to hit this app's auth routes.
     return {
-      allowedHosts: ['japr.vercel.app', '*.vercel.app'],
+      allowedHosts: ['japr.vercel.app'],
       protocol: 'https' as const
     }
   }

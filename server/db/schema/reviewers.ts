@@ -1,6 +1,17 @@
-import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { journals } from './journals'
 import { users } from './users'
+
+// Kept as a literal list (not imported from shared/constants/reviewerStatus.ts) so
+// drizzle-kit's schema-only resolution never needs the `#shared` alias — same
+// convention as journals.ts's approvalStatusEnum. Must stay in sync with
+// REVIEWER_STATUSES.
+export const reviewerStatusEnum = pgEnum('reviewer_status', [
+  'pending',
+  'in-progress',
+  'declined',
+  'reviewed'
+])
 
 export const reviewers = pgTable('reviewers', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -22,7 +33,7 @@ export const reviewers = pgTable('reviewers', {
   }>(),
   recommendation: text('recommendation'),
 
-  status: text('status').notNull().default('pending'),
+  status: reviewerStatusEnum('status').notNull().default('pending'),
   isAccepted: boolean('is_accepted').notNull().default(false),
   token: text('token'),
 

@@ -60,5 +60,9 @@ export default defineEventHandler(async (event) => {
     newValues: user
   })
 
-  return { user }
+  // logAdminAction stores a redacted copy (sanitizeAuditValues strips passwordHash) —
+  // the API response needs its own explicit exclusion since `user` is the raw row.
+  const { passwordHash: _passwordHash, ...safeUser } = user
+
+  return { user: safeUser }
 })

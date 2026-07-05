@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await db.query.users.findFirst({
-    where: (table, { eq }) => eq(table.id, id)
+    where: (table, { eq }) => eq(table.id, id),
+    columns: { passwordHash: false }
   })
 
   if (!user) {
