@@ -410,3 +410,222 @@ present). Gate: `pnpm lint` (0 errors, the same 6 pre-existing warnings) · `pnp
 - F13(d)'s "notify reviewers of final decision" only covers the five decision endpoints reachable
   from the review-stage statuses this phase touched; it does not audit whether any other manuscript
   status transition should also notify reviewers.
+
+---
+
+## Integration status — 2026-07-06
+
+PR #4 (`fix/workflow-correctness` → `main`) merged since Phase 4's write-up above was recorded, so
+`main` now contains Phases 1–4 combined (`16369df`). Phase 5 below branches from that `main`.
+
+## Phase 5 — Frontend consolidation (C1–C12, F15, B14) — landed 2026-07-06
+
+Branch: `fix/frontend-consolidation`, off `main` (post PR #1–#4 merge). Gate: `pnpm lint` (0
+errors, the same 6 pre-existing warnings) · `pnpm typecheck` clean · `pnpm test` 53/53 pass
+(unchanged test count — this phase is frontend/route-layer, not covered by the existing
+pure-function unit-test suite; see "Not verified" and "Verified live" below for how it was
+actually exercised).
+
+### What landed
+
+- **C1** — deleted `app/stores/{auth,categories,notifications}.ts` (zero consumers, grep-confirmed
+  per the plan's own gate) and removed `@pinia/nuxt`/`pinia` from `nuxt.config.ts` and
+  `package.json`; `pnpm install` re-ran to update the lockfile.
+- **C4** — removed the unpinned `toastr` CDN `<link>`/`<script>` pair from all six layouts. Confirmed
+  first (grep across `app/` and `public/assets/js/main.js`) that zero `toastr.*()` calls exist
+  anywhere, so this was a pure deletion — no `useToast` migration needed for this step.
+- **C5/C11** — new `app/composables/useActionHandler.ts` (`{ loading, message, error, run, clear }`)
+  collapses the 10 handler clones in `editor/journals/[uuid].vue` and the 9 in
+  `admin/categories.vue` into one-line `runAction(fn, success, fallback)` calls. The journal
+  detail page's three serial `await useFetch(...)` calls (detail/suggestions/reviews) are now
+  started together and awaited via `Promise.all`, cutting three sequential round-trips to one.
+  `author/submit.vue`'s three hand-rolled overlay `<div>`s become `UModal` (Nuxt UI v4's
+  `:open`/`@update:open`/`#body`/`#footer` slots — verified against the installed
+  `@nuxt/ui@4.5.1` type definitions, not guessed) for the document-preview and review-policy
+  dialogs; the loading
+  overlay was deliberately left as a plain `<div>` — it's a non-dismissible passive spinner with
+  nothing focusable inside, not a real dialog, so wrapping it in `UModal` would fight Reka's
+  focus-trap/a11y semantics for no benefit. Also added a client-side `file.size` check (was
+  UI-only: the page said "up to 10MB" but never checked) using a `MAX_FILE_SIZE_BYTES` constant
+  commented as needing to stay in sync with the server's `MAX_FILE_SIZE_MB` default.
+- **C6** — `SettingsForm.vue`'s two template branches (Tailwind single-form "author public layout"
+  vs. Bootstrap-styled settings+password two-form dashboard layout) are not just a style
+  difference — they have different field sets (no academic/reviewer sections in the public
+  branch) and different form groupings (one combined submit vs. two independent forms). Full
+  single-template collapse was assessed as too large a structural change to do safely without a
+  live visual regression pass across all 4 dashboard roles + the public author layout in this
+  session. Landed the achievable, low-risk piece instead: one `inputClass`/`countrySelectVariant`
+  computed pair replaces the duplicated class-string literals on every field common to both
+  branches (fullname/username/institution/email/password/country), which is the actual
+  "class-variant map" the plan called for — the two branches' distinct DOM structures stay
+  separate.
+- **C7** — 🛑 STOP resolved by the human: **adopt** vee-validate (not remove). Wired
+  `useForm`/`defineField`/`toTypedSchema` onto all five auth forms and the manuscript submit
+  form, reusing existing `#shared/validation` zod schemas (`signUpSchema`, `activationSchema`,
+  `journalCreateSchema`) where they existed and adding three new minimal ones
+  (`signInSchema`/`forgotPasswordSchema`/`resetPasswordSchema` in `shared/validation/auth.ts`)
+  where they didn't — login/forgot-password/reset-password previously had **zero** schema-backed
+  validation (login's password field didn't even have native `required`). For the submit form,
+  built a derived `submitFormSchema` from `journalCreateSchema` via `.omit()`/`.extend()` rather
+  than hand-duplicating field rules: omits fields the client form doesn't collect
+  (`description`/`journalUrl`/`journalFormat`/`agree`/`accept`), tightens `institution`/
+  `metaKeywords`/`categoryId` to required (stricter than the shared schema, which other
+  `journalCreateSchema` consumers don't need), and widens `subCategoryId`/`subSubCategoryId` to
+  accept `''` alongside a real UUID (a native `<select>`'s "nothing chosen yet" value, which
+  `.uuid().optional()` alone rejects — `.optional()` only permits `undefined`, not an empty
+  string). The dynamic "sub-category required only if the category has one" rule stayed as a
+  manual check inside the submit handler rather than a reactive computed schema — a deliberate
+  simplification, not a dropped requirement. Checked the real `@vee-validate/zod@4.15.1` vs.
+  `zod@4.3.6` peer-dependency mismatch by reading the installed package's source directly: the
+  core `safeParseAsync`/issue-mapping path doesn't touch the affected (empty, v3-only)
+  `ZodFirstPartyTypeKind` enum, so it works; only `describe()`-based nested "is this required"
+  introspection is unreliable, and none of these schemas have array sub-paths, so it's moot here.
+- **C8** — new `app/utils/extractApiErrorMessage.ts` (`data.statusMessage ?? data.message ??
+  error.message ?? fallback`) replaces ~58 call sites across two commits: the ~54
+  `error instanceof Error ? error.message : '<fallback>'` one-liners (which discarded the
+  server's real `statusMessage` in favor of a generic message) and ~7 ad-hoc
+  `fetchError.data?.statusMessage ?? ...` chains (which had already worked around exactly that
+  problem in a few places, inconsistently). Left `author/submit.vue`'s `describeValidationError`
+  alone — that reads `fetchError.data?.data?.name === 'ZodError'` to unpack a structured
+  validation-error body, a different concern from "get one displayable string."
+- **C9** — `JournalQueueList.vue` and `ReviewerQueueList.vue` now destructure `error`/`refresh`
+  from their `useFetch` call and render a `DashboardSummaryError` retry row instead of silently
+  falling back to the empty-state row on a fetch failure (previously indistinguishable from
+  "genuinely empty").
+- **B14** — new `server/utils/reviewerQueue.ts` (`listReviewerAssignments`) dedupes the six
+  near-identical, **unbounded** `reviewers`⋈`journals` queries in
+  `server/api/reviewer/journals/{pending,approved,declined,reviewed,in-progress,declined-invitations}.get.ts`
+  into one paginated helper (mirroring `listJournalsByStatus`'s `getPagination`/`buildPageMeta`
+  pattern); each endpoint now just supplies its status filter and now returns `{ reviews, meta }`
+  instead of an unpaginated `{ reviews }`. Preserved the original per-endpoint `urgent` semantics
+  (only `pending`/`in-progress` compute it — a completed/declined review has no "actionable
+  deadline" to be urgent about) via a `showUrgency` option rather than hard-coding it into the
+  shared helper. `ReviewerQueueList.vue` switched from doing its own client-side slice-pagination
+  over the full array to server pagination + `AppPagination`, matching `JournalQueueList.vue`'s
+  existing pattern. `server/api/journals/search.get.ts` now re-exports `index.get.ts`'s handler
+  instead of duplicating it byte-for-byte (they were already identical, both delegating to
+  `listPublicJournals`).
+- **C12 + F15** (the full punch list):
+  - Register page: fixed the "Welcome back!" heading (copied from login) and removed the
+    "Forgot password?" link (there's no account yet to have a password for).
+  - `author/submit.vue` file-size check — see C5/C11 above.
+  - `app/utils/workspace.ts`: `resolveWorkspacePath` checked `copy_desk_editor` **after** the
+    `author` branch, while `resolveRoleLayout` checked it at the same tier as
+    `editor_in_chief`/`managing_editor` (**before** `author`) — a user with roles
+    `['author', 'copy_desk_editor']` got the editor layout shell but was routed to `/author`.
+    Moved the `resolveWorkspacePath` check up to match.
+  - `shared/constants/roles.ts` gained `ADMIN_ROLES`/`AUTHOR_ROLES`/`EDITOR_ROLES`/
+    `EDITOR_ROLES_WITH_COPY_DESK`/`REVIEWER_ROLES`; all 51 inline `requiredRoles: [...]` literals
+    across `app/pages/**` replaced with the matching constant (one page had the 4-role
+    editor+copy-desk group in a different element order than the other five — same set,
+    converted to the same constant). `app/types/page-meta.d.ts` widened `requiredRoles` to
+    `readonly string[]` since the new constants are readonly tuples.
+  - `useNotifications.ts`: `onMounted` called `startPolling()` unconditionally right after
+    `connectStream()`, so the 30s poll interval ran continuously even with a healthy SSE
+    connection — the `onerror` handler already implemented "poll only as a fallback" correctly;
+    the unconditional call at mount was the bug. Removed it.
+  - Deleted the empty `app/pages/journal/` directory (the real, populated one is `journals/`,
+    plural) and `app/pages/login.vue`; added a `routeRules: { '/login': { redirect: ... } }` to
+    `nuxt.config.ts` so it's a zero-render Nitro-level 301 instead of a mounted page that calls
+    `navigateTo` at render time.
+  - Added comments at both ends of the `diff_prettyHtml` → `v-html` chain
+    (`server/services/versions.ts` and `versions/compare.vue`) documenting that the `v-html` is
+    only safe because `diff_prettyHtml` HTML-escapes the diffed text internally — nothing
+    sanitizes it separately, so swapping the diff library would silently reopen an XSS hole.
+  - Unified `reject`/`rejected` → `decline`/`declined` at the route-file and page-copy layer:
+    renamed `server/api/editor/journals/[uuid]/{reject.post.ts→decline.post.ts,
+    desk-reject.post.ts→desk-decline.post.ts}` and both
+    `server/api/{editor,reviewer}/journals/rejected.get.ts→declined.get.ts`, updated the two
+    consuming pages' `api-url`/titles, and renamed the corresponding handler functions/refs in
+    `editor/journals/[uuid].vue`. Deliberately left `requirePermission(event, 'journal',
+    'reject')`'s action string untouched — it's a key into the DB-backed `permissions` table
+    (`server/utils/permissions.ts`), not a route name; renaming it would need a data migration
+    and is a different, bigger decision than a vocabulary cleanup.
+- **C2/C3/C10** (current-user consolidation):
+  - `server/api/me.get.ts` never throws for "not logged in" — it always returns `200
+    {authenticated: false, ...}`. So `useCurrentUser.ts`'s blanket `try { ... } catch { return
+    defaultCurrentUser() }` was silently converting every *real* failure (network, 500, DB error)
+    into a fake "logged out" state, and its hand-rolled `error` ref was never populated on the
+    initial load (only inside a `refresh()` wrapper that the swallowed exception never reached).
+    Removed the try/catch and the wrapper entirely: `useCurrentUser()` now returns
+    `useAsyncData()`'s handle as-is. That handle is both directly destructurable (existing
+    component usage unchanged) and awaitable (confirmed by reading Nuxt 4.4.2's
+    `asyncData.js` source — the returned object is `Object.assign`ed onto a `Promise`), which is
+    what unblocks the next point.
+  - `app/middleware/{auth,role,guest,author-onboarding}.ts` each called the module-level
+    `fetchCurrentUser()` directly — an uncached fetch independent of the page's own
+    `useCurrentUser()` call, meaning most navigations fired 2–3 separate `/api/me` requests
+    (`auth`+`role` on every role-gated page, plus a 3rd from `author-onboarding` on
+    `/author/submit`). Switched all four to `await useCurrentUser()`, which shares the
+    `'current-user'` `useAsyncData` key/in-flight-promise with whatever the page itself requests.
+  - `useRoleLayout.ts`'s `applyRoleLayout()` was synchronous — it read `currentUser.value`
+    (still the logged-out default before the async fetch resolves) and called `setPageLayout`
+    once, with nothing re-applying it once the real roles arrived. Now `applyRoleLayout` is async
+    and `await`s the same `useCurrentUser()` handle the composable already captured at setup time
+    (not a second call — avoids any question of composable-context validity from calling
+    `useCurrentUser()` again inside a later-invoked function) before calling `setPageLayout`.
+    Updated both call sites (`notifications/{index,preferences}.vue`) to `await` it.
+  - Moved two client-side, post-render redirects into route middleware so they run before the
+    page paints instead of flashing the previous screen first: a `copy_desk_editor`-only user
+    landing on `/editor` (new `app/middleware/copy-desk-redirect.ts`, added to that one page's
+    middleware array) and a user who already accepted the review policy landing on
+    `/review-policy` (folded into `auth.ts`, paired with its existing "not accepted yet →
+    /review-policy" direction — the reverse direction was previously a `watch(currentUser, ...,
+    {immediate: true})` in `review-policy.vue` itself).
+
+### Verified live
+
+This phase touches route middleware and page-load behavior that unit tests don't exercise, so —
+beyond the usual lint/typecheck/test gate — started a real `nuxt dev` server against the actual
+seeded Postgres DB (`docker compose`'s `japr-postgres-1`) and drove it with `curl` using real
+session cookies from an actual `POST /api/auth/sign-in/email`, rather than asserting from
+typecheck alone:
+
+- `/login` → 301 → `/auth/login` (routeRules).
+- An already-authenticated user hitting `/auth/login` → 302 → their workspace (guest middleware
+  reading the shared cache).
+- `editor_in_chief` and `associate_editor` (reviewer-role) accounts hitting `/review-policy` after
+  already accepting it → 302 to `/author/submit` / `/reviewer` respectively (the realistic
+  audience for this redirect — see the finding below for the one role combination that isn't).
+- `copy_desk_editor`-only account hitting `/editor` → 302 → `/editor/copy-desk`; a real
+  `editor_in_chief` account hitting `/editor` → 200, dashboard renders normally (no unwanted
+  redirect for a senior editor).
+- All six refactored `server/api/reviewer/journals/*.get.ts` endpoints return the new
+  `{ reviews, meta }` shape with real seeded rows (not just empty-array happy path).
+- The renamed/aliased routes (`decline.post.ts`, `desk-decline.post.ts`, both `declined.get.ts`,
+  `journals/search.get.ts`) all resolve (401 unauthenticated, not 404 not-found — confirms Nitro
+  registered them under their new paths/exports).
+- A sample of pages touched by the C8/C12-roles mechanical sweep (`admin/categories`,
+  `admin/users`, `admin/roles`, `editor/copy-desk`, `reviewer/reviewed`,
+  `notifications/preferences`, `author/interests`, `author/settings`) all render 200 for an
+  appropriately-roled session.
+
+### Found (not fixed) — pre-existing, out of scope for this phase
+
+The review-policy "already accepted" redirect's non-reviewer fallback target
+(`/author/submit`) is wrong for an authenticated user with **neither** an author nor a
+reviewer role — e.g. a plain `editor_in_chief` hitting `/review-policy` directly gets bounced to
+`/author/submit`, which then 403s them out to `/?accessDenied=1` (confirmed live: this is exactly
+what happens). This is not a regression from moving the redirect into middleware — the *original*
+`review-policy.vue` watcher had the identical unconditional `else navigateTo('/author/submit')`
+fallback, so an editor hitting this page manually would have hit the exact same dead end before
+this phase too. `/review-policy` is only ever linked to for author/reviewer flows, so this is a
+low-probability edge case, not a live bug affecting normal usage — flagging it rather than
+silently fixing it, since "what should happen for a role with neither" is a product decision, not
+a mechanical consolidation.
+
+### Not verified
+
+- No browser/visual pass — the "no wrong-layout flash on hard refresh" fix (C3) is inherently a
+  client-side timing behavior; verified the underlying data-readiness fix is correct (traced
+  Nuxt's actual `useAsyncData` dedup/await behavior from source rather than assuming it) and that
+  the SSR response for each role renders the right dashboard, but did not visually confirm the
+  absence of a flash in an actual browser paint (no headless-browser tooling was available in
+  this environment during this session), and did not exercise the vee-validate-wired forms'
+  client-side interaction (field-level error display on blur, `UModal` open/close animation) —
+  only their SSR output.
+- The `SettingsForm.vue` partial consolidation (C6) means the two template branches still exist
+  side by side; a future full collapse into one field-list-driven template is still open (tracked
+  by this note, not a new task file).
+- B14's pagination change to the six reviewer endpoints was checked against the local dev DB's
+  real (small) seeded data, not load-tested at a size where `pageCount > 1` actually paginates.
