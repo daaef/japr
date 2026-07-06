@@ -100,9 +100,21 @@ function formatDate(value?: string | null) {
                   <h6 class="mb-0">
                     {{ review.journalTitle }}
                   </h6>
-                  <div class="d-flex gap-2 mt-2">
-                    <span v-if="review.recent" class="badge bg-info">Recent</span>
-                    <span v-if="review.urgent" class="badge bg-danger">Urgent</span>
+                  <div class="flex gap-2 mt-2">
+                    <UBadge
+                      v-if="review.recent"
+                      color="info"
+                      variant="subtle"
+                    >
+                      Recent
+                    </UBadge>
+                    <UBadge
+                      v-if="review.urgent"
+                      color="error"
+                      variant="subtle"
+                    >
+                      Urgent
+                    </UBadge>
                   </div>
                 </td>
                 <td>
@@ -122,12 +134,14 @@ function formatDate(value?: string | null) {
                 </td>
                 <td>
                   <div class="flex-align justify-content-center gap-8">
-                    <NuxtLink
+                    <UButton
                       :to="`/reviewer/journals/${review.journalId}/review`"
-                      class="action-btn action-btn-primary"
+                      color="primary"
+                      variant="soft"
+                      size="sm"
                     >
                       Review
-                    </NuxtLink>
+                    </UButton>
                   </div>
                 </td>
               </tr>

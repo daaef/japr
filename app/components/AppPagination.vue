@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   page: number
   totalPages: number
   total: number
@@ -10,37 +10,22 @@ const emit = defineEmits<{
   change: [page: number]
 }>()
 
-function goTo(page: number) {
-  if (page < 1 || page > props.totalPages) {
-    return
-  }
-
+function onUpdatePage(page: number) {
   emit('change', page)
 }
 </script>
 
 <template>
-  <div class="flex-between flex-wrap gap-8 mt-24">
-    <p class="text-13 text-gray-600 mb-0">
+  <div class="flex flex-wrap items-center justify-between gap-2 mt-6">
+    <p class="text-sm text-muted">
       Showing page {{ page }} of {{ totalPages }} ({{ total }} results)
     </p>
-    <div class="flex-align gap-8">
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        :disabled="page <= 1"
-        @click="goTo(page - 1)"
-      >
-        Previous
-      </button>
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        :disabled="page >= totalPages"
-        @click="goTo(page + 1)"
-      >
-        Next
-      </button>
-    </div>
+    <UPagination
+      :page="page"
+      :items-per-page="pageSize"
+      :total="total"
+      size="sm"
+      @update:page="onUpdatePage"
+    />
   </div>
 </template>

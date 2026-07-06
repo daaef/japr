@@ -135,7 +135,6 @@ function toggleFilters() {
 }
 
 const page = computed(() => data.value?.meta.page ?? 1)
-const totalPages = computed(() => data.value?.meta.pageCount ?? 1)
 </script>
 
 <template>
@@ -215,101 +214,14 @@ const totalPages = computed(() => data.value?.meta.pageCount ?? 1)
       </div>
 
       <div class="lg:border pl-8 border-transparent border-l-secondary-900/50 min-w-0">
-        <div class="flex justify-between mb-6">
-          <div class="flex gap-x-4">
-            <button
-              type="button"
-              class="flex gap-1 text-sm text-gray-700 disabled:opacity-40"
-              :disabled="page <= 1"
-              @click="goToPage(1)"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-chevrons-left"
-              >
-                <path d="m11 17-5-5 5-5" />
-                <path d="m18 17-5-5 5-5" />
-              </svg>
-              First
-            </button>
-            <button
-              type="button"
-              class="flex gap-1 text-sm text-gray-700 disabled:opacity-40"
-              :disabled="page <= 1"
-              @click="goToPage(page - 1)"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-chevron-left"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-              Previous
-            </button>
-          </div>
-          <div class="flex gap-x-4">
-            <button
-              type="button"
-              class="flex gap-1 text-sm text-gray-700 disabled:opacity-40"
-              :disabled="page >= totalPages"
-              @click="goToPage(page + 1)"
-            >
-              Next
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-chevron-right"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="flex gap-1 text-sm text-gray-700 disabled:opacity-40"
-              :disabled="page >= totalPages"
-              @click="goToPage(totalPages)"
-            >
-              Last
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-chevrons-right"
-              >
-                <path d="m6 17 5-5-5-5" />
-                <path d="m13 17 5-5-5-5" />
-              </svg>
-            </button>
-          </div>
+        <div class="flex justify-end mb-6">
+          <UPagination
+            :page="page"
+            :items-per-page="data?.meta.pageSize ?? 10"
+            :total="data?.meta.total ?? 0"
+            show-edges
+            @update:page="goToPage"
+          />
         </div>
 
         <div

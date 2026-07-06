@@ -129,12 +129,14 @@ function formatDate(value?: string) {
                 </td>
                 <td>
                   <div class="flex-align flex justify-content-center gap-8">
-                    <NuxtLink
+                    <UButton
                       :to="detailPath(journal.id)"
-                      class="action-btn action-btn-primary"
+                      color="primary"
+                      variant="soft"
+                      size="sm"
                     >
                       View
-                    </NuxtLink>
+                    </UButton>
                     <slot
                       name="row-actions"
                       :journal="journal"

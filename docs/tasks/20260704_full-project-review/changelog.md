@@ -629,3 +629,162 @@ a mechanical consolidation.
   by this note, not a new task file).
 - B14's pagination change to the six reviewer endpoints was checked against the local dev DB's
   real (small) seeded data, not load-tested at a size where `pageCount > 1` actually paginates.
+
+---
+
+## Integration status — 2026-07-06
+
+PR #5 (`fix/frontend-consolidation` → `main`) merged since Phase 5's write-up above was recorded,
+so `main` now contains Phases 1–5 combined. Before starting Phase 6, the human hardened the
+phase's own end-state requirement (see `plan.md`/`implementation.md`'s Phase 6 sections): Nuxt UI
+v4 becomes the *only* UI system, with no exception for the author role's marketing shell (D5) and
+a grep-verifiable zero-Bootstrap/jQuery/toastr/Preline definition of done. Phase 6 below branches
+from `main` on a new `fix/design-system-unification` branch.
+
+## Phase 6 — Design-system unification (D1–D13), partial: shared atoms — in progress, started 2026-07-06
+
+Branch: `fix/design-system-unification`, off `main` (post PR #1–#5 merge). This entry covers only
+step 1 (freeze) and step 2 (shared atoms) of the phase's 10-step plan — layouts, token sweep,
+dark mode, a11y, responsive, and final cleanup deletion are still open (scoped intentionally: the
+phase is large enough that the human asked for atoms-only this pass, with a stop-and-report gate
+before any layout work). Gate: `pnpm lint` (0 errors, the same 6 pre-existing warnings) ·
+`pnpm typecheck` clean · `pnpm test` 53/53 pass (unchanged — this pass is presentational, no new
+pure-function logic).
+
+### What landed
+
+- **D3** — `JournalStatusBadge.vue` now wraps `UBadge` (`variant="subtle"`) instead of raw
+  `bg-x-50 text-x-600 rounded-pill` theme classes. Colors are mapped through a verified 7-value
+  Nuxt UI semantic palette (`primary/secondary/success/info/warning/error/neutral`, confirmed
+  against the installed `@nuxt/ui@4.5.1` badge theme at `.nuxt/ui/badge.ts` rather than guessed);
+  `declined`/`rejected`/`suspended`/`disabled` map to `error` (Nuxt UI has no `danger` slot). The
+  leading dot indicator was previously sized `w-6 h-6` — correct only under the legacy theme's
+  px-scale (D2), oversized (24px) under real Tailwind — now `size-1.5` (6px), the actual intended
+  size once the theme sheet is gone.
+- **D4** — Queue action buttons now use `UButton` instead of `.action-btn action-btn-*`, which
+  problem.md's D4 finding had already identified as broken outside `.journal-site` scope (the
+  class is only defined there, in `app/assets/css/journal-layout-extras.css`) — every editor/
+  reviewer queue's primary View/Review button was rendering as a bare unstyled link. Fixed in
+  `JournalQueueList.vue` (View), `ReviewerQueueList.vue` (Review), and `editor/copy-desk.vue`
+  (Mark published, now with `UButton`'s built-in `loading` spinner instead of just text-swapping).
+  Also caught and fixed two raw Bootstrap `badge bg-info`/`badge bg-danger` tags in
+  `ReviewerQueueList.vue` ("Recent"/"Urgent") — the same class-of-bug as D3, now `UBadge`. The
+  three now-unused `.action-btn` rule blocks in `journal-layout-extras.css` are confirmed dead
+  (zero remaining consumers, grepped) but left in place — deleting the file is step 10's job, once
+  the layout that loads it is rebuilt (plan's own guidance: don't strip a shared legacy sheet
+  piecemeal before the layout depending on it is migrated).
+- **D7** — `AppPagination.vue` now wraps `UPagination` (verified props against
+  `@nuxt/ui`'s `Pagination.vue.d.ts`: `page`/`total`/`itemsPerPage`, `update:page` emit) instead
+  of two hand-rolled `btn btn-outline-secondary` Previous/Next buttons. Also fixed the *third*
+  fork problem.md's D7 named but Phase 5's B14 pass didn't reach: `journals/index.vue`'s public
+  listing had its own hand-rolled First/Previous/Next/Last buttons with inline Lucide SVG paths;
+  replaced with the same `UPagination` (`show-edges`), and removed the now-dead `totalPages`
+  computed. All three D7 forks are now one component.
+- **D8, with a deviation from the plan's literal wording** — `NotificationDropdown.vue` and
+  `DashboardProfileDropdown.vue` are rewritten, but using **`UPopover`, not `UDropdownMenu`** as
+  `plan.md`/`implementation.md` originally specified. Read `UDropdownMenu`'s actual slot model
+  first (`DropdownMenu.vue.d.ts`): it's an ARIA `menu`-role item list (`items` + per-item
+  `label`/`icon`/`leading`/`trailing` slots) with no slot for replacing the whole panel body.
+  Both components render rich, non-menu custom content (a notification feed with avatars,
+  timestamps, unread dots, a header action button, loading/error/empty states; a profile card
+  with a name header) that doesn't fit that model without either flattening it into plain text
+  items or fighting the component's slots. `UPopover` is Nuxt UI's primitive for "arbitrary
+  floating content behind a trigger" (`default` slot = trigger, `#content` slot = anything) and
+  still delivers D8's actual goal — Reka UI's real focus trap, Escape-to-close, click-outside, and
+  ARIA (`aria-haspopup="dialog"`, `data-state`), replacing the two hand-rolled
+  `document.addEventListener('click', ...)` implementations that had none of that. Verified live
+  in a browser (see below): the rewritten `DashboardProfileDropdown` renders as a real Reka
+  popover trigger with correct attributes and a `lucide:chevron-down` icon.
+  - Also fixed, while rewriting `NotificationDropdown`: a dynamic Tailwind class
+    `` `bg-${notification.color}-100 text-${notification.color}-600` `` built from a server-supplied
+    string — flagged in problem.md's D8 itself as only "working" because the legacy CSS wasn't
+    tree-shaken (Tailwind's JIT can't generate a class from a runtime-interpolated string, so once
+    the legacy sheet is deleted in step 10 this would have silently gone blank). Grepped every
+    notification-creation call site (`server/utils/editorNotifications.ts`,
+    `server/api/journals/index.post.ts`) for the real, complete set of `color`/`icon` values ever
+    written — only `primary`/`warning` and `ph-bell`/`ph-clock`/`ph-file-text` — and replaced the
+    interpolation with static lookup tables (`avatarClasses` keyed by a closed `AvatarColor` union;
+    a `legacyIconMap` from the old Phosphor icon-font names to the installed `i-lucide-*`
+    equivalents, since `@iconify-json/ph` isn't installed but `lucide` is), each falling back to a
+    safe default (`neutral` / `i-lucide-bell`) for any value outside that verified set rather than
+    guessing at unenumerated ones.
+- **C11/D9, an item the plan's atom list missed** — `app/components/DocumentPreview.vue` (the
+  manuscript preview overlay on `journals/[slug].vue`) was still a fully hand-rolled Bootstrap
+  `.modal.fade.show.d-block` overlay with a raw `.btn-close` button; Phase 5's C11 pass only
+  reached `author/submit.vue`'s three overlays. Found via a repo-wide grep for
+  `modal-dialog|data-bs-toggle` (not just `.action-btn`) and converted to `UModal`, matching
+  `author/submit.vue`'s established pattern (`v-model:open`, `#body` slot).
+- **Toast infra — verified, adoption deferred, not silently skipped.** The plan's atom list
+  included "toasts → `useToast`, unblocking C4's toastr deletion." Checked: `<UApp>` already wraps
+  `app.vue` (mounts Nuxt UI's toaster) and `useToast()` is available; Phase 5's C4 had already
+  confirmed *zero* live `toastr.*()` call sites existed to migrate (the toastr `<script>` tags were
+  dead CDN links). What's actually still Bootstrap-styled is the *inline* alert-banner pattern
+  (`alert alert-danger`/`alert-success`, 11 files) that `useActionHandler.ts`'s consumers render
+  for success/error feedback. Replacing that with `useToast()` would be a real UX change (ephemeral
+  toast vs. persistent inline banner) touching ~11 pages, not a like-for-like atom swap — deferred
+  to a deliberate step rather than folded silently into this pass.
+- **Not touched this pass (flagged, not fixed):** `EditorStatusReference.vue` still reads
+  `MANUSCRIPT_STATUS_COLORS` (kept in `shared/constants/manuscriptStatus.ts` for it and for
+  `tests/manuscriptStatus.test.ts`) to color a Bootstrap `row`/`col-md-6` grid of status dots —
+  it's a whole dashboard-card widget, not a shared atom, so it's layout-migration-step-4 scope.
+
+### Verified live
+
+Started a real `nuxt dev` instance against the local seeded Postgres DB (matching Phase 5's
+practice) and drove it with a headless-Chromium Playwright script (no `chromium-cli`/cached
+browser was available in this environment; installed `playwright`'s Chromium build for this
+session — not added as a project dependency):
+
+- `/journals` (public listing): `UPagination` renders correctly — First/Previous/1/Next/Last with
+  real icons, page 1 highlighted, correct disabled states on a >1-page result set. Screenshotted.
+- `/admin/journals`: same `UPagination` component, screenshotted, "Showing page 1 of 1 (9 results)"
+  footer renders correctly against real seeded data.
+- Logged in as the seeded admin account and inspected the `/admin` layout's top navbar DOM
+  directly: `DashboardProfileDropdown` renders as a genuine Reka popover trigger
+  (`aria-haspopup="dialog"`, `data-state="closed"`, a real `i-lucide:chevron-down` icon) — the
+  UPopover rewrite is confirmed working end-to-end, not just typechecking.
+
+### Known issue hit during verification (pre-existing, not caused by this change)
+
+`JournalStatusBadge` and `NotificationDropdown` intermittently render as unresolved literal tags
+(`<journalstatusbadge>`) in this specific sandboxed dev environment, with a paired Vue warning
+("Component `<Anonymous>` is missing template or render function"). Two unrelated, pre-existing
+components in the same directory (`AdminHealthCard.vue`, `AdminReviewPerformanceCard.vue`, last
+touched 2026-06-28, never edited in this session) show the identical failure, which ruled out a
+mistake in this pass's edits. Confirmed conclusively with a `git stash` A/B test: `git stash` the
+nine files changed in this pass, clear `.nuxt`/`node_modules/.cache`, cold-boot the dev server
+against the **original, unmodified, pre-Phase-6 code** — the exact same
+`JournalStatusBadge`-fails-to-resolve warning reproduced. This is a pre-existing Nuxt/Vite dev-mode
+component-registration quirk specific to this sandbox (likely related to the many concurrent
+`nuxt dev` processes this verification session's own port conflicts spawned — cleaned up
+afterward, see below), not a defect in the `UBadge`/`UPopover` migration itself. Lint, typecheck,
+and the full test suite are unaffected (all check import correctness and pure logic, not dev-mode
+SSR component registration). Not independently re-verified against a production `pnpm build`
+in this session — flagging as the one live-render claim in this entry that rests on code review
+(verified Nuxt UI v4.5.1 prop/slot signatures, matching the already-proven-working `UBadge` usage
+pattern from `ReviewerQueueList.vue`'s Recent/Urgent badges) plus green lint/typecheck/test, not a
+browser screenshot.
+
+### Environment note
+
+This verification session's repeated dev-server restarts (while chasing the port/registration
+issue above) left several orphaned `nuxt dev`/`pnpm dev` processes on the machine, since Git
+Bash's `kill` on a `pnpm`-wrapper PID didn't reach the actual child Nitro/Vite processes on
+Windows. All identified and stopped via `Stop-Process` before finishing. Separately, port 3000 was
+found occupied by a process invisible to Windows' native `netstat`/`Get-NetTCPConnection` — almost
+certainly a leftover Docker container from earlier phases' `docker compose` testing, reachable via
+Docker Desktop's port-forwarding. Left untouched (not started by this session, not confirmed safe
+to stop); verification instead ran on port 3001 with `BETTER_AUTH_URL` set to match, so Better
+Auth's trusted-origin check (B11) didn't reject the login.
+
+### Not verified
+
+- No visual confirmation of `NotificationDropdown`'s actual open panel (avatar colors, skeleton
+  loading state, empty/error states) — blocked by the environment quirk above; the component's
+  code was reviewed against verified Nuxt UI APIs but not screenshotted open.
+- `JournalQueueList`/`ReviewerQueueList`'s `UButton` View/Review buttons and the `UBadge`
+  Recent/Urgent tags were not independently screenshotted in a live role dashboard this pass
+  (no editor/reviewer test session was set up, only the seeded admin account) — confirmed via
+  lint/typecheck and by matching the identical, verified pattern already proven live in
+  `DashboardProfileDropdown`.
+- No production `pnpm build` run this pass (only `nuxt dev`).
