@@ -45,14 +45,16 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
       empty-message="No manuscripts are currently in the copy desk queue."
     >
       <template #row-actions="{ journal, refresh }">
-        <button
-          type="button"
-          class="action-btn action-btn-success"
+        <UButton
+          color="success"
+          variant="soft"
+          size="sm"
+          :loading="publishingId === journal.id"
           :disabled="publishingId === journal.id"
           @click="markPublished(journal.id, refresh)"
         >
           {{ publishingId === journal.id ? 'Publishing…' : 'Mark published' }}
-        </button>
+        </UButton>
       </template>
     </JournalQueueList>
   </div>

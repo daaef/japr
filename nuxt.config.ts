@@ -6,6 +6,15 @@ export default defineNuxtConfig({
     '@nuxt/image'
   ],
 
+  // Every component filename under app/components/** is already globally unique (verified),
+  // so bare filenames are safe as component names. Without this, Nuxt's default folder-path
+  // prefixing silently registers e.g. app/components/dashboard/JournalStatusBadge.vue as
+  // <DashboardJournalStatusBadge>, not the <JournalStatusBadge> every template actually uses —
+  // the component then renders as an empty unresolved tag with no build-time error.
+  components: [
+    { path: '~/components', pathPrefix: false }
+  ],
+
   css: [
     '~/assets/css/main.css',
     '~/assets/css/journal.css',

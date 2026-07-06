@@ -15,9 +15,40 @@ const open = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
 const items = ref<DropdownNotification[]>([])
-const root = ref<HTMLElement | null>(null)
 
 const { unreadCount, refreshUnreadCount } = useNotifications()
+
+// Legacy Phosphor icon-font names stored on historical notification rows;
+// only these three values are ever written (grepped every notification
+// creation call site) — anything else falls back to the default bell.
+const legacyIconMap: Record<string, string> = {
+  'ph-bell': 'i-lucide-bell',
+  'ph-clock': 'i-lucide-clock',
+  'ph-file-text': 'i-lucide-file-text'
+}
+
+function notificationIcon(icon: string) {
+  return legacyIconMap[icon] ?? 'i-lucide-bell'
+}
+
+type AvatarColor = 'primary' | 'warning' | 'neutral'
+
+// Only 'primary' (default) and 'warning' are ever written server-side;
+// anything unrecognized safely falls back to neutral.
+const avatarColorMap: Record<string, AvatarColor> = {
+  primary: 'primary',
+  warning: 'warning'
+}
+
+const avatarClasses: Record<AvatarColor, string> = {
+  primary: 'bg-primary/10 text-primary',
+  warning: 'bg-warning/10 text-warning',
+  neutral: 'bg-elevated text-muted'
+}
+
+function avatarClass(color: string) {
+  return avatarClasses[avatarColorMap[color] ?? 'neutral']
+}
 
 async function loadDropdown() {
   loading.value = true
@@ -39,25 +70,19 @@ async function loadDropdown() {
   }
 }
 
-function toggle() {
-  open.value = !open.value
-
-  if (open.value) {
+watch(open, (value) => {
+  if (value) {
     loadDropdown()
   }
-}
-
-function close() {
-  open.value = false
-}
+})
 
 async function markRead(id: string, actionUrl?: string) {
   await $fetch(`/api/notifications/${id}/read`, { method: 'POST' })
   await Promise.all([loadDropdown(), refreshUnreadCount()])
 
   if (actionUrl && actionUrl !== '#') {
+    open.value = false
     await navigateTo(actionUrl)
-    close()
   }
 }
 
@@ -65,194 +90,136 @@ async function markAllRead() {
   await $fetch('/api/notifications/read-all', { method: 'POST' })
   await Promise.all([loadDropdown(), refreshUnreadCount()])
 }
-
-function onDocumentClick(event: MouseEvent) {
-  if (!open.value) {
-    return
-  }
-
-  const target = event.target as Node | null
-  if (root.value && target && !root.value.contains(target)) {
-    close()
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', onDocumentClick)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocumentClick)
-})
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="dropdown"
-  >
-    <button
-      type="button"
-      class="dropdown-btn text-gray-500 w-40 h-40 bg-main-50 hover-bg-main-100 transition-2 rounded-circle text-xl flex-center position-relative"
-      aria-label="Notifications"
-      :aria-expanded="open"
-      @click.stop="toggle"
-    >
-      <span class="position-relative">
-        <i class="ph ph-bell" />
-        <span
-          v-if="unreadCount > 0"
-          class="alarm-notify position-absolute inset-e-0 notification-badge"
-        >
-          {{ unreadCount > 99 ? '99+' : unreadCount }}
-        </span>
-      </span>
-    </button>
+  <UPopover v-model:open="open">
+    <div class="relative">
+      <UButton
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-bell"
+        size="lg"
+        square
+        aria-label="Notifications"
+      />
+      <UBadge
+        v-if="unreadCount > 0"
+        color="error"
+        variant="solid"
+        size="xs"
+        class="absolute -top-0.5 -right-0.5 pointer-events-none"
+      >
+        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      </UBadge>
+    </div>
 
-    <div
-      class="dropdown-menu dropdown-menu--lg border-0 bg-transparent p-0"
-      :class="{ show: open }"
-      style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 42px);"
-    >
-      <div class="card border border-gray-100 rounded-12 box-shadow-custom p-0 overflow-hidden">
-        <div class="card-body p-0">
-          <div class="py-8 px-24 bg-main-600">
-            <div class="flex-between">
-              <h5 class="text-xl fw-semibold text-white mb-0">
-                Notifications
-              </h5>
-              <div class="flex-align gap-12">
-                <button
-                  type="button"
-                  class="bg-white rounded-6 text-sm px-8 py-2 hover-text-primary-600"
-                  @click.stop="markAllRead"
-                >
-                  Mark All Read
-                </button>
-                <button
-                  type="button"
-                  class="close-dropdown hover-scale-1 text-xl text-white"
-                  aria-label="Close notifications"
-                  @click.stop="close"
-                >
-                  <i class="ph ph-x" />
-                </button>
-              </div>
-            </div>
+    <template #content>
+      <div class="w-96 max-w-[90vw]">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-default">
+          <h3 class="text-sm font-semibold text-highlighted">
+            Notifications
+          </h3>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click="markAllRead"
+          >
+            Mark all read
+          </UButton>
+        </div>
+
+        <div class="max-h-96 overflow-y-auto">
+          <div
+            v-if="loading"
+            class="p-4 space-y-3"
+          >
+            <USkeleton class="h-12 w-full" />
+            <USkeleton class="h-12 w-full" />
+            <USkeleton class="h-12 w-full" />
           </div>
 
-          <div class="notifications-container max-h-400 overflow-y-auto">
-            <div
-              v-if="loading"
-              class="text-center py-20"
+          <div
+            v-else-if="errorMessage"
+            class="text-center py-8 px-6"
+          >
+            <UIcon
+              name="i-lucide-circle-alert"
+              class="text-3xl text-error mb-2"
+            />
+            <p class="text-muted mb-3">
+              {{ errorMessage }}
+            </p>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              @click="loadDropdown"
             >
-              <div
-                class="spinner-border text-primary"
-                role="status"
-              >
-                <span class="visually-hidden">Loading...</span>
-              </div>
-            </div>
+              Retry
+            </UButton>
+          </div>
 
-            <div
-              v-else-if="errorMessage"
-              class="text-center py-20 px-24"
+          <div
+            v-else-if="!items.length"
+            class="text-center py-10"
+          >
+            <UIcon
+              name="i-lucide-bell-off"
+              class="text-3xl text-dimmed mb-2"
+            />
+            <p class="text-muted mb-0">
+              No notifications
+            </p>
+          </div>
+
+          <ul
+            v-else
+            class="divide-y divide-default"
+          >
+            <li
+              v-for="notification in items"
+              :key="notification.id"
             >
-              <i class="ph ph-warning-circle text-4xl text-danger mb-2" />
-              <p class="text-gray-600 mb-3">
-                {{ errorMessage }}
-              </p>
               <button
                 type="button"
-                class="btn btn-outline-primary btn-sm"
-                @click.stop="loadDropdown"
-              >
-                Retry
-              </button>
-            </div>
-
-            <div
-              v-else-if="!items.length"
-              class="text-center py-20"
-            >
-              <i class="ph ph-bell-slash text-4xl text-gray-300 mb-2" />
-              <p class="text-gray-400 mb-0">
-                No notifications
-              </p>
-            </div>
-
-            <div v-else>
-              <button
-                v-for="notification in items"
-                :key="notification.id"
-                type="button"
-                class="notification-item w-100 border-0 text-start px-24 py-16 border-bottom border-gray-100"
-                :class="notification.isRead ? 'bg-gray-50' : 'bg-white'"
+                class="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-elevated transition-colors"
+                :class="notification.isRead ? 'bg-default' : 'bg-elevated/50'"
                 @click="markRead(notification.id, notification.actionUrl)"
               >
-                <div class="flex-between gap-8">
-                  <div class="flex-align gap-12">
-                    <div
-                      class="w-40 h-40 rounded-circle flex-center"
-                      :class="`bg-${notification.color}-100 text-${notification.color}-600`"
-                    >
-                      <i :class="`ph ${notification.icon}`" />
-                    </div>
-                    <div class="grow">
-                      <h6 class="text-sm fw-semibold mb-4">
-                        {{ notification.title }}
-                      </h6>
-                      <p class="text-xs text-gray-600 mb-0">
-                        {{ notification.message }}
-                      </p>
-                      <span class="text-xs text-gray-400">{{ notification.createdAt }}</span>
-                    </div>
-                  </div>
-                  <span
-                    v-if="!notification.isRead"
-                    class="w-8 h-8 bg-primary-600 rounded-circle shrink-0"
-                  />
+                <div
+                  class="size-9 rounded-full flex items-center justify-center shrink-0"
+                  :class="avatarClass(notification.color)"
+                >
+                  <UIcon :name="notificationIcon(notification.icon)" />
                 </div>
+                <div class="grow min-w-0">
+                  <h4 class="text-sm font-semibold text-highlighted mb-0.5">
+                    {{ notification.title }}
+                  </h4>
+                  <p class="text-xs text-muted mb-1">
+                    {{ notification.message }}
+                  </p>
+                  <span class="text-xs text-dimmed">{{ notification.createdAt }}</span>
+                </div>
+                <span
+                  v-if="!notification.isRead"
+                  class="size-2 rounded-full bg-primary shrink-0 mt-1.5"
+                />
               </button>
-            </div>
-          </div>
-
-          <NuxtLink
-            to="/notifications"
-            class="py-13 px-24 fw-bold text-center d-block text-primary-600 border-top border-gray-100 hover-text-decoration-underline"
-            @click="close"
-          >
-            View All
-          </NuxtLink>
+            </li>
+          </ul>
         </div>
+
+        <NuxtLink
+          to="/notifications"
+          class="block text-center py-3 text-sm font-semibold text-primary border-t border-default hover:underline"
+          @click="open = false"
+        >
+          View All
+        </NuxtLink>
       </div>
-    </div>
-  </div>
+    </template>
+  </UPopover>
 </template>
-
-<style scoped>
-.notification-badge {
-  background-color: #dc3545;
-  color: white;
-  border-radius: 50%;
-  font-size: 10px;
-  min-width: 16px;
-  height: 16px;
-  line-height: 16px;
-  text-align: center;
-  top: -4px;
-  right: -4px;
-}
-
-.max-h-400 {
-  max-height: 400px;
-}
-
-.notification-item {
-  transition: background-color 0.2s ease;
-}
-
-.notification-item:hover {
-  background-color: #f8f9fa !important;
-}
-</style>

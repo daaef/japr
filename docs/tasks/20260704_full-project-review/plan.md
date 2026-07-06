@@ -132,11 +132,28 @@ own claims, so its solution.md should be cross-checked while writing this one.
 
 ## Phase 6 — `design-system-unification` (D1-D13) — largest effort, migrate incrementally
 
-Direction: **Nuxt UI v4 is the target system** — it's installed, themed (orange/rose/slate
-`@theme` tokens + `app.config.ts` aliases already correct), and the component layer the stack
-was chosen for. Bootstrap/jQuery/toastr and Preline are the retirement targets. Migrate shared
-components first (each fix propagates to every queue page for free thanks to the thin-wrapper
-architecture), layouts last.
+**Non-negotiable end state (updated 2026-07-06 per explicit human directive):** Nuxt UI v4 is
+the **only** UI component/interaction system in this app — no exception paths. Bootstrap, jQuery
+(+ jQuery UI, jquery-jvectormap), toastr, and Preline are fully retired: zero references, zero
+shipped bytes, zero npm/public-asset footprint, on every route (public, auth, and all four
+dashboards — author included, see D5 below). Nuxt UI is built on Tailwind, so plain Tailwind
+utility classes for layout/spacing remain fine; what's forbidden is any *other* CSS/JS UI
+plugin or hand-rolled component that duplicates what a Nuxt UI primitive already does (badge,
+button, pagination, dropdown, modal, toast, table, skeleton, form, navigation, accordion).
+
+**Definition of done (grep-verifiable, run before closing the phase):**
+
+```sh
+grep -rniE "bootstrap|jquery|toastr|preline" app/ nuxt.config.ts package.json   # zero hits
+```
+
+plus: `public/assets/css/bootstrap.min.css`, `public/assets/js/jquery*.js`,
+`public/assets/{css,js}/jquery-ui*`, `public/assets/{css,js}/jquery-jvectormap*` deleted;
+`app/assets/journal/sass/**` deleted; `preline` removed from `package.json`; no `.action-btn*`,
+`spinner-border`, or theme-scale (`_variable.scss`-sourced px-scale) utility classes remain.
+
+Migrate shared components first (each fix propagates to every queue page for free thanks to the
+thin-wrapper architecture), layouts last.
 
 1. Freeze: no new Bootstrap/Preline/theme-class usage from this point.
 2. Shared atoms, in order: status badge → `UBadge` wrapper over the existing
@@ -152,9 +169,11 @@ architecture), layouts last.
    `bootstrap.min.css`, theme `main.css`, jQuery, and `main.js` for that layout. This is what
    dissolves the D2 utility-class collision — until then, don't "fix" ambiguous classes like
    `w-40` piecemeal; they flip meaning when the theme sheet leaves.
-5. Author-role decision (D5): recommend giving author the same dashboard shell + shared
-   components as the other roles; if the marketing-style author area is intentional, document it
-   and share atoms (badge/button/pagination) anyway.
+5. **Author-role (D5): mandatory migration, not a decision point anymore.** The `layout: 'public'`
+   marketing shell + ad-hoc blue/indigo Tailwind is retired; author gets the same dashboard shell
+   and shared Nuxt UI atoms (badge/button/pagination/table) as editor/reviewer/admin. If any
+   author-specific visual identity is still wanted, it's expressed through Nuxt UI theme tokens
+   (`app.config.ts` color aliases), never a parallel component set or a second CSS sheet.
 6. Token sweep (D6): map raw grays/accents to Nuxt UI semantic tokens (`text-muted`,
    `bg-elevated`, `primary`); replace hex literals; standardize focus rings on `primary`; fix
    `border-[px]`, `w-25s`, `font-manrope`.
@@ -166,9 +185,11 @@ architecture), layouts last.
 9. Responsive (D12): replace the escaped-selector external CSS on the home hero with responsive
    utilities in the template; card-collapse or column-priority pattern for queue tables on small
    screens.
-10. Cleanup (D13, L-items): delete `app/assets/journal/sass/**`, Preline (plugin + dep + doc-id
-    leftovers) once its 2 usages move to `UAccordion`/`UNavigationMenu`, and finally the
-    Bootstrap assets in `public/assets/`.
+10. Cleanup (D13, L-items) — now the literal finish line, not a nice-to-have: delete
+    `app/assets/journal/sass/**` (70+ dead SCSS files), remove the `preline` plugin file + npm
+    dependency entirely (its 2 usages already moved to `UAccordion`/`UNavigationMenu` in step 4),
+    delete every Bootstrap/jQuery/jQuery-UI/jvectormap asset under `public/assets/`, and re-run
+    the definition-of-done grep above to confirm zero hits before marking Phase 6 closed.
 
 ## Sequencing & dependencies
 
