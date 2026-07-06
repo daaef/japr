@@ -779,12 +779,49 @@ Auth's trusted-origin check (B11) didn't reject the login.
 
 ### Not verified
 
-- No visual confirmation of `NotificationDropdown`'s actual open panel (avatar colors, skeleton
-  loading state, empty/error states) — blocked by the environment quirk above; the component's
-  code was reviewed against verified Nuxt UI APIs but not screenshotted open.
 - `JournalQueueList`/`ReviewerQueueList`'s `UButton` View/Review buttons and the `UBadge`
   Recent/Urgent tags were not independently screenshotted in a live role dashboard this pass
   (no editor/reviewer test session was set up, only the seeded admin account) — confirmed via
   lint/typecheck and by matching the identical, verified pattern already proven live in
   `DashboardProfileDropdown`.
 - No production `pnpm build` run this pass (only `nuxt dev`).
+
+### Update, same day: the "known issue" above was a real, project-wide bug — root-caused and fixed
+
+The human tested the `managing_editor` dashboard by hand after this entry was first written and
+found the "Manuscript Status Reference" card and the notification bell entirely missing — the
+first sign that the "environment quirk" theorized above had a real, user-visible impact, not just
+a dev-console curiosity. Re-investigated properly instead of standing by the earlier guess.
+
+**Actual root cause:** Nuxt's default `pathPrefix: true` component auto-import prefixes a
+component's registered name with its containing folder unless the filename already starts with
+that folder name. `app/components/dashboard/AdminHealthCard.vue` was registering as
+`<DashboardAdminHealthCard>`, not `<AdminHealthCard>` — every template in the app uses the bare
+name. Confirmed by grepping the generated `.nuxt/components.d.ts`: 11 of the 16 files in that
+folder (`AdminDistributionPanel`, `AdminHealthCard`, `AdminReviewPerformanceCard`,
+`AdminTopReviewersTable`, `EditorStatusReference`, `JournalQueueList`, `JournalStatusBadge`,
+`NotificationDropdown`, `ReviewerAssignmentCards`, `ReviewerQueueList`, `SimpleTrendChart`) were
+double-prefixed and silently unresolvable under the name every page actually uses; the other 5
+already start with "Dashboard" in their filename, so they happened to register correctly by
+coincidence. This is why `AdminHealthCard`/`AdminReviewPerformanceCard` — files never touched in
+this session — showed the identical failure to `JournalStatusBadge`/`NotificationDropdown`, which
+is what correctly ruled out this pass's edits as the cause back when this was first hit.
+Pre-existing since these components were first written; invisible to every prior phase's
+verification because static review can't see a runtime-only registration mismatch, and every
+"live" check up to now confirmed HTTP status codes and redirects, not actual rendered card content.
+
+**Fix:** `nuxt.config.ts` now declares `components: [{ path: '~/components', pathPrefix: false }]`.
+Verified zero component-filename collisions exist anywhere under `app/components/**` first (so
+bare-name registration is unambiguous everywhere, not just in `dashboard/`). Verified live: the
+missing "Manuscript Status Reference" card and notification bell both render correctly post-fix,
+and the `grep -rn "Failed to resolve component"` dev-server warning is gone entirely. Gate green.
+
+**Also reported by the human, investigated, fix deferred by explicit decision:** the "Manage
+Journals" sidebar item visually stays highlighted/expanded after navigating away from the journals
+section. Root cause confirmed live: the parent `<li>` has no Vue-reactive class binding at all —
+clicking it lets `main.js` (jQuery) add an `activePage` class directly to the DOM; Vue Router's
+client-side navigation never remounts the layout, so nothing ever removes that class once added.
+This is exactly the jQuery-vs-reactive-routing failure mode Phase 6's still-pending layout-rebuild
+step (step 4: rebuild each dashboard shell in Vue, dropping jQuery/`main.js`) exists to eliminate
+permanently. The human chose to defer rather than patch the jQuery-driven sidebar twice — tracked
+here as an open item for that step, not fixed in this pass.
