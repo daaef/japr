@@ -5,58 +5,79 @@
   --font-sans: "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-serif: "Georgia", "Times New Roman", serif;
 
-  /* Laravel journal tailwind.config.js — primary (orange) */
-  --color-primary-50: #fff8ed;
-  --color-primary-100: #fff0d4;
-  --color-primary-200: #ffdea8;
-  --color-primary-300: #ffc570;
-  --color-primary-400: #ffa137;
-  --color-primary-500: #ff830c;
-  --color-primary-600: #f06906;
-  --color-primary-700: #c74e07;
-  --color-primary-800: #9e3e0e;
-  --color-primary-900: #7f350f;
-  --color-primary-950: #451805;
+  /*
+   * Brand palette — derived from the JAPR logo (deep maroon ring, warm amber/gold
+   * Africa map + sun). `maroon` and `gold` are the canonical scales; the Nuxt UI aliases
+   * in app/app.config.ts map primary→maroon, secondary→gold, neutral→stone.
+   *
+   * Maroon (primary) — 500 is the interactive brand maroon; 700 ≈ the logo ring.
+   */
+  --color-maroon-50: #fcf4f5;
+  --color-maroon-100: #f8e7e9;
+  --color-maroon-200: #f0ccd2;
+  --color-maroon-300: #e2a6b0;
+  --color-maroon-400: #cd7382;
+  --color-maroon-500: #9a2f42;
+  --color-maroon-600: #862a3a;
+  --color-maroon-700: #6f2530;
+  --color-maroon-800: #5f232c;
+  --color-maroon-900: #522028;
+  --color-maroon-950: #2e0e14;
 
-  /* Laravel journal tailwind.config.js — secondary (coral) */
-  --color-secondary-50: #fef4f2;
-  --color-secondary-100: #fde7e3;
-  --color-secondary-200: #fdd2cb;
-  --color-secondary-300: #fab2a7;
-  --color-secondary-400: #f48675;
-  --color-secondary-500: #ea5f49;
-  --color-secondary-600: #d7422b;
-  --color-secondary-700: #b53420;
-  --color-secondary-800: #962e1e;
-  --color-secondary-900: #762a1e;
-  --color-secondary-950: #43140c;
+  /* Gold (secondary) — warm ochre-gold accent from the logo sun/map. */
+  --color-gold-50: #fdf8ec;
+  --color-gold-100: #f9edc9;
+  --color-gold-200: #f2d88d;
+  --color-gold-300: #ebbf54;
+  --color-gold-400: #e5a833;
+  --color-gold-500: #d5871b;
+  --color-gold-600: #bd6c12;
+  --color-gold-700: #9c5014;
+  --color-gold-800: #7f4017;
+  --color-gold-900: #6b3617;
+  --color-gold-950: #3e1c09;
 
-  /* Nuxt UI aliases */
-  --color-orange-50: #fff8ed;
-  --color-orange-100: #fff0d4;
-  --color-orange-200: #ffdea8;
-  --color-orange-300: #ffc570;
-  --color-orange-400: #ffa137;
-  --color-orange-500: #ff830c;
-  --color-orange-600: #f06906;
-  --color-orange-700: #c74e07;
-  --color-orange-800: #9e3e0e;
-  --color-orange-900: #7f350f;
-  --color-orange-950: #451805;
+  /*
+   * Legacy Tailwind utility ramps still referenced by un-migrated templates
+   * (`*-primary-*` in 22 files, `*-secondary-*` in 7, `*-orange-*` in 7). Re-pointed to
+   * the brand so those pages stay on-brand until the W1–W4 sweep replaces the literals;
+   * delete these blocks once the sweep is done. (`rose` had 0 usages — removed.)
+   */
+  --color-primary-50: #fcf4f5;
+  --color-primary-100: #f8e7e9;
+  --color-primary-200: #f0ccd2;
+  --color-primary-300: #e2a6b0;
+  --color-primary-400: #cd7382;
+  --color-primary-500: #9a2f42;
+  --color-primary-600: #862a3a;
+  --color-primary-700: #6f2530;
+  --color-primary-800: #5f232c;
+  --color-primary-900: #522028;
+  --color-primary-950: #2e0e14;
 
-  --color-rose-50: #fef4f2;
-  --color-rose-100: #fde7e3;
-  --color-rose-200: #fdd2cb;
-  --color-rose-300: #fab2a7;
-  --color-rose-400: #f48675;
-  --color-rose-500: #ea5f49;
-  --color-rose-600: #d7422b;
-  --color-rose-700: #b53420;
-  --color-rose-800: #962e1e;
-  --color-rose-900: #762a1e;
-  --color-rose-950: #43140c;
+  --color-secondary-50: #fdf8ec;
+  --color-secondary-100: #f9edc9;
+  --color-secondary-200: #f2d88d;
+  --color-secondary-300: #ebbf54;
+  --color-secondary-400: #e5a833;
+  --color-secondary-500: #d5871b;
+  --color-secondary-600: #bd6c12;
+  --color-secondary-700: #9c5014;
+  --color-secondary-800: #7f4017;
+  --color-secondary-900: #6b3617;
+  --color-secondary-950: #3e1c09;
 
-  --ui-primary: var(--color-primary-500);
+  --color-orange-50: #fcf4f5;
+  --color-orange-100: #f8e7e9;
+  --color-orange-200: #f0ccd2;
+  --color-orange-300: #e2a6b0;
+  --color-orange-400: #cd7382;
+  --color-orange-500: #9a2f42;
+  --color-orange-600: #862a3a;
+  --color-orange-700: #6f2530;
+  --color-orange-800: #5f232c;
+  --color-orange-900: #522028;
+  --color-orange-950: #2e0e14;
 
   --container-center: true;
 }
