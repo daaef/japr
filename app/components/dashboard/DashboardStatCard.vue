@@ -10,26 +10,24 @@ defineProps<{
 </script>
 
 <template>
-  <div class="card h-100">
-    <div class="card-body">
-      <h4 class="mb-2">
-        {{ loading ? '…' : value }}
-      </h4>
-      <span class="text-gray-600">{{ label }}</span>
-      <div class="flex-between gap-8 mt-16">
-        <span
-          class="shrink-0 w-48 h-48 flex-center rounded-circle text-white text-2xl"
-          :class="iconClass"
-        >
-          <i :class="`ph-fill ${icon}`" />
-        </span>
-        <small
-          v-if="meta"
-          class="text-gray-500"
-        >
-          {{ meta }}
-        </small>
-      </div>
+  <UCard class="h-full">
+    <h4 class="text-2xl font-semibold text-highlighted mb-2">
+      {{ loading ? '…' : value }}
+    </h4>
+    <span class="text-muted">{{ label }}</span>
+    <div class="flex-between gap-8 mt-16">
+      <span
+        class="shrink-0 w-48 h-48 flex-center rounded-circle text-white text-2xl"
+        :class="iconClass"
+      >
+        <UIcon :name="icon" />
+      </span>
+      <small
+        v-if="meta"
+        class="text-muted"
+      >
+        {{ meta }}
+      </small>
     </div>
-  </div>
+  </UCard>
 </template>

@@ -89,7 +89,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Desk Review"
             :value="summary.pendingQueue"
-            icon="ph-book-open"
+            icon="i-lucide-book-open"
             icon-class="bg-main-600"
             :meta="summary.legacyPending ? `${summary.legacyPending} legacy pending` : undefined"
             :loading="summaryPending"
@@ -99,7 +99,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="In Progress"
             :value="summary.inProgress"
-            icon="ph-graduation-cap"
+            icon="i-lucide-graduation-cap"
             icon-class="bg-purple-600"
             :loading="summaryPending"
           />
@@ -108,7 +108,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Under Peer Review"
             :value="summary.underPeerReview"
-            icon="ph-users-three"
+            icon="i-lucide-users"
             icon-class="bg-info-600"
             :loading="summaryPending"
           />
@@ -117,7 +117,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Ready for Notice"
             :value="summary.readyForNotice"
-            icon="ph-bell"
+            icon="i-lucide-bell"
             icon-class="bg-info"
             :loading="summaryPending"
           />
@@ -126,7 +126,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Reviewed"
             :value="summary.reviewed"
-            icon="ph-check-circle"
+            icon="i-lucide-circle-check"
             icon-class="bg-success"
             :loading="summaryPending"
           />
@@ -135,7 +135,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Approved Manuscripts"
             :value="summary.approved"
-            icon="ph-certificate"
+            icon="i-lucide-award"
             icon-class="bg-main-two-600"
             :loading="summaryPending"
           />
@@ -144,7 +144,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Revision Requested"
             :value="summary.changesRequested"
-            icon="ph-pencil-simple"
+            icon="i-lucide-pencil"
             icon-class="bg-warning-600"
             :loading="summaryPending"
           />
@@ -153,7 +153,7 @@ const summary = computed(() => summaryData.value.summary)
           <DashboardStatCard
             label="Declined"
             :value="summary.declined"
-            icon="ph-x-circle"
+            icon="i-lucide-circle-x"
             icon-class="bg-danger-600"
             :loading="summaryPending"
           />

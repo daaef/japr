@@ -7,17 +7,17 @@ const dayNumber = new Intl.DateTimeFormat('en-GB', { day: 'numeric' }).format(no
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-body text-center">
-      <p class="text-13 text-gray-500 mb-4">
+  <UCard>
+    <div class="text-center">
+      <p class="text-xs text-muted mb-1">
         {{ monthName }}
       </p>
-      <h3 class="mb-2">
+      <h3 class="text-3xl font-semibold text-highlighted mb-1">
         {{ dayNumber }}
       </h3>
-      <p class="text-gray-600 mb-0">
+      <p class="text-muted mb-0">
         {{ dayName }}
       </p>
     </div>
-  </div>
+  </UCard>
 </template>

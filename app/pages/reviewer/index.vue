@@ -72,7 +72,7 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
           <DashboardStatCard
             label="Pending Manuscripts"
             :value="summary.pending"
-            icon="ph-book-open"
+            icon="i-lucide-book-open"
             icon-class="bg-main-600"
             :loading="summaryPending"
           />
@@ -81,7 +81,7 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
           <DashboardStatCard
             label="Reviewed Manuscripts"
             :value="summary.reviewed"
-            icon="ph-check-circle"
+            icon="i-lucide-circle-check"
             icon-class="bg-info-600"
             :loading="summaryPending"
           />
@@ -90,7 +90,7 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
           <DashboardStatCard
             label="Approved Manuscripts"
             :value="summary.approved"
-            icon="ph-certificate"
+            icon="i-lucide-award"
             icon-class="bg-main-two-600"
             :loading="summaryPending"
           />
@@ -99,7 +99,7 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
           <DashboardStatCard
             label="Manuscripts in Progress"
             :value="summary.inProgress"
-            icon="ph-graduation-cap"
+            icon="i-lucide-graduation-cap"
             icon-class="bg-purple-600"
             :loading="summaryPending"
           />
@@ -108,7 +108,7 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
           <DashboardStatCard
             label="Declined Invitations"
             :value="summary.declinedInvitations"
-            icon="ph-x-circle"
+            icon="i-lucide-circle-x"
             icon-class="bg-warning-600"
             :meta="summary.declinedManuscripts ? `${summary.declinedManuscripts} declined manuscripts` : undefined"
             :loading="summaryPending"

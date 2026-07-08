@@ -53,90 +53,98 @@ function formatDate(value: string | null) {
 </script>
 
 <template>
-  <div class="card mt-24">
-    <div class="card-body">
-      <div class="mb-20 flex-between flex-wrap gap-8">
-        <div>
-          <h4 class="mb-2">
-            Journals Assigned to You
-          </h4>
-          <p class="text-gray-500 mb-0">
-            Review invitations and active assignments.
-          </p>
-        </div>
-        <div class="flex-align gap-8 flex-wrap">
-          <button
-            v-for="filter in filterOptions"
-            :key="filter.value"
-            type="button"
-            class="btn btn-sm rounded-pill"
-            :class="activeFilter === filter.value ? 'btn-main' : 'btn-outline-main'"
-            @click="activeFilter = filter.value"
-          >
-            {{ filter.label }}
-          </button>
-        </div>
-      </div>
-
-      <div
-        v-if="!filteredAssignments.length"
-        class="text-center py-40"
-      >
-        <i class="ph ph-book-open text-5xl text-gray-300 mb-16" />
-        <p class="text-gray-500 mb-0">
-          No assignments in this filter.
+  <UCard class="mt-24">
+    <div class="mb-20 flex-between flex-wrap gap-8">
+      <div>
+        <h4 class="text-lg font-semibold text-highlighted mb-2">
+          Journals Assigned to You
+        </h4>
+        <p class="text-muted mb-0">
+          Review invitations and active assignments.
         </p>
       </div>
-
-      <template v-else>
-        <div
-          v-for="assignment in filteredAssignments"
-          :key="assignment.id"
-          class="p-xl-4 py-16 px-12 rounded-8 border border-gray-100 hover-border-gray-200 transition-1 mb-16"
+      <div class="flex-align gap-8 flex-wrap">
+        <UButton
+          v-for="filter in filterOptions"
+          :key="filter.value"
+          size="sm"
+          color="primary"
+          :variant="activeFilter === filter.value ? 'solid' : 'outline'"
+          class="rounded-full"
+          @click="activeFilter = filter.value"
         >
-          <div class="flex-between gap-8 mb-12">
-            <div class="flex-align flex-wrap gap-8">
-              <span class="text-main-600 bg-main-50 w-44 h-44 rounded-circle flex-center text-2xl shrink-0">
-                <i class="ph-fill ph-graduation-cap" />
-              </span>
-              <div class="grow">
-                <h6 class="mb-2">
-                  {{ assignment.journalTitle }}
-                </h6>
-                <div class="flex-align flex-wrap gap-12 mb-2">
-                  <JournalStatusBadge :status="assignment.status" />
-                  <span class="text-13 text-gray-500">
-                    Due {{ formatDate(assignment.reviewDeadline) }}
-                  </span>
-                </div>
+          {{ filter.label }}
+        </UButton>
+      </div>
+    </div>
+
+    <div
+      v-if="!filteredAssignments.length"
+      class="text-center py-40"
+    >
+      <UIcon
+        name="i-lucide-book-open"
+        class="text-5xl text-dimmed mb-16"
+      />
+      <p class="text-muted mb-0">
+        No assignments in this filter.
+      </p>
+    </div>
+
+    <template v-else>
+      <div
+        v-for="assignment in filteredAssignments"
+        :key="assignment.id"
+        class="p-xl-4 py-16 px-12 rounded-8 border border-default hover:border-accented transition-1 mb-16"
+      >
+        <div class="flex-between gap-8 mb-12">
+          <div class="flex-align flex-wrap gap-8">
+            <span class="text-primary-600 bg-primary-50 w-44 h-44 rounded-circle flex-center text-2xl shrink-0">
+              <UIcon name="i-lucide-graduation-cap" />
+            </span>
+            <div class="grow">
+              <h6 class="text-base font-semibold text-highlighted mb-2">
+                {{ assignment.journalTitle }}
+              </h6>
+              <div class="flex-align flex-wrap gap-12 mb-2">
+                <JournalStatusBadge :status="assignment.status" />
+                <span class="text-xs text-muted">
+                  Due {{ formatDate(assignment.reviewDeadline) }}
+                </span>
               </div>
             </div>
-            <div class="text-end">
-              <span
-                v-if="isRecent(assignment)"
-                class="badge bg-info rounded-pill mb-2 d-block"
-              >
-                Recent
-              </span>
-              <span
-                v-if="isUrgent(assignment)"
-                class="badge bg-danger rounded-pill"
-              >
-                Urgent
-              </span>
-            </div>
           </div>
-
-          <div class="flex-align gap-8 mt-12">
-            <NuxtLink
-              :to="`/reviewer/journals/${assignment.journalId}/review`"
-              class="btn btn-main btn-sm rounded-pill"
+          <div class="flex flex-col items-end gap-2">
+            <UBadge
+              v-if="isRecent(assignment)"
+              color="info"
+              variant="subtle"
+              class="rounded-full"
             >
-              Review
-            </NuxtLink>
+              Recent
+            </UBadge>
+            <UBadge
+              v-if="isUrgent(assignment)"
+              color="error"
+              variant="subtle"
+              class="rounded-full"
+            >
+              Urgent
+            </UBadge>
           </div>
         </div>
-      </template>
-    </div>
-  </div>
+
+        <div class="flex-align gap-8 mt-12">
+          <UButton
+            :to="`/reviewer/journals/${assignment.journalId}/review`"
+            color="primary"
+            size="sm"
+            class="rounded-full"
+          >
+            Review
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </UCard>
 </template>

@@ -6,37 +6,40 @@ defineProps<{
 </script>
 
 <template>
-  <div class="card h-100">
-    <div class="card-header">
-      <h5 class="mb-0">
+  <UCard>
+    <template #header>
+      <h5 class="text-base font-semibold text-highlighted mb-0">
         {{ title }}
       </h5>
+    </template>
+    <div
+      v-if="!rows.length"
+      class="text-center text-muted py-24"
+    >
+      No data available.
     </div>
-    <div class="card-body">
+    <template v-else>
       <div
-        v-if="!rows.length"
-        class="text-center text-muted py-24"
+        v-for="row in rows"
+        :key="row.label"
+        class="flex justify-between items-center mb-3"
       >
-        No data available.
+        <span class="capitalize">{{ row.label.replaceAll('_', ' ').replaceAll('-', ' ') }}</span>
+        <span>
+          <UBadge
+            color="primary"
+            variant="subtle"
+          >
+            {{ row.count }}
+          </UBadge>
+          <small
+            v-if="row.percentage !== undefined"
+            class="text-muted ms-2"
+          >
+            {{ row.percentage }}%
+          </small>
+        </span>
       </div>
-      <template v-else>
-        <div
-          v-for="row in rows"
-          :key="row.label"
-          class="d-flex justify-content-between align-items-center mb-3"
-        >
-          <span class="text-capitalize">{{ row.label.replaceAll('_', ' ').replaceAll('-', ' ') }}</span>
-          <span>
-            <span class="badge bg-primary">{{ row.count }}</span>
-            <small
-              v-if="row.percentage !== undefined"
-              class="text-muted ms-2"
-            >
-              {{ row.percentage }}%
-            </small>
-          </span>
-        </div>
-      </template>
-    </div>
-  </div>
+    </template>
+  </UCard>
 </template>

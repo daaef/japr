@@ -10,16 +10,16 @@ defineProps<{
   <div>
     <p
       v-if="eyebrow"
-      class="text-13 text-gray-500 text-uppercase mb-4"
+      class="text-xs uppercase tracking-wide text-muted mb-1"
     >
       {{ eyebrow }}
     </p>
-    <h4 class="mb-4">
+    <h4 class="text-lg font-semibold text-highlighted mb-1">
       {{ title }}
     </h4>
     <p
       v-if="description"
-      class="text-13 text-gray-600 mb-0"
+      class="text-sm text-muted mb-0"
     >
       {{ description }}
     </p>

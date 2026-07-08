@@ -24,6 +24,13 @@ const emit = defineEmits<{
 const languageOptions = ['British English', 'American English', 'French']
 const licenseOptions = JOURNAL_LICENSE_OPTIONS
 
+const filterAccordionItems = [
+  { label: 'Categories', value: 'categories', slot: 'categories' as const },
+  { label: 'Languages', value: 'languages', slot: 'languages' as const },
+  { label: 'Licenses', value: 'licenses', slot: 'licenses' as const },
+  { label: 'Country', value: 'countries', slot: 'countries' as const }
+]
+
 function toggleValue(list: string[], value: string, checked: boolean) {
   if (checked) {
     return list.includes(value) ? list : [...list, value]
@@ -63,357 +70,175 @@ function onCountryChange(country: string, event: Event) {
 </script>
 
 <template>
-  <nav
-    class="hs-accordion-group"
-    data-hs-accordion-always-open
-  >
+  <nav>
     <form
       class="w-full flex space-y-2.5 flex-col flex-wrap"
       @submit.prevent="emit('apply')"
     >
-      <ul class="space-y-1.5">
-        <li
-          class="hs-accordion active"
-          id="categories-accordion"
-        >
-          <button
-            type="button"
-            class="hs-accordion-toggle hs-accordion-active:text-secondary-900 hs-accordion-active:hover:bg-transparent w-full text-start flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-secondary-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100 uppercase"
-            aria-expanded="true"
-            aria-controls="categories-accordion-content"
-          >
-            Categories
-            <svg
-              class="hs-accordion-active:block ms-auto hidden size-4 text-gray-600 group-hover:text-gray-500"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+      <UAccordion
+        type="multiple"
+        :items="filterAccordionItems"
+        :default-value="['categories', 'languages', 'licenses', 'countries']"
+      >
+        <template #categories>
+          <ul class="pt-2 ps-2 max-h-[200px] overflow-y-auto">
+            <li
+              v-for="category in categories"
+              :key="category.id"
             >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
-            <svg
-              class="hs-accordion-active:hidden ms-auto block size-4 text-gray-600 group-hover:text-gray-500"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div
-            id="categories-accordion-content"
-            class="hs-accordion-content w-full overflow-hidden transition-[height] duration-300"
-            role="region"
-            aria-labelledby="categories-accordion"
-          >
-            <ul class="pt-2 ps-2 max-h-[200px] overflow-y-auto">
-              <li
-                v-for="category in categories"
-                :key="category.id"
+              <label
+                class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-default rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                :for="`cat-${category.id}`"
               >
-                <label
-                  class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :for="`cat-${category.id}`"
+                <input
+                  :id="`cat-${category.id}`"
+                  type="checkbox"
+                  name="category[]"
+                  :value="category.id"
+                  :checked="selectedCategories.includes(category.id)"
+                  @change="onCategoryChange(category.id, $event)"
                 >
-                  <input
-                    :id="`cat-${category.id}`"
-                    type="checkbox"
-                    name="category[]"
-                    :value="category.id"
-                    :checked="selectedCategories.includes(category.id)"
-                    @change="onCategoryChange(category.id, $event)"
-                  >
-                  <span class="inline-block">{{ category.name }}</span>
-                </label>
+                <span class="inline-block">{{ category.name }}</span>
+              </label>
 
-                <ul
-                  v-if="selectedCategories.includes(category.id) && category.subCategories.length"
-                  class="ps-6"
+              <ul
+                v-if="selectedCategories.includes(category.id) && category.subCategories.length"
+                class="ps-6"
+              >
+                <li
+                  v-for="subCategory in category.subCategories"
+                  :key="subCategory.id"
                 >
-                  <li
-                    v-for="subCategory in category.subCategories"
-                    :key="subCategory.id"
+                  <label
+                    class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-toned rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                    :for="`subcat-${subCategory.id}`"
                   >
-                    <label
-                      class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-gray-600 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                      :for="`subcat-${subCategory.id}`"
+                    <input
+                      :id="`subcat-${subCategory.id}`"
+                      type="checkbox"
+                      name="subcategory[]"
+                      :value="subCategory.id"
+                      :checked="selectedSubcategories.includes(subCategory.id)"
+                      @change="onSubcategoryChange(subCategory.id, $event)"
                     >
-                      <input
-                        :id="`subcat-${subCategory.id}`"
-                        type="checkbox"
-                        name="subcategory[]"
-                        :value="subCategory.id"
-                        :checked="selectedSubcategories.includes(subCategory.id)"
-                        @change="onSubcategoryChange(subCategory.id, $event)"
-                      >
-                      <span class="inline-block">{{ subCategory.name }}</span>
-                    </label>
+                    <span class="inline-block">{{ subCategory.name }}</span>
+                  </label>
 
-                    <ul
-                      v-if="selectedSubcategories.includes(subCategory.id) && subCategory.subSubCategories.length"
-                      class="ps-6"
+                  <ul
+                    v-if="selectedSubcategories.includes(subCategory.id) && subCategory.subSubCategories.length"
+                    class="ps-6"
+                  >
+                    <li
+                      v-for="subSubCategory in subCategory.subSubCategories"
+                      :key="subSubCategory.id"
                     >
-                      <li
-                        v-for="subSubCategory in subCategory.subSubCategories"
-                        :key="subSubCategory.id"
+                      <label
+                        class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-muted rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                        :for="`subsubcat-${subSubCategory.id}`"
                       >
-                        <label
-                          class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                          :for="`subsubcat-${subSubCategory.id}`"
+                        <input
+                          :id="`subsubcat-${subSubCategory.id}`"
+                          type="checkbox"
+                          name="subsubcategory[]"
+                          :value="subSubCategory.id"
+                          :checked="selectedSubSubcategories.includes(subSubCategory.id)"
+                          @change="onSubSubcategoryChange(subSubCategory.id, $event)"
                         >
-                          <input
-                            :id="`subsubcat-${subSubCategory.id}`"
-                            type="checkbox"
-                            name="subsubcategory[]"
-                            :value="subSubCategory.id"
-                            :checked="selectedSubSubcategories.includes(subSubCategory.id)"
-                            @change="onSubSubcategoryChange(subSubCategory.id, $event)"
-                          >
-                          <span class="inline-block">{{ subSubCategory.name }}</span>
-                        </label>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </li>
+                        <span class="inline-block">{{ subSubCategory.name }}</span>
+                      </label>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </template>
 
-        <li
-          class="hs-accordion active"
-          id="languages-accordion"
-        >
-          <button
-            type="button"
-            class="hs-accordion-toggle hs-accordion-active:text-primary-900 hs-accordion-active:hover:bg-transparent w-full text-start flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-primary-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100 uppercase"
-            aria-expanded="true"
-            aria-controls="languages-accordion-content"
-          >
-            Languages
-            <svg
-              class="hs-accordion-active:block ms-auto hidden size-4 text-gray-600 group-hover:text-gray-500"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+        <template #languages>
+          <ul class="pt-2 ps-2">
+            <li
+              v-for="(language, index) in languageOptions"
+              :key="language"
             >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
-            <svg
-              class="hs-accordion-active:hidden ms-auto block size-4 text-gray-600 group-hover:text-gray-500"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div
-            id="languages-accordion-content"
-            class="hs-accordion-content w-full overflow-hidden transition-[height] duration-300"
-            role="region"
-            aria-labelledby="languages-accordion"
-          >
-            <ul class="pt-2 ps-2">
-              <li
-                v-for="(language, index) in languageOptions"
-                :key="language"
+              <label
+                class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-default rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                :for="`lang-${index + 1}`"
               >
-                <label
-                  class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :for="`lang-${index + 1}`"
+                <input
+                  :id="`lang-${index + 1}`"
+                  type="checkbox"
+                  :checked="selectedLanguages.includes(language)"
+                  @change="onLanguageChange(language, $event)"
                 >
-                  <input
-                    :id="`lang-${index + 1}`"
-                    type="checkbox"
-                    :checked="selectedLanguages.includes(language)"
-                    @change="onLanguageChange(language, $event)"
-                  >
-                  <span class="inline-block">{{ language }}</span>
-                </label>
-              </li>
-            </ul>
-          </div>
-        </li>
+                <span class="inline-block">{{ language }}</span>
+              </label>
+            </li>
+          </ul>
+        </template>
 
-        <li
-          class="hs-accordion active"
-          id="licenses-accordion"
-        >
-          <button
-            type="button"
-            class="hs-accordion-toggle hs-accordion-active:text-primary-900 hs-accordion-active:hover:bg-transparent w-full text-start flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-primary-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100 uppercase"
-            aria-expanded="true"
-            aria-controls="licenses-accordion-content"
-          >
-            Licenses
-            <svg
-              class="hs-accordion-active:block hs-accordion-active:text-primary-900 ms-auto hidden size-4 text-primary-800"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+        <template #licenses>
+          <ul class="pt-2 ps-2">
+            <li
+              v-for="license in licenseOptions"
+              :key="license.id"
+              class="relative flex gap-x-3 px-2.5"
             >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
-            <svg
-              class="hs-accordion-active:hidden ms-auto block size-4 text-gray-600 group-hover:text-gray-500"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div
-            id="licenses-accordion-content"
-            class="hs-accordion-content w-full overflow-hidden transition-[height] duration-300"
-            role="region"
-            aria-labelledby="licenses-accordion"
-          >
-            <ul class="pt-2 ps-2">
-              <li
-                v-for="license in licenseOptions"
-                :key="license.id"
-                class="relative flex gap-x-3 px-2.5"
-              >
-                <div class="flex h-6 items-center">
-                  <input
-                    :id="license.id"
-                    name="license[]"
-                    type="checkbox"
-                    :value="license.label"
-                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
-                    :checked="selectedLicenses.includes(license.label)"
-                    @change="onLicenseChange(license.label, $event)"
-                  >
-                </div>
-                <div class="text-sm leading-6">
-                  <label
-                    :for="license.id"
-                    class="text-gray-500"
-                  >{{ license.label }}</label>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </li>
+              <div class="flex h-6 items-center">
+                <input
+                  :id="license.id"
+                  name="license[]"
+                  type="checkbox"
+                  :value="license.label"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                  :checked="selectedLicenses.includes(license.label)"
+                  @change="onLicenseChange(license.label, $event)"
+                >
+              </div>
+              <div class="text-sm leading-6">
+                <label
+                  :for="license.id"
+                  class="text-muted"
+                >{{ license.label }}</label>
+              </div>
+            </li>
+          </ul>
+        </template>
 
-        <li
-          class="hs-accordion active"
-          id="countries-accordion"
-        >
-          <button
-            type="button"
-            class="hs-accordion-toggle hs-accordion-active:text-primary-900 hs-accordion-active:hover:bg-transparent w-full text-start flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-primary-800 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100 uppercase"
-            aria-expanded="true"
-            aria-controls="countries-accordion-content"
-          >
-            Country
-            <svg
-              class="hs-accordion-active:block hs-accordion-active:text-primary-900 ms-auto hidden size-4 text-primary-800"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+        <template #countries>
+          <ul class="pt-2 ps-2 max-h-[200px] overflow-y-auto">
+            <li
+              v-for="country in countries"
+              :key="country"
+              class="relative flex gap-x-3 px-2.5"
             >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
-            <svg
-              class="hs-accordion-active:hidden ms-auto block size-4 text-gray-600 group-hover:text-gray-500"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div
-            id="countries-accordion-content"
-            class="hs-accordion-content w-full overflow-hidden transition-[height] duration-300"
-            role="region"
-            aria-labelledby="countries-accordion"
-          >
-            <ul class="pt-2 ps-2 max-h-[200px] overflow-y-auto">
-              <li
-                v-for="country in countries"
-                :key="country"
-                class="relative flex gap-x-3 px-2.5"
-              >
-                <div class="flex h-6 items-center">
-                  <input
-                    :id="country"
-                    name="country[]"
-                    type="checkbox"
-                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
-                    :value="country"
-                    :checked="selectedCountries.includes(country)"
-                    @change="onCountryChange(country, $event)"
-                  >
-                </div>
-                <div class="text-sm leading-6">
-                  <label
-                    :for="country"
-                    class="text-gray-500"
-                  >{{ country }}</label>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </li>
-      </ul>
-      <button
+              <div class="flex h-6 items-center">
+                <input
+                  :id="country"
+                  name="country[]"
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                  :value="country"
+                  :checked="selectedCountries.includes(country)"
+                  @change="onCountryChange(country, $event)"
+                >
+              </div>
+              <div class="text-sm leading-6">
+                <label
+                  :for="country"
+                  class="text-muted"
+                >{{ country }}</label>
+              </div>
+            </li>
+          </ul>
+        </template>
+      </UAccordion>
+      <UButton
         type="submit"
-        class="py-2 px-5 bg-primary-500 text-gray-100 rounded-[8px]"
+        color="primary"
+        block
       >
         Apply filter
-      </button>
+      </UButton>
     </form>
   </nav>
 </template>

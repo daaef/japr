@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <article class="card p-24">
+  <UCard>
     <div class="border-b border-default pb-4">
       <h3 class="text-lg font-semibold text-toned">
         {{ member.name }}
@@ -28,5 +28,5 @@ defineProps<{
         {{ member.institution }}
       </p>
     </div>
-  </article>
+  </UCard>
 </template>

@@ -50,15 +50,18 @@ function formatDate(value?: string | null) {
 <template>
   <div class="row gy-4">
     <div class="col-lg-12">
-      <div class="card mt-24 overflow-hidden">
-        <div class="card-header">
+      <UCard
+        class="mt-6 overflow-hidden"
+        :ui="{ body: 'p-0 sm:p-0' }"
+      >
+        <template #header>
           <h4 class="mb-0">
             {{ title }} ({{ data?.meta.total ?? 0 }})
           </h4>
-        </div>
+        </template>
         <div
           v-if="error"
-          class="p-24"
+          class="p-6"
         >
           <DashboardSummaryError
             :message="`Unable to load ${title.toLowerCase()}.`"
@@ -67,11 +70,11 @@ function formatDate(value?: string | null) {
         </div>
         <div
           v-else
-          class="card-body p-0 overflow-x-auto"
+          class="overflow-x-auto"
         >
           <div
             v-if="pending"
-            class="p-24 text-13 text-gray-500"
+            class="p-6 text-xs text-muted"
           >
             Loading assignments...
           </div>
@@ -118,14 +121,14 @@ function formatDate(value?: string | null) {
                   </div>
                 </td>
                 <td>
-                  <span class="text-13 text-gray-600">{{ formatDate(review.journalSubmittedAt) }}</span>
+                  <span class="text-xs text-muted">{{ formatDate(review.journalSubmittedAt) }}</span>
                 </td>
                 <td>
-                  <span class="text-13 text-gray-600">{{ formatDate(review.assignedAt) }}</span>
+                  <span class="text-xs text-muted">{{ formatDate(review.assignedAt) }}</span>
                 </td>
                 <td>
-                  <span class="text-13 text-gray-600">{{ formatDate(review.reviewDeadline) }}</span>
-                  <span v-if="review.reviewSubmittedAt" class="d-block text-13 text-success">
+                  <span class="text-xs text-muted">{{ formatDate(review.reviewDeadline) }}</span>
+                  <span v-if="review.reviewSubmittedAt" class="d-block text-xs text-success">
                     Submitted {{ formatDate(review.reviewSubmittedAt) }}
                   </span>
                 </td>
@@ -148,7 +151,7 @@ function formatDate(value?: string | null) {
               <tr v-if="!reviews.length">
                 <td
                   colspan="6"
-                  class="text-center py-24 text-13 text-gray-500"
+                  class="text-center py-24 text-xs text-muted"
                 >
                   {{ emptyMessage ?? 'No assignments in this queue.' }}
                 </td>
@@ -156,9 +159,9 @@ function formatDate(value?: string | null) {
             </tbody>
           </table>
         </div>
-        <div
+        <template
           v-if="data?.meta.total"
-          class="card-footer"
+          #footer
         >
           <AppPagination
             :page="data.meta.page"
@@ -167,8 +170,8 @@ function formatDate(value?: string | null) {
             :page-size="data.meta.pageSize"
             @change="goToPage"
           />
-        </div>
-      </div>
+        </template>
+      </UCard>
     </div>
   </div>
 </template>

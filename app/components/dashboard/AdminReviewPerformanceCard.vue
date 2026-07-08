@@ -8,27 +8,25 @@ defineProps<{
 </script>
 
 <template>
-  <div class="card h-100">
-    <div class="card-body">
-      <h5 class="mb-3">
-        Review Performance
-      </h5>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="text-gray-600">Active Reviewers</span>
-        <strong>{{ activeReviewers }}</strong>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="text-gray-600">Avg Review Time</span>
-        <strong>{{ averageReviewTimeDays }} days</strong>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="text-gray-600">Reviews This Month</span>
-        <strong class="text-success-600">{{ reviewsCompletedThisMonth }}</strong>
-      </div>
-      <div class="d-flex justify-content-between align-items-center">
-        <span class="text-gray-600">Overdue Reviews</span>
-        <strong :class="overdueReviews > 0 ? 'text-danger-600' : 'text-success-600'">{{ overdueReviews }}</strong>
-      </div>
+  <UCard>
+    <h5 class="text-base font-semibold text-highlighted mb-3">
+      Review Performance
+    </h5>
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-muted">Active Reviewers</span>
+      <strong>{{ activeReviewers }}</strong>
     </div>
-  </div>
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-muted">Avg Review Time</span>
+      <strong>{{ averageReviewTimeDays }} days</strong>
+    </div>
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-muted">Reviews This Month</span>
+      <strong class="text-success">{{ reviewsCompletedThisMonth }}</strong>
+    </div>
+    <div class="flex justify-between items-center">
+      <span class="text-muted">Overdue Reviews</span>
+      <strong :class="overdueReviews > 0 ? 'text-error' : 'text-success'">{{ overdueReviews }}</strong>
+    </div>
+  </UCard>
 </template>

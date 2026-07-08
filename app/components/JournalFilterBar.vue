@@ -22,40 +22,35 @@ const searchTypes = [
     class="flex flex-col gap-3 lg:flex-row"
     @submit.prevent="emit('submit')"
   >
-    <select
+    <USelect
       v-model="searchType"
-      class="form-select lg:w-40"
-    >
-      <option
-        v-for="option in searchTypes"
-        :key="option.value"
-        :value="option.value"
-      >
-        {{ option.label }}
-      </option>
-    </select>
+      :items="searchTypes"
+      class="lg:w-40"
+    />
 
-    <input
+    <UInput
       v-model="search"
       type="search"
       placeholder="Search keyword or title"
-      class="form-control flex-1"
-    >
+      class="flex-1"
+    />
 
-    <button
+    <UButton
       v-if="showFilterButton"
       type="button"
-      class="btn btn-outline-secondary lg:hidden"
+      color="neutral"
+      variant="outline"
+      class="lg:hidden"
       @click="emit('toggleFilters')"
     >
       Filters
-    </button>
+    </UButton>
 
-    <button
+    <UButton
       type="submit"
-      class="btn btn-primary"
+      color="primary"
     >
       Search
-    </button>
+    </UButton>
   </form>
 </template>

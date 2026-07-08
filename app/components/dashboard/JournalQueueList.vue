@@ -50,17 +50,20 @@ function formatDate(value?: string) {
 <template>
   <div class="row gy-4">
     <div class="col-lg-12">
-      <div class="card mt-24 overflow-hidden">
-        <div class="card-header">
+      <UCard
+        class="mt-6 overflow-hidden"
+        :ui="{ body: 'p-0 sm:p-0' }"
+      >
+        <template #header>
           <div class="mb-0 flex-between flex-wrap gap-8">
             <h4 class="mb-0">
               {{ title }} ({{ data?.meta.total ?? 0 }})
             </h4>
           </div>
-        </div>
+        </template>
         <div
           v-if="error"
-          class="p-24"
+          class="p-6"
         >
           <DashboardSummaryError
             :message="`Unable to load ${title.toLowerCase()}.`"
@@ -69,11 +72,11 @@ function formatDate(value?: string) {
         </div>
         <div
           v-else
-          class="card-body p-0 overflow-x-auto scroll-sm scroll-sm-horizontal"
+          class="overflow-x-auto scroll-sm scroll-sm-horizontal"
         >
           <div
             v-if="pending"
-            class="p-24 text-13 text-gray-500"
+            class="p-6 text-xs text-muted"
           >
             Loading manuscripts...
           </div>
@@ -104,23 +107,26 @@ function formatDate(value?: string) {
                 <td>
                   <div class="flex-align gap-8">
                     <div class="w-40 h-40 rounded-circle bg-main-600 flex-center flex-shrink-0">
-                      <i class="ph ph-file-text text-white text-lg" />
+                      <UIcon
+                        name="i-lucide-file-text"
+                        class="text-white text-lg"
+                      />
                     </div>
                     <div>
                       <h6 class="mb-0">
                         {{ journal.title }}
                       </h6>
                       <div class="table-list">
-                        <span class="text-13 text-gray-600">{{ formatDate(journal.createdAt ?? journal.updatedAt) }}</span>
+                        <span class="text-xs text-muted">{{ formatDate(journal.createdAt ?? journal.updatedAt) }}</span>
                       </div>
                     </div>
                   </div>
                 </td>
                 <td>
-                  <span class="text-13 text-gray-600">{{ journal.author || '—' }}</span>
+                  <span class="text-xs text-muted">{{ journal.author || '—' }}</span>
                 </td>
                 <td>
-                  <span class="text-13 text-gray-600">{{ journal.country || 'N/A' }}</span>
+                  <span class="text-xs text-muted">{{ journal.country || 'N/A' }}</span>
                 </td>
                 <td>
                   <div class="flex-align justify-content-center gap-16">
@@ -148,7 +154,7 @@ function formatDate(value?: string) {
               <tr v-if="!data?.journals.length">
                 <td
                   colspan="5"
-                  class="text-center py-24 text-13 text-gray-500"
+                  class="text-center py-24 text-xs text-muted"
                 >
                   {{ emptyMessage ?? 'No manuscripts in this queue.' }}
                 </td>
@@ -156,9 +162,9 @@ function formatDate(value?: string) {
             </tbody>
           </table>
         </div>
-        <div
+        <template
           v-if="data?.meta.total"
-          class="card-footer"
+          #footer
         >
           <AppPagination
             :page="data.meta.page"
@@ -167,8 +173,8 @@ function formatDate(value?: string) {
             :page-size="data.meta.pageSize"
             @change="goToPage"
           />
-        </div>
-      </div>
+        </template>
+      </UCard>
     </div>
   </div>
 </template>

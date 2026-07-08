@@ -124,7 +124,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Total Journals"
             :value="summary.totalJournals"
-            icon="ph-book-open"
+            icon="i-lucide-book-open"
             icon-class="bg-main-600"
             :meta="`+${summary.recentSubmissions} this month`"
             :loading="summaryPending"
@@ -134,7 +134,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Journals Approved"
             :value="summary.approvedJournals"
-            icon="ph-certificate"
+            icon="i-lucide-award"
             icon-class="bg-main-two-600"
             :meta="`${summary.averageProcessingTimeDays} days avg`"
             :loading="summaryPending"
@@ -144,7 +144,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Pending Manuscripts"
             :value="summary.pendingManuscripts"
-            icon="ph-clock"
+            icon="i-lucide-clock"
             icon-class="bg-purple-600"
             :meta="summary.overdueReviews > 0 ? `${summary.overdueReviews} overdue` : 'On track'"
             :loading="summaryPending"
@@ -154,7 +154,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Total Users"
             :value="summary.totalUsers"
-            icon="ph-users-three"
+            icon="i-lucide-users"
             icon-class="bg-success-600"
             :meta="`+${summary.newUsersThisMonth} new`"
             :loading="summaryPending"
@@ -164,7 +164,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Roles"
             :value="summary.totalRoles"
-            icon="ph-shield-check"
+            icon="i-lucide-shield-check"
             icon-class="bg-main-600"
             :loading="summaryPending"
           />
@@ -173,7 +173,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Categories"
             :value="summary.totalCategories"
-            icon="ph-graduation-cap"
+            icon="i-lucide-graduation-cap"
             icon-class="bg-purple-600"
             :loading="summaryPending"
           />
@@ -182,7 +182,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Declined Journals"
             :value="summary.declinedJournals"
-            icon="ph-x-circle"
+            icon="i-lucide-circle-x"
             icon-class="bg-danger-600"
             :loading="summaryPending"
           />
@@ -191,7 +191,7 @@ async function sendTestEmail() {
           <DashboardStatCard
             label="Active Reviewers"
             :value="summary.activeReviewers"
-            icon="ph-user-check"
+            icon="i-lucide-user-check"
             icon-class="bg-info-600"
             :loading="summaryPending"
           />

@@ -9,14 +9,21 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="alert alert-warning flex-between flex-wrap gap-12">
-    <span>{{ message ?? 'Dashboard data could not be loaded.' }}</span>
-    <button
-      type="button"
-      class="btn btn-outline-warning btn-sm"
-      @click="emit('retry')"
-    >
-      Retry
-    </button>
-  </div>
+  <UAlert
+    color="warning"
+    variant="subtle"
+    icon="i-lucide-triangle-alert"
+    :title="message ?? 'Dashboard data could not be loaded.'"
+  >
+    <template #actions>
+      <UButton
+        color="warning"
+        variant="outline"
+        size="sm"
+        @click="emit('retry')"
+      >
+        Retry
+      </UButton>
+    </template>
+  </UAlert>
 </template>

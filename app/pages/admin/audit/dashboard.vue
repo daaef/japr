@@ -73,16 +73,16 @@ const stats = computed(() => data.value)
     </div>
 
     <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="Total Actions" :value="stats.totalActions" icon="ph-list-checks" icon-class="bg-main-600" :loading="pending" />
+      <DashboardStatCard label="Total Actions" :value="stats.totalActions" icon="i-lucide-list-checks" icon-class="bg-main-600" :loading="pending" />
     </div>
     <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="Active Admins" :value="stats.activeAdminUsers" icon="ph-users-three" icon-class="bg-success-600" :loading="pending" />
+      <DashboardStatCard label="Active Admins" :value="stats.activeAdminUsers" icon="i-lucide-users" icon-class="bg-success-600" :loading="pending" />
     </div>
     <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="High-Risk Actions" :value="stats.highRiskActions" icon="ph-warning" icon-class="bg-danger-600" :loading="pending" />
+      <DashboardStatCard label="High-Risk Actions" :value="stats.highRiskActions" icon="i-lucide-triangle-alert" icon-class="bg-danger-600" :loading="pending" />
     </div>
     <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="Actions Today" :value="stats.actionsToday" icon="ph-calendar-check" icon-class="bg-info-600" :loading="pending" />
+      <DashboardStatCard label="Actions Today" :value="stats.actionsToday" icon="i-lucide-calendar-check" icon-class="bg-info-600" :loading="pending" />
     </div>
 
     <div class="col-lg-8">
