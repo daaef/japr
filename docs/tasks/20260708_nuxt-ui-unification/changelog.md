@@ -196,3 +196,14 @@ Bootstrap-grid grep of the changed files returns zero.
 
 Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact +
 Bootstrap-grid grep of the changed files returns zero.
+
+## W4 — Page sweep: reviewer area — landed 2026-07-09
+
+- **`reviewer/index.vue`**: hero/stat-card/grid treatment; the 4 soft-tinted performance tiles kept
+  their semantic `bg-*-50` backgrounds; Quick Actions → `UButton` with `rounded-full` to preserve
+  the pill shape.
+- **`reviewer/invitations/respond.vue`**: `card` → `UCard`, the accept/decline `btn` → one `UButton`
+  with color/variant driven by the existing `action` computed (unchanged), Cancel → `UButton`.
+
+Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact
+grep of the changed files returns zero.

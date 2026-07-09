@@ -39,44 +39,33 @@ async function respond() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12 card p-24">
-      <h4 class="mb-4">Review invitation</h4>
+  <UCard>
+    <h3 class="mb-2 text-lg font-semibold text-highlighted">Review invitation</h3>
 
-      <p
-        v-if="!token"
-        class="text-13 text-danger mb-0"
-      >
-        This invitation link is missing its token.
+    <p v-if="!token" class="mb-0 text-sm text-error">
+      This invitation link is missing its token.
+    </p>
+    <template v-else>
+      <p class="text-sm text-muted">
+        {{ action === 'accept' ? 'Accept' : 'Decline' }} this review invitation<template v-if="title"> for "{{ title }}"</template>?
       </p>
-      <template v-else>
-        <p class="text-13 text-gray-600">
-          {{ action === 'accept' ? 'Accept' : 'Decline' }} this review invitation<template v-if="title"> for "{{ title }}"</template>?
-        </p>
-        <div class="mt-16 flex flex-wrap gap-8">
-          <button
-            type="button"
-            class="btn"
-            :class="action === 'accept' ? 'btn-primary' : 'btn-outline-danger'"
-            :disabled="loading"
-            @click="respond"
-          >
-            {{ loading ? 'Submitting...' : (action === 'accept' ? 'Accept invitation' : 'Decline invitation') }}
-          </button>
-          <NuxtLink
-            to="/reviewer/pending"
-            class="btn btn-outline-secondary"
-          >
-            Cancel
-          </NuxtLink>
-        </div>
-        <p
-          v-if="errorMessage"
-          class="mt-12 text-danger mb-0"
+      <div class="mt-4 flex flex-wrap gap-2">
+        <UButton
+          :color="action === 'accept' ? 'primary' : 'error'"
+          :variant="action === 'accept' ? 'solid' : 'outline'"
+          :loading="loading"
+          :disabled="loading"
+          @click="respond"
         >
-          {{ errorMessage }}
-        </p>
-      </template>
-    </div>
-  </div>
+          {{ loading ? 'Submitting...' : (action === 'accept' ? 'Accept invitation' : 'Decline invitation') }}
+        </UButton>
+        <UButton to="/reviewer/pending" color="neutral" variant="outline">
+          Cancel
+        </UButton>
+      </div>
+      <p v-if="errorMessage" class="mb-0 mt-3 text-sm text-error">
+        {{ errorMessage }}
+      </p>
+    </template>
+  </UCard>
 </template>
