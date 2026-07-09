@@ -163,15 +163,19 @@ function displayStat(value: number) {
 
 <template>
   <div>
-  <div
+  <UAlert
     v-if="accessDeniedPath"
-    class="fixed left-1/2 top-[96px] z-2100 w-[min(92vw,640px)] -translate-x-1/2 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-lg"
-    role="alert"
+    color="error"
+    variant="subtle"
+    icon="i-lucide-circle-alert"
+    class="fixed left-1/2 top-24 z-2100 w-[min(92vw,640px)] -translate-x-1/2 shadow-lg"
   >
-    You do not have permission to access
-    <span class="font-semibold">{{ accessDeniedPath }}</span>.
-    Please switch to an account with the required dashboard role.
-  </div>
+    <template #description>
+      You do not have permission to access
+      <span class="font-semibold">{{ accessDeniedPath }}</span>.
+      Please switch to an account with the required dashboard role.
+    </template>
+  </UAlert>
 
   <form
     class="grid grid-cols-[300px_1fr] w-full"
@@ -198,20 +202,7 @@ function displayStat(value: number) {
               class="caret-icon block h-[18px]"
               @click.stop="toggleCategoryCollapse(category.id)"
             >
-              <svg
-                class="inline !align-baseline h-[18px] w-[18px]"
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
+              <UIcon name="i-lucide-chevron-right" class="inline align-baseline! h-4.5 w-4.5" />
             </span>
             <input
               :id="`category-${category.id}`"
@@ -242,20 +233,7 @@ function displayStat(value: number) {
                   class="caret-icon block h-[18px]"
                   @click.stop="toggleSubcategoryCollapse(subCategory.id)"
                 >
-                  <svg
-                    class="!align-baseline h-[18px] w-[18px]"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
+                  <UIcon name="i-lucide-chevron-right" class="align-baseline! h-4.5 w-4.5" />
                 </span>
                 <input
                   :id="`subcategory-${subCategory.id}`"
@@ -310,40 +288,18 @@ function displayStat(value: number) {
         <p class="text-white text-xl">
           Explore Journals, Literature, and Research Across the Continent
         </p>
-        <div class="flex rounded-[15px] shadow-sm relative">
-          <input
-            id="search"
-            v-model="search"
-            type="text"
-            name="search"
-            class="py-3 px-4 block w-full border-gray-200 shadow-sm rounded-[15px] text-sm focus:z-10 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50 disabled:pointer-events-none"
-            placeholder="Search  for a keyword, title, publication date, ISSN, ISBN, DOI "
-          >
-          <button
-            type="submit"
-            class="w-[2.875rem] z-[1000] h-[2.875rem] absolute right-0 shrink-0 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-900 focus:outline-none focus:bg-primary-950 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <svg
-              class="shrink-0 size-4"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="8"
-              />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </button>
-        </div>
+        <UInput
+          id="search"
+          v-model="search"
+          type="text"
+          size="xl"
+          class="w-full rounded-[15px] shadow-sm"
+          placeholder="Search  for a keyword, title, publication date, ISSN, ISBN, DOI "
+        >
+          <template #trailing>
+            <UButton type="submit" icon="i-lucide-search" color="primary" size="sm" aria-label="Search" />
+          </template>
+        </UInput>
       </div>
       <img
         class="w-full h-[560px] object-cover"
@@ -384,21 +340,7 @@ function displayStat(value: number) {
           <h5 class="font-bold">
             {{ tile.name }}
           </h5>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-arrow-right"
-          >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
+          <UIcon name="i-lucide-arrow-right" class="size-6" />
         </div>
       </a>
     </div>
@@ -435,7 +377,7 @@ function displayStat(value: number) {
     <div class="grid grid-cols-4 gap-8">
       <p
         v-if="statsError"
-        class="col-span-4 text-center text-sm text-red-600"
+        class="col-span-4 text-center text-sm text-error"
       >
         Live statistics are temporarily unavailable.
       </p>

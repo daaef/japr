@@ -208,6 +208,37 @@ Bootstrap-grid grep of the changed files returns zero.
 Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact
 grep of the changed files returns zero.
 
+## W4 — Page sweep: home/misc — landed 2026-07-09
+
+- **`notifications/index.vue`**: `card`/`list-group` → `UCard` + `divide-y` list; the 5 stat tiles,
+  filters (`USelect` with a new `typeFilterItems` computed), and action buttons → Nuxt UI. The
+  per-notification dynamic `<i :class="\`ph ${notification.data.icon}\`">` (server-controlled data,
+  not a static template string) → `UIcon` via a new `notificationIcon()` lookup covering the actual
+  finite set the server sends (`ph-bell`/`ph-clock`/`ph-file-text`, verified by grepping
+  `server/utils/editorNotifications.ts` + `server/api/journals/index.post.ts`), falling back to the
+  bell default for anything unmapped. The dynamic `bg-${color}-100`/`text-${color}-600` interpolation
+  is untouched (already resolves to real semantic/brand utilities for the only two values the server
+  sets — `warning` and the default `primary`).
+- **`mail/index.vue`** (dev-only mail viewer): every inline heroicon SVG → `UIcon` (`subjectIcon()`
+  now returns a verified lucide name instead of an SVG path — `i-lucide-circle-check`/`i-lucide-key`/
+  `i-lucide-file-text`/`i-lucide-mail`); refresh button's manual `animate-spin` class → `UButton
+  :loading`; filter input/cards → `UFormField`/`UInput`/`UCard`.
+- **`index.vue`** (bespoke marketing homepage — faithful clean-up only, no redesign per the mandate):
+  the fixed access-denied banner → `UAlert`; the two collapse-caret SVGs and the most-viewed-tile
+  arrow SVG → `UIcon`; the search input/button → `UInput` with a `#trailing` `UButton` (safe because
+  `submitSearch` reads the `search` ref, not `FormData`). The category-tree checkboxes and its native
+  `<form>`/`FormData` submission were deliberately **left untouched** — `setDescendantsChecked`/
+  `onCategory(Sub)CheckboxChange` cascade checked-state via raw `querySelectorAll('input[type=
+  checkbox]')`, and `category[]`/`subsubcategory[]` rely on native `name`/`value` attributes for
+  `FormData.getAll()` extraction; same judgment call already established for `JournalFiltersPanel` in
+  W1. The bespoke hero/stats/most-viewed layout (arbitrary pixel values, gradients) is untouched —
+  it was already built on the brand `primary`/`secondary` aliases, not raw hex.
+
+Verified: `nuxt typecheck` clean · `eslint` clean (3 files) · `pnpm test` 53/53 · zero inline `<svg>`
+and zero legacy-artifact matches in the changed files. **W4 page sweep is now complete** — the
+app-wide legacy-artifact grep returns matches only in W5 (layouts, `JournalNavbar.vue`) and W6
+(CSS/SASS) scope.
+
 ## W4 — Page sweep: public area — landed 2026-07-09
 
 - **`journals/[slug].vue`** (hand-rolled Tailwind, not Bootstrap): every `bg-white rounded-xl
