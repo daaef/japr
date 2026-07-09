@@ -166,6 +166,19 @@ const changeForm = reactive({
   comment: ''
 })
 
+const changeFieldItems = [
+  { label: 'Title', value: 'title' as const },
+  { label: 'Abstract', value: 'abstract' as const },
+  { label: 'Description', value: 'description' as const }
+]
+
+const recommendationItems = [
+  { label: 'Accept', value: 'accept' },
+  { label: 'Minor revision', value: 'minor_revision' },
+  { label: 'Major revision', value: 'major_revision' },
+  { label: 'Reject', value: 'reject' }
+]
+
 async function requestChange() {
   actionLoading.value = true
   actionMessage.value = ''
@@ -251,140 +264,116 @@ async function submitReview() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div
-      v-if="pending"
-      class="col-12 card p-24 text-13 text-gray-500"
-    >
-      Loading review assignment...
-    </div>
+  <div class="flex flex-col gap-4">
+    <UCard v-if="pending">
+      <p class="text-sm text-muted">Loading review assignment...</p>
+    </UCard>
 
     <template v-else>
-      <div class="col-12 card p-24">
-        <div class="flex-between flex-wrap gap-8">
+      <UCard>
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h4 class="mb-4">{{ data.journal.title || 'Review assignment' }}</h4>
-            <p class="text-13 text-gray-600">{{ data.journal.abstract || data.journal.description }}</p>
+            <h2 class="text-lg font-semibold text-highlighted">{{ data.journal.title || 'Review assignment' }}</h2>
+            <p class="text-sm text-muted">{{ data.journal.abstract || data.journal.description }}</p>
           </div>
           <JournalStatusBadge :status="data.reviewer.status" />
         </div>
-        <div class="mt-16 flex flex-wrap gap-8">
-          <button
-            v-if="canRespondToInvitation"
-            type="button"
-            class="btn btn-primary"
-            :disabled="actionLoading"
-            @click="acceptInvite"
-          >
+        <div v-if="canRespondToInvitation" class="mt-4 flex flex-wrap gap-2">
+          <UButton :disabled="actionLoading" @click="acceptInvite">
             Accept invitation
-          </button>
-          <button
-            v-if="canRespondToInvitation"
-            type="button"
-            class="btn btn-outline-secondary"
-            :disabled="actionLoading"
-            @click="declineInvite"
-          >
+          </UButton>
+          <UButton color="neutral" variant="outline" :disabled="actionLoading" @click="declineInvite">
             Decline invitation
-          </button>
+          </UButton>
         </div>
         <form
           v-if="canRespondToInvitation"
-          class="mt-16 row gy-2"
+          class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
           @submit.prevent="declineWithComment"
         >
-          <div class="col-md-9">
-            <label class="form-label">Decline reason or scheduling note</label>
-            <textarea
-              v-model="declineComment"
-              rows="2"
-              class="form-control"
-              maxlength="5000"
-            />
-          </div>
-          <div class="col-md-3 d-flex align-items-end">
-            <button
-              type="submit"
-              class="btn btn-outline-danger w-100"
-              :disabled="actionLoading || declineComment.trim().length < 3"
-            >
-              Decline with comment
-            </button>
-          </div>
+          <UFormField label="Decline reason or scheduling note" class="flex-1">
+            <UTextarea v-model="declineComment" :rows="2" maxlength="5000" class="w-full" />
+          </UFormField>
+          <UButton
+            type="submit"
+            color="error"
+            variant="outline"
+            :disabled="actionLoading || declineComment.trim().length < 3"
+          >
+            Decline with comment
+          </UButton>
         </form>
-        <p v-if="actionMessage" class="mt-12 text-success mb-0">{{ actionMessage }}</p>
-        <p v-if="actionError" class="mt-12 text-danger mb-0">{{ actionError }}</p>
-      </div>
+        <UAlert v-if="actionMessage" color="success" variant="subtle" icon="i-lucide-circle-check" class="mt-4" :title="actionMessage" />
+        <UAlert v-if="actionError" color="error" variant="subtle" icon="i-lucide-circle-alert" class="mt-4" :title="actionError" />
+      </UCard>
 
-      <div class="col-12 card p-24">
-        <h4 class="mb-24">Submit review</h4>
-        <div class="row gy-4">
-          <div class="col-lg-7">
-            <h6 class="mb-12">Document preview</h6>
-            <div class="border rounded overflow-hidden" style="height: 600px;">
-              <div v-if="previewPending" class="d-flex align-items-center justify-content-center h-100 text-gray-500">Loading...</div>
-              <div v-else-if="previewError" class="d-flex align-items-center justify-content-center h-100 text-gray-500 px-4 text-center">{{ previewError }}</div>
-              <iframe v-else-if="previewPdfUrl" :src="previewPdfUrl" class="w-100 h-100 border-0" :title="previewTitle" />
-              <iframe v-else-if="previewHtml" :srcdoc="previewHtml" class="w-100 h-100 border-0" :title="previewTitle" />
-              <div v-else class="d-flex align-items-center justify-content-center h-100 text-gray-500">Preview not available</div>
+      <UCard>
+        <template #header>
+          <h2 class="text-lg font-semibold text-highlighted">Submit review</h2>
+        </template>
+        <div class="grid gap-6 lg:grid-cols-12">
+          <div class="lg:col-span-7">
+            <h3 class="mb-3 text-sm font-semibold text-highlighted">Document preview</h3>
+            <div class="h-150 overflow-hidden rounded-lg border border-default">
+              <div v-if="previewPending" class="flex h-full items-center justify-center text-muted">Loading...</div>
+              <div v-else-if="previewError" class="flex h-full items-center justify-center px-4 text-center text-muted">{{ previewError }}</div>
+              <iframe v-else-if="previewPdfUrl" :src="previewPdfUrl" class="h-full w-full border-0" :title="previewTitle" />
+              <iframe v-else-if="previewHtml" :srcdoc="previewHtml" class="h-full w-full border-0" :title="previewTitle" />
+              <div v-else class="flex h-full items-center justify-center text-muted">Preview not available</div>
             </div>
           </div>
-          <div class="col-lg-5">
-            <form class="row gy-3" @submit.prevent="submitReview">
-              <div class="col-12">
-                <label class="form-label">Full review</label>
-                <textarea
-                  v-model="form.review"
-                  rows="5"
-                  minlength="20"
-                  maxlength="5000"
-                  class="form-control"
-                  required
-                />
-                <p class="text-13 text-gray-500 mt-1 mb-0">
-                  Minimum 20 characters. This field is required for review submission.
-                </p>
-              </div>
-              <div class="col-12"><label class="form-label">Originality</label><input v-model.number="form.originality" type="range" min="0" max="5" step="1" class="form-range"></div>
-              <div class="col-12"><label class="form-label">Methodology</label><input v-model.number="form.methodology" type="range" min="0" max="5" step="1" class="form-range"></div>
-              <div class="col-12"><label class="form-label">Significance</label><input v-model.number="form.significance" type="range" min="0" max="5" step="1" class="form-range"></div>
-              <div class="col-12"><label class="form-label">Clarity</label><input v-model.number="form.clarity" type="range" min="0" max="5" step="1" class="form-range"></div>
-              <div class="col-12"><label class="form-label">Literature review</label><input v-model.number="form.literatureReview" type="range" min="0" max="5" step="1" class="form-range"></div>
-              <div class="col-12"><label class="form-label">Data analysis</label><input v-model.number="form.dataAnalysis" type="range" min="0" max="5" step="1" class="form-range"></div>
-              <div class="col-12">
-                <label class="form-label">Overall rating</label>
-                <input v-model.number="form.rating" type="range" min="1" max="5" step="1" class="form-range">
-              </div>
-              <div class="col-12">
-                <label class="form-label">Recommendation</label>
-                <select v-model="form.recommendation" class="form-select py-9 text-15 fw-medium" required>
-                  <option value="accept">Accept</option>
-                  <option value="minor_revision">Minor revision</option>
-                  <option value="major_revision">Major revision</option>
-                  <option value="reject">Reject</option>
-                </select>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Comments to author</label>
-                <textarea v-model="form.comment" rows="5" maxlength="5000" class="form-control" required />
-              </div>
-              <div class="col-12">
-                <label class="form-label">Confidential comments to editor</label>
-                <textarea v-model="form.confidentialComments" rows="3" maxlength="2000" class="form-control" />
-              </div>
-              <div class="col-12">
-                <button type="submit" class="btn btn-primary w-100" :disabled="actionLoading || form.review.length < 20 || form.comment.length < 10">
-                  Submit review
-                </button>
-              </div>
+          <div class="lg:col-span-5">
+            <form class="flex flex-col gap-4" @submit.prevent="submitReview">
+              <UFormField label="Full review" hint="Minimum 20 characters. Required for review submission.">
+                <UTextarea v-model="form.review" :rows="5" minlength="20" maxlength="5000" required class="w-full" />
+              </UFormField>
+              <UFormField label="Originality">
+                <USlider v-model="form.originality" :min="0" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Methodology">
+                <USlider v-model="form.methodology" :min="0" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Significance">
+                <USlider v-model="form.significance" :min="0" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Clarity">
+                <USlider v-model="form.clarity" :min="0" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Literature review">
+                <USlider v-model="form.literatureReview" :min="0" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Data analysis">
+                <USlider v-model="form.dataAnalysis" :min="0" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Overall rating">
+                <USlider v-model="form.rating" :min="1" :max="5" :step="1" />
+              </UFormField>
+              <UFormField label="Recommendation">
+                <URadioGroup v-model="form.recommendation" :items="recommendationItems" />
+              </UFormField>
+              <UFormField label="Comments to author">
+                <UTextarea v-model="form.comment" :rows="5" maxlength="5000" required class="w-full" />
+              </UFormField>
+              <UFormField label="Confidential comments to editor">
+                <UTextarea v-model="form.confidentialComments" :rows="3" maxlength="2000" class="w-full" />
+              </UFormField>
+              <UButton
+                type="submit"
+                block
+                :disabled="actionLoading || form.review.length < 20 || form.comment.length < 10"
+              >
+                Submit review
+              </UButton>
             </form>
           </div>
         </div>
-      </div>
+      </UCard>
 
-      <div class="col-12 card p-24">
-        <h4 class="mb-16">Deadline extension</h4>
-        <p class="text-13 text-gray-600">
+      <UCard>
+        <template #header>
+          <h2 class="text-lg font-semibold text-highlighted">Deadline extension</h2>
+        </template>
+        <p class="text-sm text-muted">
           Current deadline: {{ data.reviewer.reviewDeadline ? new Date(data.reviewer.reviewDeadline).toLocaleDateString() : 'No deadline set' }}
         </p>
         <UAlert
@@ -392,107 +381,84 @@ async function submitReview() {
           color="info"
           variant="subtle"
           icon="i-lucide-info"
+          class="mt-4"
           :title="`Extension already requested: ${data.reviewer.deadlineExtensionReason || 'No reason recorded.'}`"
         />
         <form
           v-else
-          class="row gy-3"
+          class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
           @submit.prevent="requestExtension"
         >
-          <div class="col-md-9">
-            <label class="form-label">Reason</label>
-            <textarea
-              v-model="extensionReason"
-              rows="3"
-              maxlength="1000"
-              class="form-control"
-              required
-            />
-          </div>
-          <div class="col-md-3 d-flex align-items-end">
-            <button
-              type="submit"
-              class="btn btn-outline-info w-100"
-              :disabled="actionLoading || extensionReason.trim().length < 5"
-            >
-              Request extension
-            </button>
-          </div>
+          <UFormField label="Reason" class="flex-1">
+            <UTextarea v-model="extensionReason" :rows="3" maxlength="1000" required class="w-full" />
+          </UFormField>
+          <UButton
+            type="submit"
+            color="info"
+            variant="outline"
+            :disabled="actionLoading || extensionReason.trim().length < 5"
+          >
+            Request extension
+          </UButton>
         </form>
-      </div>
+      </UCard>
 
-      <div class="col-12 card p-24">
-        <h4 class="mb-16">Other peer review context</h4>
-        <div v-if="!data.peerReviews.length" class="text-13 text-gray-500">
+      <UCard>
+        <template #header>
+          <h2 class="text-lg font-semibold text-highlighted">Other peer review context</h2>
+        </template>
+        <p v-if="!data.peerReviews.length" class="text-sm text-muted">
           No other peer reviews are visible yet.
-        </div>
+        </p>
         <div
           v-for="peerReview in data.peerReviews"
           v-else
           :key="peerReview.id"
-          class="rounded-12 border border-gray-100 p-16 mb-12"
+          class="mb-3 rounded-xl border border-default p-4"
         >
-          <div class="flex-between flex-wrap gap-8 mb-2">
-            <span class="fw-semibold">Peer review</span>
-            <span v-if="peerReview.recommendation" class="badge bg-primary">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <span class="font-semibold text-highlighted">Peer review</span>
+            <UBadge v-if="peerReview.recommendation" color="primary" variant="subtle">
               {{ peerReview.recommendation.replaceAll('_', ' ') }}
-            </span>
+            </UBadge>
           </div>
-          <p v-if="peerReview.rating" class="text-13 text-gray-600 mb-2">
+          <p v-if="peerReview.rating" class="mb-2 text-sm text-muted">
             Rating: {{ peerReview.rating }}/5
           </p>
-          <p class="mb-0 text-13 text-gray-700">
+          <p class="mb-0 text-sm text-toned">
             {{ peerReview.comment || 'No public comment recorded.' }}
           </p>
         </div>
-      </div>
+      </UCard>
 
-      <div class="col-12 card p-24">
-        <h4 class="mb-24">Request manuscript changes</h4>
-        <form
-          class="row gy-3"
-          @submit.prevent="requestChange"
-        >
-          <div class="col-md-4">
-            <label class="form-label">Field</label>
-            <select
-              v-model="changeForm.field"
-              class="form-select py-9 text-15 fw-medium"
-            >
-              <option value="title">Title</option>
-              <option value="abstract">Abstract</option>
-              <option value="description">Description</option>
-            </select>
+      <UCard>
+        <template #header>
+          <h2 class="text-lg font-semibold text-highlighted">Request manuscript changes</h2>
+        </template>
+        <form class="flex flex-col gap-4" @submit.prevent="requestChange">
+          <div class="grid gap-4 sm:grid-cols-12">
+            <UFormField label="Field" class="sm:col-span-4">
+              <USelect v-model="changeForm.field" :items="changeFieldItems" class="w-full" />
+            </UFormField>
+            <UFormField label="Suggested change" class="sm:col-span-8">
+              <UInput v-model="changeForm.suggestedChange" required class="w-full" />
+            </UFormField>
           </div>
-          <div class="col-md-8">
-            <label class="form-label">Suggested change</label>
-            <input
-              v-model="changeForm.suggestedChange"
-              type="text"
-              class="form-control"
-              required
-            >
-          </div>
-          <div class="col-12">
-            <label class="form-label">Comment to author</label>
-            <textarea
-              v-model="changeForm.comment"
-              rows="3"
-              maxlength="2000"
-              class="form-control"
-            />
-          </div>
-          <div class="col-12">
-            <button
+          <UFormField label="Comment to author">
+            <UTextarea v-model="changeForm.comment" :rows="3" maxlength="2000" class="w-full" />
+          </UFormField>
+          <div>
+            <UButton
               type="submit"
-              class="btn btn-outline-main"
+              color="primary"
+              variant="outline"
               :disabled="actionLoading || !changeForm.suggestedChange.trim()"
             >
               Request change
-            </button>
+            </UButton>
           </div>
         </form>
-      </div>
+      </UCard>
     </template>
   </div>
 </template>

@@ -11,6 +11,10 @@ const props = withDefaults(defineProps<{
 
 const model = defineModel<string>({ default: '' })
 
+// Consumes the injected UFormField context so the field's auto-generated label `for`
+// id actually matches this control's id (falls back to the `id` prop when standalone).
+const { id } = useFormField(props)
+
 const { data } = await useFetch<{
   regions: Array<{
     id: string

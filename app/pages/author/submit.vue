@@ -16,7 +16,6 @@ const router = useRouter()
 const { data: currentUser, refresh: refreshCurrentUser } = useCurrentUser()
 
 const languages = ['American English', 'British English', 'French']
-const fieldClass = 'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
 
 // journalCreateSchema.categoryId/subCategoryId/subSubCategoryId are `.uuid()`, which
 // rejects the '' a native <select> holds before anything is chosen — allow '' through
@@ -32,7 +31,10 @@ const submitFormSchema = journalCreateSchema
     metaKeywords: z.string().trim().min(1, 'Keywords are required.'),
     categoryId: z.string().uuid('Please select a category.'),
     subCategoryId: optionalUuidField,
-    subSubCategoryId: optionalUuidField
+    subSubCategoryId: optionalUuidField,
+    // Drop the shared schema's `.nullable()` — this form only ever produces '' (unset)
+    // or a literal label string, never `null`, which is what USelect's typed v-model needs.
+    license: z.string().trim().max(120).optional()
   })
 
 const { defineField, handleSubmit, errors } = useForm({
@@ -80,9 +82,7 @@ const previewContent = ref<{ type: 'html' | 'pdf', html?: string, url?: string }
 
 const selectedFile = ref<File | null>(null)
 const fileNameMessage = ref('')
-const fileNameClass = ref('px-4 py-2 text-sm font-medium text-gray-100 rounded-md bg-primary-600')
-const fileInput = ref<HTMLInputElement | null>(null)
-const dropZone = ref<HTMLDivElement | null>(null)
+const fileNameStatus = ref<'info' | 'success' | 'error'>('info')
 
 const uploadedFile = ref<null | {
   fileKey: string
@@ -120,6 +120,25 @@ const availableSubSubCategories = computed(() => {
   return subCategory?.subSubCategories ?? []
 })
 
+const categoryItems = computed(() =>
+  categoryData.value.categories.map(category => ({
+    label: category.categoryName || category.name,
+    value: category.id
+  }))
+)
+
+const subCategoryItems = computed(() =>
+  availableSubCategories.value.map(subCategory => ({ label: subCategory.name, value: subCategory.id }))
+)
+
+const subSubCategoryItems = computed(() =>
+  availableSubSubCategories.value.map(subSubCategory => ({ label: subSubCategory.name, value: subSubCategory.id }))
+)
+
+const licenseItems = computed<Array<{ label: string, value: string }>>(() =>
+  JOURNAL_LICENSE_OPTIONS.map(licenseOption => ({ label: licenseOption.label, value: licenseOption.label }))
+)
+
 watch(categoryId, () => {
   subCategoryId.value = ''
   subSubCategoryId.value = ''
@@ -153,8 +172,16 @@ const canSubmit = computed(() => {
 // Keep in sync with the server's MAX_FILE_SIZE_MB default (server/utils/files.ts).
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
-function handleFileSelection(file: File | null) {
-  selectedFile.value = file
+// Set right before we programmatically null `selectedFile` after rejecting an invalid
+// file, so the watcher's own resulting re-invocation skips clearing the message it just set.
+let rejectingFile = false
+
+watch(selectedFile, (file) => {
+  if (rejectingFile) {
+    rejectingFile = false
+    return
+  }
+
   previewContent.value = null
   uploadedFile.value = null
 
@@ -164,9 +191,10 @@ function handleFileSelection(file: File | null) {
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    selectedFile.value = null
     fileNameMessage.value = `File too large: ${file.name} (max 10MB)`
-    fileNameClass.value = 'px-4 py-2 text-sm font-medium text-gray-100 rounded-md bg-red-600'
+    fileNameStatus.value = 'error'
+    rejectingFile = true
+    selectedFile.value = null
     return
   }
 
@@ -174,35 +202,17 @@ function handleFileSelection(file: File | null) {
 
   if (extension === 'doc' || extension === 'docx') {
     fileNameMessage.value = `Selected: ${file.name} (will be converted to PDF)`
-    fileNameClass.value = 'px-4 py-2 text-sm font-medium text-gray-100 rounded-md bg-blue-600'
+    fileNameStatus.value = 'info'
   } else if (extension === 'pdf') {
     fileNameMessage.value = `Selected: ${file.name}`
-    fileNameClass.value = 'px-4 py-2 text-sm font-medium text-gray-100 rounded-md bg-green-600'
+    fileNameStatus.value = 'success'
   } else {
     fileNameMessage.value = `Unsupported file type: ${file.name}`
-    fileNameClass.value = 'px-4 py-2 text-sm font-medium text-gray-100 rounded-md bg-red-600'
+    fileNameStatus.value = 'error'
+    rejectingFile = true
+    selectedFile.value = null
   }
-}
-
-function onFileInputChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  handleFileSelection(target.files?.[0] ?? null)
-}
-
-function onDrop(event: DragEvent) {
-  event.preventDefault()
-  const file = event.dataTransfer?.files?.[0] ?? null
-  handleFileSelection(file)
-  if (file && fileInput.value) {
-    const dataTransfer = new DataTransfer()
-    dataTransfer.items.add(file)
-    fileInput.value.files = dataTransfer.files
-  }
-}
-
-function onDragOver(event: DragEvent) {
-  event.preventDefault()
-}
+})
 
 async function uploadFile() {
   if (!selectedFile.value) {
@@ -387,393 +397,221 @@ const createSubmission = handleSubmit(async (values) => {
 
 <template>
   <div>
-    <div class="w-full pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold leading-6 text-gray-900">
+    <div class="flex w-full flex-col gap-1 border-b border-default pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <h3 class="text-lg font-bold text-highlighted">
         Submissions
       </h3>
-      <div>
-        <h4 class="text-sm text-gray-700">
-          {{ userFirstName }}'s Dashboard
-        </h4>
-      </div>
+      <h4 class="text-sm text-muted">
+        {{ userFirstName }}'s Dashboard
+      </h4>
     </div>
-    <hr class="mb-8">
+    <hr class="mb-8 border-default">
 
     <form @submit.prevent="createSubmission">
-      <div class="space-y-12">
+      <div class="flex flex-col gap-8">
         <div>
-          <h2 class="text-base font-semibold leading-7 text-gray-900">
+          <h2 class="text-base font-semibold text-highlighted">
             Submit a Manuscript
           </h2>
-          <p class="mt-1 text-sm leading-6 text-gray-600">
+          <p class="mt-1 text-sm text-muted">
             Submit a manuscript for reviews by our editors
           </p>
 
-          <div class="grid grid-cols-1 mt-10 gap-x-6 gap-y-8 sm:grid-cols-2">
-            <div>
-              <label for="author" class="block text-sm font-medium leading-6 text-gray-900">Authors (separate with commas)</label>
-              <div class="mt-2">
-                <input
-                  id="author"
-                  v-model="author"
-                  v-bind="authorAttrs"
-                  type="text"
-                  placeholder="John Smith, Jane Doe, Robert Johnson"
-                  :class="fieldClass"
-                >
-                <p v-if="errors.author" class="mt-1 text-sm text-red-600">{{ errors.author }}</p>
-              </div>
-            </div>
+          <div class="mt-8 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+            <UFormField label="Authors (separate with commas)" :error="errors.author">
+              <UInput
+                v-model="author"
+                v-bind="authorAttrs"
+                type="text"
+                placeholder="John Smith, Jane Doe, Robert Johnson"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div>
-              <label for="title" class="block text-sm font-medium leading-6 text-gray-900">Manuscript title</label>
-              <div class="mt-2">
-                <input
-                  id="title"
-                  v-model="title"
-                  v-bind="titleAttrs"
-                  type="text"
-                  placeholder="Enter your manuscript title"
-                  :class="fieldClass"
-                >
-                <p v-if="errors.title" class="mt-1 text-sm text-red-600">{{ errors.title }}</p>
-              </div>
-            </div>
+            <UFormField label="Manuscript title" :error="errors.title">
+              <UInput
+                v-model="title"
+                v-bind="titleAttrs"
+                type="text"
+                placeholder="Enter your manuscript title"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div class="col-span-full">
-              <label for="abstract" class="block text-sm font-medium leading-6 text-gray-900">Abstract</label>
-              <div class="mt-2">
-                <textarea
-                  id="abstract"
-                  v-model="abstract"
-                  v-bind="abstractAttrs"
-                  rows="3"
-                  placeholder="Brief summary of your research (150-300 words)"
-                  :class="fieldClass"
-                />
-                <p v-if="errors.abstract" class="mt-1 text-sm text-red-600">{{ errors.abstract }}</p>
-              </div>
-            </div>
+            <UFormField label="Abstract" :error="errors.abstract" class="sm:col-span-2">
+              <UTextarea
+                v-model="abstract"
+                v-bind="abstractAttrs"
+                :rows="3"
+                placeholder="Brief summary of your research (150-300 words)"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div>
-              <label for="institution" class="block text-sm font-medium leading-6 text-gray-900">Institution/Affiliation</label>
-              <div class="mt-2">
-                <input
-                  id="institution"
-                  v-model="institution"
-                  v-bind="institutionAttrs"
-                  type="text"
-                  placeholder="Your institution or organization"
-                  :class="fieldClass"
-                >
-                <p v-if="errors.institution" class="mt-1 text-sm text-red-600">{{ errors.institution }}</p>
-              </div>
-            </div>
+            <UFormField label="Institution/Affiliation" :error="errors.institution">
+              <UInput
+                v-model="institution"
+                v-bind="institutionAttrs"
+                type="text"
+                placeholder="Your institution or organization"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div>
-              <label for="keywords" class="block text-sm font-medium leading-6 text-gray-900">Keywords (3-6 keywords, comma separated)</label>
-              <div class="mt-2">
-                <input
-                  id="keywords"
-                  v-model="metaKeywords"
-                  v-bind="metaKeywordsAttrs"
-                  type="text"
-                  placeholder="renewable energy, sustainability, climate change"
-                  :class="fieldClass"
-                >
-                <p v-if="errors.metaKeywords" class="mt-1 text-sm text-red-600">{{ errors.metaKeywords }}</p>
-              </div>
-            </div>
+            <UFormField label="Keywords (3-6 keywords, comma separated)" :error="errors.metaKeywords">
+              <UInput
+                v-model="metaKeywords"
+                v-bind="metaKeywordsAttrs"
+                type="text"
+                placeholder="renewable energy, sustainability, climate change"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div class="col-span-full">
-              <label for="file-upload" class="block text-sm font-medium leading-6 text-gray-900">Manuscript (Word docs auto-converted to PDF)</label>
-              <div
-                ref="dropZone"
-                class="flex justify-center px-6 py-10 mt-2 border border-dashed rounded-lg border-gray-900/25"
-                @drop="onDrop"
-                @dragover="onDragOver"
+            <UFormField label="Manuscript (Word docs auto-converted to PDF)" class="sm:col-span-2">
+              <UFileUpload
+                v-model="selectedFile"
+                icon="i-lucide-upload"
+                label="Upload Manuscript"
+                description="PDF, DOC, or DOCX files up to 10MB"
+                accept=".pdf,.doc,.docx"
+              />
+              <div v-if="fileNameMessage" class="mt-3">
+                <UBadge :color="fileNameStatus" variant="subtle">
+                  {{ fileNameMessage }}
+                </UBadge>
+              </div>
+              <UButton
+                v-if="selectedFile"
+                color="primary"
+                variant="soft"
+                size="sm"
+                icon="i-lucide-eye"
+                class="mt-2"
+                @click="openPreview"
               >
-                <div class="text-center">
-                  <svg
-                    class="w-12 h-12 mx-auto text-gray-300"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
-                  </svg>
-                  <div class="flex mt-4 text-sm justify-center leading-6 text-gray-600">
-                    <label
-                      for="file-upload"
-                      class="relative font-semibold text-indigo-600 bg-white rounded-md cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
-                    >
-                      <span>Upload Manuscript</span>
-                      <input
-                        id="file-upload"
-                        ref="fileInput"
-                        type="file"
-                        class="sr-only"
-                        accept=".pdf,.doc,.docx"
-                        @change="onFileInputChange"
-                      >
-                    </label>
-                    <p class="pl-1">
-                      or drag and drop
-                    </p>
-                  </div>
-                  <span
-                    v-if="fileNameMessage"
-                    :class="fileNameClass"
-                    class="inline-block mt-3"
-                  >
-                    {{ fileNameMessage }}
-                  </span>
-                  <p class="text-xs leading-5 text-gray-600 mt-2">
-                    PDF, DOC, or DOCX files up to 10MB
-                  </p>
-                  <button
-                    v-if="selectedFile"
-                    type="button"
-                    class="mt-3 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    @click="openPreview"
-                  >
-                    Preview Document
-                  </button>
-                </div>
-              </div>
-            </div>
+                Preview Document
+              </UButton>
+            </UFormField>
 
-            <div class="w-full">
-              <label for="country" class="block text-sm font-medium leading-6 text-gray-900">Country</label>
-              <div class="mt-2">
-                <CountrySelect
-                  id="country"
-                  v-model="country"
-                  v-bind="countryAttrs"
-                  variant="public"
-                />
-                <p v-if="errors.country" class="mt-1 text-sm text-red-600">{{ errors.country }}</p>
-              </div>
-            </div>
+            <UFormField label="Country" :error="errors.country">
+              <CountrySelect
+                v-model="country"
+                v-bind="countryAttrs"
+                variant="public"
+              />
+            </UFormField>
 
-            <div class="w-full">
-              <label for="journal_language" class="block text-sm font-medium leading-6 text-gray-900">Language</label>
-              <div class="mt-2">
-                <select
-                  id="journal_language"
-                  v-model="journalLanguage"
-                  v-bind="journalLanguageAttrs"
-                  :class="fieldClass"
-                >
-                  <option value="" disabled>
-                    Select language
-                  </option>
-                  <option
-                    v-for="language in languages"
-                    :key="language"
-                    :value="language"
-                  >
-                    {{ language }}
-                  </option>
-                </select>
-                <p v-if="errors.journalLanguage" class="mt-1 text-sm text-red-600">{{ errors.journalLanguage }}</p>
-              </div>
-            </div>
+            <UFormField label="Language" :error="errors.journalLanguage">
+              <USelect
+                v-model="journalLanguage"
+                v-bind="journalLanguageAttrs"
+                :items="languages"
+                placeholder="Select language"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div class="col-span-full">
-              <label for="category_id" class="block text-sm font-medium leading-6 text-gray-900">Category</label>
-              <div class="mt-2">
-                <select
-                  id="category_id"
-                  v-model="categoryId"
-                  v-bind="categoryIdAttrs"
-                  :class="fieldClass"
-                >
-                  <option value="" disabled>
-                    Select category
-                  </option>
-                  <option
-                    v-for="category in categoryData.categories"
-                    :key="category.id"
-                    :value="category.id"
-                  >
-                    {{ category.categoryName || category.name }}
-                  </option>
-                </select>
-                <p v-if="errors.categoryId" class="mt-1 text-sm text-red-600">{{ errors.categoryId }}</p>
-              </div>
-            </div>
+            <UFormField label="Category" :error="errors.categoryId" class="sm:col-span-2">
+              <USelect
+                v-model="categoryId"
+                v-bind="categoryIdAttrs"
+                :items="categoryItems"
+                placeholder="Select category"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div
+            <UFormField
               v-if="availableSubCategories.length"
-              class="col-span-full"
+              label="Sub-Category"
+              class="sm:col-span-2"
             >
-              <label for="subcategory_id" class="block text-sm font-medium leading-6 text-gray-900">Sub-Category</label>
-              <div class="mt-2">
-                <select
-                  id="subcategory_id"
-                  v-model="subCategoryId"
-                  v-bind="subCategoryIdAttrs"
-                  :class="fieldClass"
-                >
-                  <option value="" disabled>
-                    Select a sub-category
-                  </option>
-                  <option
-                    v-for="subCategory in availableSubCategories"
-                    :key="subCategory.id"
-                    :value="subCategory.id"
-                  >
-                    {{ subCategory.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
+              <USelect
+                v-model="subCategoryId"
+                v-bind="subCategoryIdAttrs"
+                :items="subCategoryItems"
+                placeholder="Select a sub-category"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div
+            <UFormField
               v-if="availableSubSubCategories.length"
-              class="col-span-full"
+              label="Sub-Subcategory"
+              class="sm:col-span-2"
             >
-              <label for="subsubcategory_id" class="block text-sm font-medium leading-6 text-gray-900">Sub-Subcategory</label>
-              <div class="mt-2">
-                <select
-                  id="subsubcategory_id"
-                  v-model="subSubCategoryId"
-                  v-bind="subSubCategoryIdAttrs"
-                  :class="fieldClass"
-                >
-                  <option value="">
-                    Select a sub-subcategory (optional)
-                  </option>
-                  <option
-                    v-for="subSubCategory in availableSubSubCategories"
-                    :key="subSubCategory.id"
-                    :value="subSubCategory.id"
-                  >
-                    {{ subSubCategory.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
+              <USelect
+                v-model="subSubCategoryId"
+                v-bind="subSubCategoryIdAttrs"
+                :items="subSubCategoryItems"
+                placeholder="Select a sub-subcategory (optional)"
+                class="w-full"
+              />
+            </UFormField>
 
-            <div class="col-span-full">
-              <label for="license" class="block text-sm font-medium leading-6 text-gray-900">License (optional)</label>
-              <div class="mt-2">
-                <select
-                  id="license"
-                  v-model="license"
-                  v-bind="licenseAttrs"
-                  :class="fieldClass"
-                >
-                  <option value="">
-                    No license selected
-                  </option>
-                  <option
-                    v-for="licenseOption in JOURNAL_LICENSE_OPTIONS"
-                    :key="licenseOption.id"
-                    :value="licenseOption.label"
-                  >
-                    {{ licenseOption.label }}
-                  </option>
-                </select>
-              </div>
-            </div>
+            <UFormField label="License (optional)" class="sm:col-span-2">
+              <USelect
+                v-model="license"
+                v-bind="licenseAttrs"
+                :items="licenseItems"
+                placeholder="No license selected"
+                class="w-full"
+              />
+            </UFormField>
           </div>
         </div>
 
-        <div class="pb-12 border-b border-gray-900/10">
-          <fieldset>
-            <div class="mt-6 space-y-6">
-              <div class="relative flex gap-x-3">
-                <div class="flex items-center h-6">
-                  <input
-                    id="agree"
-                    v-model="agreePolicy"
-                    type="checkbox"
-                    required
-                    class="w-4 h-4 border-gray-300 rounded text-primary-600 focus:ring-primary-600"
-                  >
-                </div>
-                <div class="text-sm leading-6">
-                  <label for="agree" class="text-gray-500">
-                    I agree that I haven't published this article anywhere else
-                  </label>
-                </div>
-              </div>
+        <div class="flex flex-col gap-4 border-b border-default pb-8">
+          <UCheckbox v-model="agreePolicy" label="I agree that I haven't published this article anywhere else" />
 
-              <div class="relative flex gap-x-3">
-                <div class="flex items-center h-6">
-                  <input
-                    id="review_policy_accepted"
-                    type="checkbox"
-                    class="w-4 h-4 border-gray-300 rounded text-primary-600 focus:ring-primary-600"
-                    :checked="reviewPolicyAccepted || reviewPolicyAcceptedLocally"
-                    disabled
-                  >
-                </div>
-                <div class="text-sm leading-6">
-                  <label for="review_policy_accepted" class="text-gray-500">
-                    I accept the
-                    <button
-                      v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)"
-                      type="button"
-                      class="p-0 text-blue-600 font-bold underline bg-transparent border-none cursor-pointer hover:text-blue-800"
-                      @click="showReviewPolicyModal = true"
-                    >
-                      JAPR Review Policy
-                    </button>
-                    <NuxtLink
-                      v-else
-                      to="/review-policy"
-                      target="_blank"
-                      class="text-blue-600 underline font-bold hover:text-blue-800"
-                    >
-                      JAPR Review Policy
-                    </NuxtLink>
-                    and agree to comply with all review standards and procedures
-                    <template v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)">
-                      <br><small class="text-gray-400 italic">(Click policy link to accept before submitting)</small>
-                    </template>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </fieldset>
+          <UCheckbox :model-value="reviewPolicyAccepted || reviewPolicyAcceptedLocally" disabled>
+            <template #label>
+              I accept the
+              <UButton
+                v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)"
+                variant="link"
+                class="px-0 font-bold"
+                @click="showReviewPolicyModal = true"
+              >
+                JAPR Review Policy
+              </UButton>
+              <NuxtLink
+                v-else
+                to="/review-policy"
+                target="_blank"
+                class="font-bold text-primary underline"
+              >
+                JAPR Review Policy
+              </NuxtLink>
+              and agree to comply with all review standards and procedures
+              <template v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)">
+                <br><span class="italic text-dimmed">(Click policy link to accept before submitting)</span>
+              </template>
+            </template>
+          </UCheckbox>
         </div>
       </div>
 
-      <div
+      <UAlert
         v-if="errorMessage"
-        class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      >
-        {{ errorMessage }}
-      </div>
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        class="mt-6"
+        :title="errorMessage"
+      />
 
-      <div class="flex items-center justify-end mt-6 gap-x-6">
-        <button
-          type="button"
-          class="px-3 py-2 text-sm font-semibold leading-6 text-gray-200 bg-red-600 rounded-md hover:bg-red-500"
-          @click="router.back()"
-        >
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <UButton color="error" @click="router.back()">
           Cancel
-        </button>
-        <button
-          type="submit"
-          class="px-3 py-2 text-sm font-semibold text-white bg-green-800 rounded-md shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-50"
-          :disabled="loading || !canSubmit"
-        >
+        </UButton>
+        <UButton type="submit" color="success" :loading="loading" :disabled="loading || !canSubmit">
           {{ loading ? 'Submitting...' : 'Submit' }}
-        </button>
+        </UButton>
       </div>
     </form>
 
-    <!-- Document Preview Modal -->
     <UModal
       :open="showPreviewModal"
       title="Document Preview"
@@ -781,52 +619,35 @@ const createSubmission = handleSubmit(async (values) => {
       @update:open="(value) => { if (!value) closePreviewModal() }"
     >
       <template #body>
-        <div
-          class="overflow-y-auto rounded-lg border bg-gray-50 p-6"
-          style="max-height: 65vh;"
-        >
-          <div
-            v-if="previewLoading"
-            class="text-center py-12"
-          >
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-            <p class="mt-4 text-gray-600 text-lg">
+        <div class="max-h-[65vh] overflow-y-auto rounded-lg border border-default bg-muted p-6">
+          <div v-if="previewLoading" class="py-12 text-center">
+            <UIcon name="i-lucide-loader-circle" class="mx-auto size-12 animate-spin text-primary" />
+            <p class="mt-4 text-lg text-muted">
               Generating preview...
             </p>
           </div>
           <iframe
             v-else-if="previewContent?.type === 'pdf' && previewContent.url"
             :src="previewContent.url"
-            class="w-full border-0"
-            style="height: 60vh;"
+            class="h-[60vh] w-full border-0"
             title="Document preview"
           />
           <iframe
             v-else-if="previewContent?.type === 'html' && previewContent.html"
             :srcdoc="previewContent.html"
-            class="w-full border-0"
-            style="height: 60vh;"
+            class="h-[60vh] w-full border-0"
             title="Document preview"
           />
-          <div
-            v-else-if="previewError"
-            class="text-center py-12 text-red-600"
-          >
+          <div v-else-if="previewError" class="py-12 text-center text-error">
             {{ previewError }}
           </div>
         </div>
       </template>
       <template #footer>
-        <UButton
-          color="neutral"
-          variant="outline"
-          label="Close Preview"
-          @click="closePreviewModal"
-        />
+        <UButton color="neutral" variant="outline" label="Close Preview" @click="closePreviewModal" />
       </template>
     </UModal>
 
-    <!-- Review Policy Modal -->
     <UModal
       :open="showReviewPolicyModal"
       title="JAPR Review Policy"
@@ -834,9 +655,9 @@ const createSubmission = handleSubmit(async (values) => {
       @update:open="(value) => { if (!value) declineReviewPolicy() }"
     >
       <template #body>
-        <div class="prose max-w-none text-sm text-gray-600">
+        <div class="prose max-w-none text-sm text-muted">
           <section>
-            <h2 class="text-lg font-semibold text-gray-900">
+            <h2 class="text-lg font-semibold text-highlighted">
               1. Peer Review Process
             </h2>
             <p class="mt-2">
@@ -844,10 +665,10 @@ const createSubmission = handleSubmit(async (values) => {
             </p>
           </section>
           <section class="mt-6">
-            <h2 class="text-lg font-semibold text-gray-900">
+            <h2 class="text-lg font-semibold text-highlighted">
               2. Reviewer Responsibilities
             </h2>
-            <ul class="mt-2 list-disc pl-5 space-y-1">
+            <ul class="mt-2 list-disc space-y-1 pl-5">
               <li>Maintain confidentiality</li>
               <li>Provide objective, constructive feedback</li>
               <li>Complete reviews within 14 days</li>
@@ -856,30 +677,21 @@ const createSubmission = handleSubmit(async (values) => {
         </div>
       </template>
       <template #footer>
-        <UButton
-          color="error"
-          label="Decline"
-          @click="declineReviewPolicy"
-        />
-        <UButton
-          color="success"
-          label="Accept"
-          @click="acceptReviewPolicy"
-        />
+        <UButton color="error" label="Decline" @click="declineReviewPolicy" />
+        <UButton color="success" label="Accept" @click="acceptReviewPolicy" />
       </template>
     </UModal>
 
-    <!-- Loading Overlay -->
     <div
       v-if="showLoadingOverlay"
-      class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 flex items-center justify-center h-full"
+      class="fixed inset-0 z-50 flex h-full items-center justify-center bg-black/50"
     >
-      <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center space-x-3">
-          <div class="w-6 h-6 border-b-2 border-green-600 rounded-full animate-spin" />
-          <span class="text-gray-700">Processing and converting your document...</span>
+      <div class="rounded-lg bg-default p-6 shadow-lg">
+        <div class="flex items-center gap-3">
+          <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-primary" />
+          <span class="text-toned">Processing and converting your document...</span>
         </div>
-        <p class="mt-2 text-sm text-gray-500">
+        <p class="mt-2 text-sm text-muted">
           This may take a moment for Word documents.
         </p>
       </div>
