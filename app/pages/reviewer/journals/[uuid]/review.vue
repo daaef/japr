@@ -387,12 +387,13 @@ async function submitReview() {
         <p class="text-13 text-gray-600">
           Current deadline: {{ data.reviewer.reviewDeadline ? new Date(data.reviewer.reviewDeadline).toLocaleDateString() : 'No deadline set' }}
         </p>
-        <div
+        <UAlert
           v-if="data.reviewer.deadlineExtensionRequested"
-          class="alert alert-info"
-        >
-          Extension already requested: {{ data.reviewer.deadlineExtensionReason || 'No reason recorded.' }}
-        </div>
+          color="info"
+          variant="subtle"
+          icon="i-lucide-info"
+          :title="`Extension already requested: ${data.reviewer.deadlineExtensionReason || 'No reason recorded.'}`"
+        />
         <form
           v-else
           class="row gy-3"

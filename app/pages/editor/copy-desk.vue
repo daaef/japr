@@ -32,12 +32,14 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
 
 <template>
   <div>
-    <div
+    <UAlert
       v-if="errorMessage"
-      class="alert alert-danger mt-24 mb-0"
-    >
-      {{ errorMessage }}
-    </div>
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      class="mt-6"
+      :title="errorMessage"
+    />
     <JournalQueueList
       title="Copy desk"
       api-url="/api/editor/journals/copy-desk"

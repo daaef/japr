@@ -62,15 +62,15 @@ const submit = handleSubmit(async (values) => {
           src="/images/japr-logo.png"
           alt="JAPR"
         >
-        <h2 class="mt-8 text-2xl font-bold text-gray-900">
+        <h2 class="mt-8 text-2xl font-bold text-highlighted">
           Activate your account
         </h2>
-        <p class="mt-2 text-sm text-gray-600">
+        <p class="mt-2 text-sm text-muted">
           Enter the six-digit code from your email.
           <template v-if="showMailViewer">
             <NuxtLink
               :to="{ path: '/mail', query: email ? { to: email } : undefined }"
-              class="font-medium text-primary-600 hover:text-primary-700"
+              class="text-primary font-medium hover:underline"
             >
               Open the mail inbox
             </NuxtLink>
@@ -78,53 +78,65 @@ const submit = handleSubmit(async (values) => {
           </template>
         </p>
 
-        <div
+        <UAlert
           v-if="resent"
-          class="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700"
-        >
-          A new activation code has been sent to your email.
-        </div>
+          color="info"
+          variant="subtle"
+          icon="i-lucide-info"
+          class="mt-4"
+          title="A new activation code has been sent to your email."
+        />
 
         <form
           class="mt-6 space-y-6"
           @submit.prevent="submit"
         >
-          <div>
-            <label class="block text-sm font-medium text-gray-900">Email</label>
-            <input
+          <UFormField
+            label="Email"
+            :error="errors.email"
+          >
+            <UInput
               v-model="email"
               v-bind="emailAttrs"
               type="email"
-              class="form-control mt-2"
-            >
-            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-900">Activation code</label>
-            <input
+              autocomplete="email"
+              placeholder="name@example.com"
+              size="lg"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Activation code"
+            :error="errors.code"
+          >
+            <UInput
               v-model="code"
               v-bind="codeAttrs"
               type="text"
               maxlength="6"
-              class="form-control mt-2 tracking-[0.25em]"
-            >
-            <p v-if="errors.code" class="mt-1 text-sm text-red-600">{{ errors.code }}</p>
-          </div>
+              size="lg"
+              class="w-full tracking-[0.25em]"
+            />
+          </UFormField>
 
-          <div
+          <UAlert
             v-if="errorMessage"
-            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {{ errorMessage }}
-          </div>
+            color="error"
+            variant="subtle"
+            icon="i-lucide-circle-alert"
+            :title="errorMessage"
+          />
 
-          <button
+          <UButton
             type="submit"
-            class="btn btn-primary w-100"
-            :disabled="loading"
+            color="primary"
+            size="lg"
+            block
+            :loading="loading"
           >
             {{ loading ? 'Activating...' : 'Activate account' }}
-          </button>
+          </UButton>
         </form>
       </div>
     </div>

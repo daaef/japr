@@ -13,18 +13,20 @@ definePageMeta({
         src="/images/japr-logo.png"
         alt="JAPR"
       >
-      <h1 class="mt-8 text-2xl font-bold text-gray-900">
+      <h1 class="mt-8 text-2xl font-bold text-highlighted">
         Password updated
       </h1>
-      <p class="mt-4 text-sm text-gray-600">
+      <p class="mt-4 text-sm text-muted">
         Your password has been reset successfully. You can sign in with your new credentials.
       </p>
-      <NuxtLink
+      <UButton
         to="/auth/login"
-        class="btn btn-primary mt-8 inline-flex"
+        color="primary"
+        size="lg"
+        class="mt-8"
       >
         Sign in
-      </NuxtLink>
+      </UButton>
     </div>
   </div>
 </template>

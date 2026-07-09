@@ -25,6 +25,11 @@ const { data, refresh } = await useFetch<{
 
 const { data: rolesData } = await useFetch<{ roles: Array<{ id: string, name: string }> }>('/api/roles')
 
+const roleItems = computed(() => (rolesData.value?.roles ?? []).map(role => ({
+  label: role.name,
+  value: role.id
+})))
+
 const form = reactive({
   fullname: '',
   country: '',
@@ -88,148 +93,135 @@ async function removeRole(roleId: string) {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            {{ data?.user.fullname || 'User detail' }}
-          </h5>
-          <p
-            v-if="data?.user.email"
-            class="text-13 text-gray-500 mb-0 mt-4"
-          >
-            {{ data.user.email }}
-          </p>
-        </div>
-        <div
-          v-if="data?.user"
-          class="card-body"
+  <div class="space-y-6">
+    <UCard>
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          {{ data?.user.fullname || 'User detail' }}
+        </h5>
+        <p
+          v-if="data?.user.email"
+          class="text-xs text-muted mb-0 mt-1"
         >
-          <form @submit.prevent="saveUser">
-            <div class="row">
-              <DashboardFormField
-                label="Full name"
-                for-id="fullname"
-                col-class="col-12"
-              >
-                <input
-                  id="fullname"
-                  v-model="form.fullname"
-                  type="text"
-                  class="form-control fw-medium text-15"
-                >
-              </DashboardFormField>
-              <DashboardFormField label="Country" for-id="country">
-                <CountrySelect
-                  id="country"
-                  v-model="form.country"
-                  variant="dashboard"
-                />
-              </DashboardFormField>
-              <DashboardFormField label="Institution" for-id="institution">
-                <input
-                  id="institution"
-                  v-model="form.institution"
-                  type="text"
-                  class="form-control fw-medium text-15"
-                  placeholder="Institution"
-                >
-              </DashboardFormField>
-            </div>
-            <label class="form-check flex-align gap-8 mb-20">
-              <input
-                v-model="form.isActive"
-                type="checkbox"
-                class="form-check-input"
-              >
-              <span class="form-check-label text-15">Active account</span>
-            </label>
-            <button
-              type="submit"
-              class="btn btn-main rounded-pill py-9"
-            >
-              Save user
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+          {{ data.user.email }}
+        </p>
+      </template>
 
-    <div
-      v-if="data?.user"
-      class="col-12"
-    >
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            Roles
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="flex-align flex-wrap gap-12 mb-20">
-            <div
-              v-for="assignment in data.user.assignments"
-              :key="assignment.roleId"
-              class="flex-align gap-8 border border-gray-100 rounded-pill px-12 py-6"
-            >
-              <AppRoleBadge :role="assignment.roleName" />
-              <button
-                type="button"
-                class="btn btn-sm text-danger border-0 bg-transparent p-0"
-                @click="removeRole(assignment.roleId)"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-
-          <form
-            class="flex-align flex-wrap gap-12"
-            @submit.prevent="assignRole"
+      <form
+        v-if="data?.user"
+        @submit.prevent="saveUser"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UFormField
+            label="Full name"
+            name="fullname"
+            class="md:col-span-2"
           >
-            <select
-              v-model="form.roleId"
-              class="form-select py-9 text-15 fw-medium"
-              style="min-width: 220px;"
-            >
-              <option value="">
-                Add role
-              </option>
-              <option
-                v-for="role in rolesData?.roles || []"
-                :key="role.id"
-                :value="role.id"
-              >
-                {{ role.name }}
-              </option>
-            </select>
-            <button
-              type="submit"
-              class="btn btn-outline-main rounded-pill py-9"
-            >
-              Assign
-            </button>
-          </form>
+            <UInput
+              v-model="form.fullname"
+              type="text"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Country"
+            name="country"
+          >
+            <CountrySelect
+              id="country"
+              v-model="form.country"
+              variant="dashboard"
+            />
+          </UFormField>
+          <UFormField
+            label="Institution"
+            name="institution"
+          >
+            <UInput
+              v-model="form.institution"
+              type="text"
+              placeholder="Institution"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+
+        <UCheckbox
+          v-model="form.isActive"
+          label="Active account"
+          class="mt-5"
+        />
+
+        <div class="mt-5">
+          <UButton
+            type="submit"
+            color="primary"
+          >
+            Save user
+          </UButton>
+        </div>
+      </form>
+    </UCard>
+
+    <UCard v-if="data?.user">
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          Roles
+        </h5>
+      </template>
+
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <div
+          v-for="assignment in data.user.assignments"
+          :key="assignment.roleId"
+          class="flex items-center gap-2 border border-default rounded-full px-3 py-1.5"
+        >
+          <AppRoleBadge :role="assignment.roleName" />
+          <UButton
+            type="button"
+            color="error"
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-x"
+            aria-label="Remove role"
+            @click="removeRole(assignment.roleId)"
+          />
         </div>
       </div>
-    </div>
 
-    <div class="col-12">
-      <div
-        v-if="message"
-        class="alert alert-success text-15"
-        role="alert"
+      <form
+        class="flex flex-wrap items-center gap-3"
+        @submit.prevent="assignRole"
       >
-        {{ message }}
-      </div>
-      <div
-        v-if="errorMessage"
-        class="alert alert-danger text-15"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </div>
-    </div>
+        <USelect
+          v-model="form.roleId"
+          :items="roleItems"
+          placeholder="Add role"
+          class="min-w-56"
+        />
+        <UButton
+          type="submit"
+          color="primary"
+          variant="outline"
+        >
+          Assign
+        </UButton>
+      </form>
+    </UCard>
+
+    <UAlert
+      v-if="message"
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      :title="message"
+    />
+    <UAlert
+      v-if="errorMessage"
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      :title="errorMessage"
+    />
   </div>
 </template>

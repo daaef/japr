@@ -108,13 +108,21 @@ const loading = ref(false)
 const passwordLoading = ref(false)
 
 const isAuthorPublicLayout = computed(() => Boolean(props.authorPublicLayout) && props.role === 'author')
-
-const inputClass = computed(() =>
-  isAuthorPublicLayout.value
-    ? 'block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
-    : 'form-control fw-medium text-15'
-)
 const countrySelectVariant = computed(() => (isAuthorPublicLayout.value ? 'public' : 'dashboard'))
+
+const preferredReviewTypeItems = PREFERRED_REVIEW_TYPE_OPTIONS.map((option) => ({
+  value: option.value as string,
+  label: option.label
+}))
+
+const researchInterestItems: string[] = [...RESEARCH_INTEREST_OPTIONS]
+
+const regionalExpertiseItems = computed(() =>
+  countryData.value.regions.flatMap((region) => [
+    { type: 'label' as const, label: region.name },
+    ...region.countries.map(country => country.name)
+  ])
+)
 
 function buildSettingsPayload(): SettingsPayload {
   const payload: SettingsPayload = {
@@ -223,556 +231,472 @@ async function changePassword() {
     v-if="authorPublicLayout && role === 'author'"
     class="py-5"
   >
-    <div
+    <UAlert
       v-if="message"
-      class="mb-4 rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800"
-    >
-      {{ message }}
-    </div>
-    <div
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      class="mb-4"
+      :title="message"
+    />
+    <UAlert
       v-if="errorMessage"
-      class="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-      role="alert"
-    >
-      {{ errorMessage }}
-    </div>
-    <div
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      class="mb-4"
+      :title="errorMessage"
+    />
+    <UAlert
       v-if="passwordMessage"
-      class="mb-4 rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800"
-    >
-      {{ passwordMessage }}
-    </div>
-    <div
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      class="mb-4"
+      :title="passwordMessage"
+    />
+    <UAlert
       v-if="passwordError"
-      class="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-      role="alert"
-    >
-      {{ passwordError }}
-    </div>
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      class="mb-4"
+      :title="passwordError"
+    />
 
     <form @submit.prevent="updateAuthorAccount">
-      <div class="space-y-12">
-        <div>
-          <h2 class="text-base font-semibold leading-7 text-gray-900">
-            {{ form.fullname.split(/\s+/)[0] || 'Author' }}'s Settings
-          </h2>
-          <p class="mt-1 text-sm leading-6 text-gray-600">
-            Update your account information and preferences.
-          </p>
-          <p class="mt-1 text-sm leading-6 text-gray-600">
-            Role:
-            <span class="inline-flex ml-2 items-center gap-x-1.5 py-1 px-2 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Author
-            </span>
-          </p>
+      <div>
+        <h2 class="text-base font-semibold text-highlighted">
+          {{ form.fullname.split(/\s+/)[0] || 'Author' }}'s Settings
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          Update your account information and preferences.
+        </p>
+        <p class="mt-1 flex items-center gap-2 text-sm text-muted">
+          Role:
+          <UBadge
+            color="info"
+            variant="subtle"
+            label="Author"
+          />
+        </p>
 
-          <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-            <div>
-              <label
-                for="author-settings-fullname"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Full Name</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-fullname"
-                  v-model="form.fullname"
-                  type="text"
-                  autocomplete="name"
-                  :class="inputClass"
-                >
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-username"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Username</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-username"
-                  v-model="form.username"
-                  type="text"
-                  autocomplete="username"
-                  :class="inputClass"
-                >
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-institution"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Institution</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-institution"
-                  v-model="form.institution"
-                  type="text"
-                  autocomplete="organization"
-                  :class="inputClass"
-                >
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-interests"
-                class="block text-sm font-medium leading-6 text-gray-900"
+        <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <UFormField
+            label="Full Name"
+            name="fullname"
+          >
+            <UInput
+              v-model="form.fullname"
+              type="text"
+              autocomplete="name"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Username"
+            name="username"
+          >
+            <UInput
+              v-model="form.username"
+              type="text"
+              autocomplete="username"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Institution"
+            name="institution"
+          >
+            <UInput
+              v-model="form.institution"
+              type="text"
+              autocomplete="organization"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField name="interests">
+            <template #label>
+              Interests
+              <NuxtLink
+                to="/author/interests"
+                class="text-primary font-bold hover:underline ms-2"
               >
-                Interests
-                <NuxtLink
-                  to="/author/interests"
-                  class="text-primary-500 font-bold hover:underline ms-2"
-                >
-                  Edit
-                </NuxtLink>
-              </label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-interests"
-                  :value="authorInterestLabels"
-                  type="text"
-                  :class="[inputClass, 'bg-gray-50 text-gray-600']"
-                  disabled
-                >
-              </div>
-            </div>
-            <div class="w-full">
-              <label
-                for="author-settings-country"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Country / Region</label>
-              <div class="mt-2">
-                <CountrySelect
-                  id="author-settings-country"
-                  v-model="form.country"
-                  :variant="countrySelectVariant"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-email"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Email</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-email"
-                  v-model="form.email"
-                  type="email"
-                  autocomplete="email"
-                  :class="inputClass"
-                >
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-current-password"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Current Password</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-current-password"
-                  v-model="passwordForm.currentPassword"
-                  type="password"
-                  autocomplete="current-password"
-                  :class="inputClass"
-                >
-                <p class="mt-1 text-xs text-gray-500">
-                  Leave blank if you don't want to change your password.
-                </p>
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-new-password"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >New Password</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-new-password"
-                  v-model="passwordForm.newPassword"
-                  type="password"
-                  autocomplete="new-password"
-                  :class="inputClass"
-                >
-              </div>
-            </div>
-            <div>
-              <label
-                for="author-settings-confirm-password"
-                class="block text-sm font-medium leading-6 text-gray-900"
-              >Confirm New Password</label>
-              <div class="mt-2">
-                <input
-                  id="author-settings-confirm-password"
-                  v-model="passwordForm.confirmPassword"
-                  type="password"
-                  autocomplete="new-password"
-                  :class="inputClass"
-                >
-              </div>
-            </div>
-          </div>
+                Edit
+              </NuxtLink>
+            </template>
+            <UInput
+              :model-value="authorInterestLabels"
+              type="text"
+              disabled
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Country / Region"
+            name="country"
+            class="w-full"
+          >
+            <CountrySelect
+              id="author-settings-country"
+              v-model="form.country"
+              :variant="countrySelectVariant"
+            />
+          </UFormField>
+          <UFormField
+            label="Email"
+            name="email"
+          >
+            <UInput
+              v-model="form.email"
+              type="email"
+              autocomplete="email"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Current Password"
+            name="current-password"
+            help="Leave blank if you don't want to change your password."
+          >
+            <UInput
+              v-model="passwordForm.currentPassword"
+              type="password"
+              autocomplete="current-password"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="New Password"
+            name="new-password"
+          >
+            <UInput
+              v-model="passwordForm.newPassword"
+              type="password"
+              autocomplete="new-password"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Confirm New Password"
+            name="confirm-password"
+          >
+            <UInput
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              class="w-full"
+            />
+          </UFormField>
         </div>
       </div>
 
       <div class="mt-6 flex items-center justify-end gap-x-6">
-        <button
+        <UButton
           type="submit"
-          class="rounded-md bg-green-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-50"
-          :disabled="loading || passwordLoading"
+          color="primary"
+          :loading="loading || passwordLoading"
         >
           {{ loading || passwordLoading ? 'Updating…' : 'Update Account' }}
-        </button>
+        </UButton>
       </div>
     </form>
   </div>
 
   <div
     v-else
-    class="row gy-4"
+    class="grid gap-4"
   >
-    <div class="col-12">
-      <div class="card p-24">
-        <h4 class="mb-24">
+    <UCard>
+      <template #header>
+        <h4 class="text-lg font-semibold">
           Account settings
         </h4>
+      </template>
 
-        <form
-          class="row gy-3"
-          @submit.prevent="saveSettings"
+      <form
+        class="grid grid-cols-1 gap-4 md:grid-cols-2"
+        @submit.prevent="saveSettings"
+      >
+        <UFormField
+          label="Full name"
+          name="fullname"
         >
-          <div class="col-md-6">
-            <label
-              for="settings-fullname"
-              class="h6 mb-8 fw-semibold"
-            >Full name</label>
-            <input
-              id="settings-fullname"
-              v-model="form.fullname"
-              :class="inputClass"
-            >
-          </div>
-          <div class="col-md-6">
-            <label
-              for="settings-username"
-              class="h6 mb-8 fw-semibold"
-            >Username</label>
-            <input
-              id="settings-username"
-              v-model="form.username"
-              :class="inputClass"
-            >
-          </div>
-          <div class="col-12">
-            <label
-              for="settings-email"
-              class="h6 mb-8 fw-semibold"
-            >Email</label>
-            <input
-              id="settings-email"
-              v-model="form.email"
-              type="email"
-              autocomplete="email"
-              :class="inputClass"
-            >
-          </div>
-          <div class="col-md-6">
-            <label
-              for="settings-country"
-              class="h6 mb-8 fw-semibold"
-            >Country</label>
-            <CountrySelect
-              id="settings-country"
-              v-model="form.country"
-              :variant="countrySelectVariant"
+          <UInput
+            v-model="form.fullname"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Username"
+          name="username"
+        >
+          <UInput
+            v-model="form.username"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Email"
+          name="email"
+          class="md:col-span-2"
+        >
+          <UInput
+            v-model="form.email"
+            type="email"
+            autocomplete="email"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Country"
+          name="country"
+        >
+          <CountrySelect
+            id="settings-country"
+            v-model="form.country"
+            :variant="countrySelectVariant"
+          />
+        </UFormField>
+        <UFormField
+          label="Institution"
+          name="institution"
+        >
+          <UInput
+            v-model="form.institution"
+            class="w-full"
+          />
+        </UFormField>
+
+        <template v-if="role === 'author'">
+          <UFormField
+            name="interests"
+            class="md:col-span-2"
+          >
+            <template #label>
+              Interests
+              <NuxtLink
+                to="/author/interests"
+                class="text-primary font-bold ms-2"
+              >
+                Edit
+              </NuxtLink>
+            </template>
+            <UInput
+              :model-value="authorInterestLabels"
+              type="text"
+              disabled
+              class="w-full"
             />
-          </div>
-          <div class="col-md-6">
-            <label
-              for="settings-institution"
-              class="h6 mb-8 fw-semibold"
-            >Institution</label>
-            <input
-              id="settings-institution"
-              v-model="form.institution"
-              :class="inputClass"
-            >
-          </div>
+          </UFormField>
+        </template>
 
-          <template v-if="role === 'author'">
-            <div class="col-12">
-              <label
-                for="settings-interests"
-                class="h6 mb-8 fw-semibold"
-              >
-                Interests
-                <NuxtLink
-                  to="/author/interests"
-                  class="text-primary-500 fw-bold ms-2"
-                >
-                  Edit
-                </NuxtLink>
-              </label>
-              <input
-                id="settings-interests"
-                :value="authorInterestLabels"
-                type="text"
-                class="form-control fw-medium text-15"
-                disabled
-              >
-            </div>
-          </template>
+        <template v-if="showAcademicProfile">
+          <UFormField
+            label="Regional expertise"
+            name="regionalExpertise"
+            help="Select all that apply."
+            class="md:col-span-2"
+          >
+            <USelect
+              v-model="form.regionalExpertise"
+              :items="regionalExpertiseItems"
+              multiple
+              placeholder="Select regions"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Research interests"
+            name="researchInterests"
+            help="Select all that apply."
+            class="md:col-span-2"
+          >
+            <USelect
+              v-model="form.researchInterests"
+              :items="researchInterestItems"
+              multiple
+              placeholder="Select interests"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Biography"
+            name="biography"
+            class="md:col-span-2"
+          >
+            <UTextarea
+              v-model="form.biography"
+              :rows="4"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Specialization"
+            name="specialization"
+          >
+            <UInput
+              v-model="form.specialization"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Academic degree"
+            name="academicDegree"
+          >
+            <UInput
+              v-model="form.academicDegree"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Publications"
+            name="publications"
+            class="md:col-span-2"
+          >
+            <UTextarea
+              v-model="form.publications"
+              :rows="4"
+              class="w-full"
+            />
+          </UFormField>
+        </template>
 
-          <template v-if="showAcademicProfile">
-            <div class="col-12">
-              <label
-                for="settings-regional-expertise"
-                class="h6 mb-8 fw-semibold"
-              >Regional expertise</label>
-              <select
-                id="settings-regional-expertise"
-                v-model="form.regionalExpertise"
-                multiple
-                class="form-select fw-medium text-15"
-                size="8"
-              >
-                <optgroup
-                  v-for="region in countryData.regions"
-                  :key="region.id"
-                  :label="region.name"
-                >
-                  <option
-                    v-for="country in region.countries"
-                    :key="country.id"
-                    :value="country.name"
-                  >
-                    {{ country.name }}
-                  </option>
-                </optgroup>
-              </select>
-              <p class="text-13 text-gray-600 mt-8 mb-0">
-                Hold Ctrl/Cmd to select multiple regions.
-              </p>
-            </div>
-            <div class="col-12">
-              <label
-                for="settings-research-interests"
-                class="h6 mb-8 fw-semibold"
-              >Research interests</label>
-              <select
-                id="settings-research-interests"
-                v-model="form.researchInterests"
-                multiple
-                class="form-select fw-medium text-15"
-                size="8"
-              >
-                <option
-                  v-for="interest in RESEARCH_INTEREST_OPTIONS"
-                  :key="interest"
-                  :value="interest"
-                >
-                  {{ interest }}
-                </option>
-              </select>
-              <p class="text-13 text-gray-600 mt-8 mb-0">
-                Hold Ctrl/Cmd to select multiple interests.
-              </p>
-            </div>
-            <div class="col-12">
-              <label
-                for="settings-biography"
-                class="h6 mb-8 fw-semibold"
-              >Biography</label>
-              <textarea
-                id="settings-biography"
-                v-model="form.biography"
-                rows="4"
-                class="form-control fw-medium text-15"
-              />
-            </div>
-            <div class="col-md-6">
-              <label
-                for="settings-specialization"
-                class="h6 mb-8 fw-semibold"
-              >Specialization</label>
-              <input
-                id="settings-specialization"
-                v-model="form.specialization"
-                class="form-control fw-medium text-15"
-              >
-            </div>
-            <div class="col-md-6">
-              <label
-                for="settings-academic-degree"
-                class="h6 mb-8 fw-semibold"
-              >Academic degree</label>
-              <input
-                id="settings-academic-degree"
-                v-model="form.academicDegree"
-                class="form-control fw-medium text-15"
-              >
-            </div>
-            <div class="col-12">
-              <label
-                for="settings-publications"
-                class="h6 mb-8 fw-semibold"
-              >Publications</label>
-              <textarea
-                id="settings-publications"
-                v-model="form.publications"
-                rows="4"
-                class="form-control fw-medium text-15"
-              />
-            </div>
-          </template>
+        <template v-if="role === 'reviewer'">
+          <UFormField
+            label="Preferred review types"
+            name="preferredReviewTypes"
+            class="md:col-span-2"
+          >
+            <USelect
+              v-model="form.preferredReviewTypes"
+              :items="preferredReviewTypeItems"
+              multiple
+              placeholder="Select review types"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Max reviews per month"
+            name="maxReviewsPerMonth"
+          >
+            <UInput
+              v-model.number="form.maxReviewsPerMonth"
+              type="number"
+              :min="0"
+              :max="50"
+              class="w-full"
+            />
+          </UFormField>
+          <USwitch
+            v-model="form.availableForReview"
+            label="Available for review"
+            class="md:col-span-2"
+          />
+        </template>
 
-          <template v-if="role === 'reviewer'">
-            <div class="col-12">
-              <label
-                for="settings-preferred-review-types"
-                class="h6 mb-8 fw-semibold"
-              >Preferred review types</label>
-              <select
-                id="settings-preferred-review-types"
-                v-model="form.preferredReviewTypes"
-                multiple
-                class="form-select fw-medium text-15"
-                size="7"
-              >
-                <option
-                  v-for="option in PREFERRED_REVIEW_TYPE_OPTIONS"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label
-                for="settings-max-reviews"
-                class="h6 mb-8 fw-semibold"
-              >Max reviews per month</label>
-              <input
-                id="settings-max-reviews"
-                v-model.number="form.maxReviewsPerMonth"
-                type="number"
-                min="0"
-                max="50"
-                class="form-control fw-medium text-15"
-              >
-            </div>
-            <div class="col-12">
-              <label class="form-check-label">
-                <input
-                  v-model="form.availableForReview"
-                  type="checkbox"
-                  class="form-check-input me-2"
-                >
-                Available for review
-              </label>
-            </div>
-          </template>
+        <div class="md:col-span-2">
+          <UButton
+            type="submit"
+            color="primary"
+            :loading="loading"
+          >
+            {{ loading ? 'Saving...' : 'Save settings' }}
+          </UButton>
+        </div>
+      </form>
 
-          <div class="col-12">
-            <button
-              type="submit"
-              class="btn btn-main rounded-pill py-9"
-              :disabled="loading"
-            >
-              {{ loading ? 'Saving...' : 'Save settings' }}
-            </button>
-          </div>
-        </form>
+      <UAlert
+        v-if="message"
+        color="success"
+        variant="subtle"
+        icon="i-lucide-circle-check"
+        class="mt-3"
+        :title="message"
+      />
+      <UAlert
+        v-if="errorMessage"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        class="mt-3"
+        :title="errorMessage"
+      />
+    </UCard>
 
-        <p
-          v-if="message"
-          class="mt-3 text-success mb-0"
-        >
-          {{ message }}
-        </p>
-        <p
-          v-if="errorMessage"
-          class="mt-3 text-danger mb-0"
-        >
-          {{ errorMessage }}
-        </p>
-      </div>
-    </div>
-
-    <div class="col-12">
-      <div class="card p-24">
-        <h4 class="mb-24">
+    <UCard>
+      <template #header>
+        <h4 class="text-lg font-semibold">
           Change password
         </h4>
+      </template>
 
-        <form
-          class="row gy-3"
-          @submit.prevent="changePassword"
+      <form
+        class="grid grid-cols-1 gap-4 md:grid-cols-2"
+        @submit.prevent="changePassword"
+      >
+        <UFormField
+          label="Current password"
+          name="current-password"
+          class="md:col-span-2"
         >
-          <div class="col-12">
-            <label
-              for="settings-current-password"
-              class="h6 mb-8 fw-semibold"
-            >Current password</label>
-            <input
-              id="settings-current-password"
-              v-model="passwordForm.currentPassword"
-              type="password"
-              autocomplete="current-password"
-              :class="inputClass"
-            >
-          </div>
-          <div class="col-md-6">
-            <label
-              for="settings-new-password"
-              class="h6 mb-8 fw-semibold"
-            >New password</label>
-            <input
-              id="settings-new-password"
-              v-model="passwordForm.newPassword"
-              type="password"
-              autocomplete="new-password"
-              :class="inputClass"
-            >
-          </div>
-          <div class="col-md-6">
-            <label
-              for="settings-confirm-password"
-              class="h6 mb-8 fw-semibold"
-            >Confirm new password</label>
-            <input
-              id="settings-confirm-password"
-              v-model="passwordForm.confirmPassword"
-              type="password"
-              autocomplete="new-password"
-              :class="inputClass"
-            >
-          </div>
-          <div class="col-12">
-            <button
-              type="submit"
-              class="btn btn-outline-main rounded-pill py-9"
-              :disabled="passwordLoading"
-            >
-              {{ passwordLoading ? 'Updating...' : 'Update password' }}
-            </button>
-          </div>
-        </form>
+          <UInput
+            v-model="passwordForm.currentPassword"
+            type="password"
+            autocomplete="current-password"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="New password"
+          name="new-password"
+        >
+          <UInput
+            v-model="passwordForm.newPassword"
+            type="password"
+            autocomplete="new-password"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Confirm new password"
+          name="confirm-password"
+        >
+          <UInput
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            class="w-full"
+          />
+        </UFormField>
+        <div class="md:col-span-2">
+          <UButton
+            type="submit"
+            color="primary"
+            variant="outline"
+            :loading="passwordLoading"
+          >
+            {{ passwordLoading ? 'Updating...' : 'Update password' }}
+          </UButton>
+        </div>
+      </form>
 
-        <p
-          v-if="passwordMessage"
-          class="mt-3 text-success mb-0"
-        >
-          {{ passwordMessage }}
-        </p>
-        <p
-          v-if="passwordError"
-          class="mt-3 text-danger mb-0"
-        >
-          {{ passwordError }}
-        </p>
-      </div>
-    </div>
+      <UAlert
+        v-if="passwordMessage"
+        color="success"
+        variant="subtle"
+        icon="i-lucide-circle-check"
+        class="mt-3"
+        :title="passwordMessage"
+      />
+      <UAlert
+        v-if="passwordError"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        class="mt-3"
+        :title="passwordError"
+      />
+    </UCard>
   </div>
 </template>

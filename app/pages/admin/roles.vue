@@ -54,108 +54,107 @@ async function createRole() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            Create role
-          </h5>
-        </div>
-        <div class="card-body">
-          <form
-            class="row gy-3 align-items-end"
-            @submit.prevent="createRole"
-          >
-            <div class="col-md-5">
-              <label
-                for="role-name"
-                class="h6 mb-8 fw-semibold"
-              >Role name</label>
-              <input
-                id="role-name"
-                v-model="form.name"
-                type="text"
-                class="form-control fw-medium text-15"
-                placeholder="Role name"
-              >
-            </div>
-            <div class="col-md-5">
-              <label
-                for="role-description"
-                class="h6 mb-8 fw-semibold"
-              >Description</label>
-              <input
-                id="role-description"
-                v-model="form.description"
-                type="text"
-                class="form-control fw-medium text-15"
-                placeholder="Description"
-              >
-            </div>
-            <div class="col-md-2">
-              <button
-                type="submit"
-                class="btn btn-main rounded-pill py-9 w-100"
-                :disabled="loading"
-              >
-                Create
-              </button>
-            </div>
-          </form>
+  <div class="space-y-6">
+    <UCard>
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          Create role
+        </h5>
+      </template>
 
-          <div
-            v-if="message"
-            class="alert alert-success text-15 mt-20 mb-0"
-            role="alert"
+      <form
+        class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"
+        @submit.prevent="createRole"
+      >
+        <UFormField
+          label="Role name"
+          name="name"
+          class="md:col-span-5"
+        >
+          <UInput
+            v-model="form.name"
+            type="text"
+            placeholder="Role name"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Description"
+          name="description"
+          class="md:col-span-5"
+        >
+          <UInput
+            v-model="form.description"
+            type="text"
+            placeholder="Description"
+            class="w-full"
+          />
+        </UFormField>
+        <div class="md:col-span-2">
+          <UButton
+            type="submit"
+            color="primary"
+            block
+            :loading="loading"
+            :disabled="loading"
           >
-            {{ message }}
-          </div>
-          <div
-            v-if="errorMessage"
-            class="alert alert-danger text-15 mt-20 mb-0"
-            role="alert"
-          >
-            {{ errorMessage }}
-          </div>
+            Create
+          </UButton>
         </div>
-      </div>
-    </div>
+      </form>
 
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            Roles
-          </h5>
-        </div>
-        <div class="card-body p-0">
-          <div
-            v-for="role in data.roles"
-            :key="role.id"
-            class="p-24 border-bottom border-gray-100"
+      <UAlert
+        v-if="message"
+        color="success"
+        variant="subtle"
+        icon="i-lucide-circle-check"
+        class="mt-5"
+        :title="message"
+      />
+      <UAlert
+        v-if="errorMessage"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        class="mt-5"
+        :title="errorMessage"
+      />
+    </UCard>
+
+    <UCard>
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          Roles
+        </h5>
+      </template>
+
+      <div class="divide-y divide-default">
+        <div
+          v-for="role in data.roles"
+          :key="role.id"
+          class="py-6 first:pt-0 last:pb-0"
+        >
+          <NuxtLink
+            :to="`/admin/roles/${role.id}`"
+            class="text-base font-semibold text-highlighted hover:text-primary"
           >
-            <NuxtLink
-              :to="`/admin/roles/${role.id}`"
-              class="h6 text-gray-900 fw-semibold hover-text-main-600 text-decoration-none"
+            {{ role.name }}
+          </NuxtLink>
+          <p class="text-xs text-muted mb-3 mt-1">
+            {{ role.description || 'No description.' }}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <UBadge
+              v-for="permission in role.permissions"
+              :key="permission.permissionId"
+              color="neutral"
+              variant="subtle"
             >
-              {{ role.name }}
-            </NuxtLink>
-            <p class="text-13 text-gray-500 mb-12 mt-4">
-              {{ role.description || 'No description.' }}
-            </p>
-            <div class="flex-align flex-wrap gap-8">
-              <span
-                v-for="permission in role.permissions"
-                :key="permission.permissionId"
-                class="badge bg-gray-100 text-13"
-              >
-                {{ permission.permissionName }}
-              </span>
-            </div>
+              {{ permission.permissionName }}
+            </UBadge>
           </div>
         </div>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

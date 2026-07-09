@@ -65,3 +65,50 @@ then verified centrally.
   components. They render via `public/assets/css/main.css` for now and **must be converted to
   Tailwind before that sheet is deleted in W6** (W4/W5 spacing sweep). `w-48` is a live
   Tailwind-vs-theme collision (12rem vs 48px).
+
+## W2 — Feedback banners — landed 2026-07-08
+
+All inline `alert alert-*` banners → `<UAlert variant="subtle">` across 10 pages, preserving the
+exact reactive conditions and message refs (no `<script>`/logic changes):
+`admin/categories`, `admin/audit/index` (ternary error/success), `admin/users`,
+`admin/users/[id]`, `admin/roles`, `admin/roles/[id]`, `notifications/preferences`,
+`reviewer/journals/[uuid]/review` (info), `editor/copy-desk`, `editor/journals/[uuid]`
+(the editorial-note warning + the action success/error pair). Color map: success→success,
+danger→error, warning→warning, info→info; each gets the matching lucide icon. `role="alert"`
+dropped (UAlert sets its own a11y role); legacy theme spacing (`mt-20`/`mb-16`/`mt-24`) normalized
+to Tailwind (`mt-5`/`mb-4`/`mt-6`). `useActionHandler`'s `message`/`error` refs untouched.
+
+Verified: grep confirms **zero** `alert alert-` left in `app/`; `eslint` clean (10 files);
+`nuxt typecheck` clean.
+
+## W3 — Forms (partial: auth + admin + settings batch) — landed 2026-07-09
+
+Reference pattern established and verified in `auth/login.vue` first (vee-validate `defineField`
+wiring kept; `<UFormField :error="errors.x"><UInput v-model=x v-bind=xAttrs/></UFormField>` — NOT
+`UForm` schema validation), then the batch fanned out across subagents and was verified centrally.
+
+### What landed
+- **Auth area (fully done):** `login`, `register`, `forgot-password`, `reset-password`, `activate`
+  → `UFormField`/`UInput`/`UButton`/`UAlert`, password reveal in `#trailing`; the 3 `success-*`
+  pages' CTAs → `UButton`. vee-validate `useForm`/`handleSubmit`/schemas untouched.
+- **Deferred W1 atoms:** `CountrySelect` → `USelectMenu` (plain string items, **no** `value-key` —
+  a value-key is a type error when the `{type:'label'}` group headings lack it; the country's value
+  equals its name so string items keep the `v-model` a string); `DashboardFormField` → `UFormField`.
+- **Light manual forms:** `contact` (`UInput`/`UTextarea`/`USelect`/`UCheckbox`), `review-policy`
+  (`UCheckbox`), `author/interests` (`UButton` toggles + `UBadge` + `UAlert`, orange→brand tokens).
+- **Admin CRUD:** `admin/users`, `admin/users/[id]`, `admin/roles`, `admin/roles/[id]`,
+  `admin/categories` → `UFormField`/`UInput`/`USelect`/`UCheckbox`/`UCheckboxGroup`/`UCard`/`UButton`
+  (icon-only row actions `variant="ghost"`). Data `<table>` in `admin/users` **kept + flagged** for
+  a central `UTable` pass. All `$fetch`/`runAction`/validation logic byte-for-byte unchanged.
+- **Shared `SettingsForm`** (both template branches; manual validation kept) + `notifications/
+  preferences` (toggles → `USwitch`). The 4 role `notifications/preferences` mirror pages are
+  redirect stubs — untouched.
+
+### Verified
+- `nuxt typecheck` clean (one `CountrySelect` `value-key` type error found and fixed) · `eslint`
+  clean · `pnpm test` 53/53 · zero legacy artifacts in the migrated files · all Nuxt UI components
+  used (`UCheckboxGroup`/`USwitch`/`USelectMenu`/…) confirmed to exist in the installed package.
+
+### Remaining in W3 (held back for careful direct handling)
+- `reviewer/journals/[uuid]/review.vue` (review submission — behavior-critical) and
+  `author/submit.vue` (vee-validate manuscript submit). See `CONTINUATION-PROMPT.md` §7.

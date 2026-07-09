@@ -163,9 +163,12 @@ async function cleanupLogs() {
     </div>
 
     <div v-if="cleanupMessage || cleanupError" class="col-12">
-      <div :class="cleanupError ? 'alert alert-danger' : 'alert alert-success'">
-        {{ cleanupError || cleanupMessage }}
-      </div>
+      <UAlert
+        :color="cleanupError ? 'error' : 'success'"
+        variant="subtle"
+        :icon="cleanupError ? 'i-lucide-circle-alert' : 'i-lucide-circle-check'"
+        :title="cleanupError || cleanupMessage"
+      />
     </div>
 
     <div class="col-12">

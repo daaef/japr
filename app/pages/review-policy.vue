@@ -71,21 +71,34 @@ async function handleAccept() {
       </div>
 
       <div class="mt-8 border-t pt-6 space-y-4">
-        <label class="flex items-start gap-3 text-sm">
-          <input v-model="accepted" type="checkbox" class="mt-1">
-          <span>I have read and agree to the JAPR Review Policy.</span>
-        </label>
-        <p v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
+        <UCheckbox
+          v-model="accepted"
+          label="I have read and agree to the JAPR Review Policy."
+        />
+        <UAlert
+          v-if="errorMessage"
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          :title="errorMessage"
+        />
         <div class="flex flex-wrap gap-3">
-          <NuxtLink to="/" class="btn btn-outline-secondary">Cancel</NuxtLink>
-          <button
+          <UButton
+            to="/"
+            color="neutral"
+            variant="outline"
+          >
+            Cancel
+          </UButton>
+          <UButton
             type="button"
-            class="btn btn-primary"
+            color="primary"
+            :loading="isSubmitting"
             :disabled="!accepted || isSubmitting"
             @click="handleAccept"
           >
             Accept and continue
-          </button>
+          </UButton>
         </div>
       </div>
     </div>

@@ -38,6 +38,11 @@ const { data: rolesData } = await useFetch<{
   default: () => ({ roles: [] })
 })
 
+const roleItems = computed(() => rolesData.value.roles.map(role => ({
+  label: role.name,
+  value: role.id
+})))
+
 const message = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
@@ -75,178 +80,190 @@ async function createUser() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100 flex-between flex-wrap gap-8">
-          <h5 class="mb-0">
-            Create user
-          </h5>
+  <div class="space-y-6">
+    <UCard>
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          Create user
+        </h5>
+      </template>
+
+      <form @submit.prevent="createUser">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UFormField
+            label="Full name"
+            name="fullname"
+          >
+            <UInput
+              v-model="form.fullname"
+              type="text"
+              placeholder="Full name"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Username"
+            name="username"
+          >
+            <UInput
+              v-model="form.username"
+              type="text"
+              placeholder="Username"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Email"
+            name="email"
+          >
+            <UInput
+              v-model="form.email"
+              type="email"
+              placeholder="Email"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Password"
+            name="password"
+          >
+            <UInput
+              v-model="form.password"
+              type="password"
+              placeholder="Password"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Country"
+            name="country"
+          >
+            <CountrySelect
+              id="country"
+              v-model="form.country"
+              variant="dashboard"
+            />
+          </UFormField>
+          <UFormField
+            label="Institution"
+            name="institution"
+          >
+            <UInput
+              v-model="form.institution"
+              type="text"
+              placeholder="Institution"
+              class="w-full"
+            />
+          </UFormField>
         </div>
-        <div class="card-body">
-          <form @submit.prevent="createUser">
-            <div class="row">
-              <DashboardFormField label="Full name" for-id="fullname">
-                <input
-                  id="fullname"
-                  v-model="form.fullname"
-                  type="text"
-                  class="form-control fw-medium text-15"
-                  placeholder="Full name"
-                >
-              </DashboardFormField>
-              <DashboardFormField label="Username" for-id="username">
-                <input
-                  id="username"
-                  v-model="form.username"
-                  type="text"
-                  class="form-control fw-medium text-15"
-                  placeholder="Username"
-                >
-              </DashboardFormField>
-              <DashboardFormField label="Email" for-id="email">
-                <input
-                  id="email"
-                  v-model="form.email"
-                  type="email"
-                  class="form-control fw-medium text-15"
-                  placeholder="Email"
-                >
-              </DashboardFormField>
-              <DashboardFormField label="Password" for-id="password">
-                <input
-                  id="password"
-                  v-model="form.password"
-                  type="password"
-                  class="form-control fw-medium text-15"
-                  placeholder="Password"
-                >
-              </DashboardFormField>
-              <DashboardFormField label="Country" for-id="country">
-                <CountrySelect
-                  id="country"
-                  v-model="form.country"
-                  variant="dashboard"
-                />
-              </DashboardFormField>
-              <DashboardFormField label="Institution" for-id="institution">
-                <input
-                  id="institution"
-                  v-model="form.institution"
-                  type="text"
-                  class="form-control fw-medium text-15"
-                  placeholder="Institution"
-                >
-              </DashboardFormField>
-            </div>
 
-            <div class="mb-20">
-              <label class="h6 mb-8 fw-semibold d-block">Assign roles</label>
-              <div class="flex-align flex-wrap gap-12">
-                <label
-                  v-for="role in rolesData.roles"
-                  :key="role.id"
-                  class="form-check flex-align gap-8 mb-0"
-                >
-                  <input
-                    v-model="form.roleIds"
-                    :value="role.id"
-                    type="checkbox"
-                    class="form-check-input"
-                  >
-                  <span class="form-check-label text-15">{{ role.name }}</span>
-                </label>
-              </div>
-            </div>
+        <UFormField
+          label="Assign roles"
+          name="roleIds"
+          class="mt-5"
+        >
+          <UCheckboxGroup
+            v-model="form.roleIds"
+            :items="roleItems"
+            orientation="horizontal"
+          />
+        </UFormField>
 
-            <div
-              v-if="message"
-              class="alert alert-success text-15"
-              role="alert"
+        <UAlert
+          v-if="message"
+          color="success"
+          variant="subtle"
+          icon="i-lucide-circle-check"
+          class="mt-5"
+          :title="message"
+        />
+        <UAlert
+          v-if="errorMessage"
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          class="mt-5"
+          :title="errorMessage"
+        />
+
+        <UButton
+          type="submit"
+          color="primary"
+          class="mt-5"
+          :loading="loading"
+          :disabled="loading"
+        >
+          Create user
+        </UButton>
+      </form>
+    </UCard>
+
+    <UCard>
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          Users
+        </h5>
+      </template>
+
+      <div class="overflow-x-auto">
+        <!-- Table kept for a central UTable pass (per migration mandate). -->
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Roles</th>
+              <th class="text-center">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="user in usersData.users"
+              :key="user.id"
             >
-              {{ message }}
-            </div>
-            <div
-              v-if="errorMessage"
-              class="alert alert-danger text-15"
-              role="alert"
-            >
-              {{ errorMessage }}
-            </div>
-
-            <button
-              type="submit"
-              class="btn btn-main rounded-pill py-9"
-              :disabled="loading"
-            >
-              Create user
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            Users
-          </h5>
-        </div>
-        <div class="card-body p-0 overflow-x-auto scroll-sm">
-          <table class="table mb-0">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Roles</th>
-                <th class="text-center">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="user in usersData.users"
-                :key="user.id"
-              >
-                <td>
-                  <NuxtLink
-                    :to="`/admin/users/${user.id}`"
-                    class="text-gray-900 fw-medium hover-text-main-600"
-                  >
-                    {{ user.fullname }}
-                  </NuxtLink>
-                </td>
-                <td class="text-13 text-gray-500">
-                  {{ user.email }}
-                </td>
-                <td>
-                  <JournalStatusBadge :status="user.isActive ? 'active' : 'suspended'" />
-                </td>
-                <td>
-                  <span
+              <td>
+                <NuxtLink
+                  :to="`/admin/users/${user.id}`"
+                  class="text-highlighted font-medium hover:text-primary"
+                >
+                  {{ user.fullname }}
+                </NuxtLink>
+              </td>
+              <td class="text-xs text-muted">
+                {{ user.email }}
+              </td>
+              <td>
+                <JournalStatusBadge :status="user.isActive ? 'active' : 'suspended'" />
+              </td>
+              <td>
+                <div class="flex flex-wrap gap-1">
+                  <UBadge
                     v-for="assignment in user.assignments"
                     :key="assignment.roleId"
-                    class="badge bg-gray-100 text-13 me-4"
+                    color="neutral"
+                    variant="subtle"
                   >
                     {{ assignment.roleName }}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <NuxtLink
-                    :to="`/admin/users/${user.id}`"
-                    class="btn btn-outline-main rounded-pill py-6 px-16 text-13"
-                  >
-                    Edit
-                  </NuxtLink>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  </UBadge>
+                </div>
+              </td>
+              <td class="text-center">
+                <UButton
+                  :to="`/admin/users/${user.id}`"
+                  color="primary"
+                  variant="outline"
+                  size="xs"
+                >
+                  Edit
+                </UButton>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

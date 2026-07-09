@@ -291,9 +291,12 @@ function declineManuscript() {
           v-if="detailData.journal.editorDecisionComment"
           class="card-body border-bottom border-gray-100"
         >
-          <div class="alert alert-warning text-15 mb-0">
-            Latest editorial note: {{ detailData.journal.editorDecisionComment }}
-          </div>
+          <UAlert
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-triangle-alert"
+            :title="`Latest editorial note: ${detailData.journal.editorDecisionComment}`"
+          />
         </div>
         <div class="card-body">
           <div class="row gy-3">
@@ -634,21 +637,21 @@ function declineManuscript() {
             Editorial decisions unlock after peer review is complete.
           </p>
 
-        <div
+        <UAlert
           v-if="actionMessage"
-          class="alert alert-success text-15"
-          role="alert"
-        >
-          {{ actionMessage }}
-        </div>
+          color="success"
+          variant="subtle"
+          icon="i-lucide-circle-check"
+          :title="actionMessage"
+        />
 
-        <div
+        <UAlert
           v-if="actionError"
-          class="alert alert-danger text-15"
-          role="alert"
-        >
-          {{ actionError }}
-        </div>
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          :title="actionError"
+        />
         </div>
       </div>
     </div>

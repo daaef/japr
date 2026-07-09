@@ -21,41 +21,29 @@ const { data } = await useFetch<{
   default: () => ({ regions: [] })
 })
 
-const selectClass = computed(() => {
-  if (props.variant === 'dashboard') {
-    return 'form-select py-9 text-15 fw-medium'
-  }
+// Flat items list: each region contributes a non-selectable `type: 'label'` heading
+// followed by its countries as plain strings. Because a country's stored value IS its
+// name, using string items keeps the `v-model` a country-name string with no value-key
+// (a value-key would be rejected — the heading items have no `value` field).
+const items = computed(() =>
+  data.value.regions.flatMap(region => [
+    { type: 'label' as const, label: region.name },
+    ...region.countries.map(country => country.name)
+  ])
+)
 
-  if (props.variant === 'auth') {
-    return 'block w-full bg-[#F9FAFB] rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6'
-  }
-
-  return 'block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
-})
+const placeholder = computed(() =>
+  props.variant === 'auth' ? 'Select your country' : 'Select country'
+)
 </script>
 
 <template>
-  <select
+  <USelectMenu
     :id="id"
     v-model="model"
-    :class="selectClass"
+    :items="items"
     :required="required"
-  >
-    <option value="" disabled>
-      {{ variant === 'auth' ? 'Select your country' : 'Select country' }}
-    </option>
-    <optgroup
-      v-for="region in data.regions"
-      :key="region.id"
-      :label="region.name"
-    >
-      <option
-        v-for="country in region.countries"
-        :key="country.id"
-        :value="country.name"
-      >
-        {{ country.name }}
-      </option>
-    </optgroup>
-  </select>
+    :placeholder="placeholder"
+    class="w-full"
+  />
 </template>

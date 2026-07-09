@@ -125,99 +125,109 @@ const submit = handleSubmit(async (values) => {
             src="/images/japr-logo.png"
             alt="JAPR"
           >
-          <h2 class="mt-8 text-2xl font-bold leading-9 tracking-tight text-gray-900">
+          <h2 class="mt-8 text-2xl font-bold leading-9 tracking-tight text-highlighted">
             Welcome back!
           </h2>
         </div>
 
-        <div
+        <UAlert
           v-if="activated"
-          class="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-        >
-          Account activated. You can sign in now.
-        </div>
+          color="success"
+          variant="subtle"
+          icon="i-lucide-circle-check"
+          class="mt-4"
+          title="Account activated. You can sign in now."
+        />
 
         <form
           class="mt-6 space-y-6"
           @submit.prevent="submit"
         >
-          <div>
-            <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Email address</label>
-            <div class="mt-2">
-              <input
-                id="email"
-                v-model="email"
-                v-bind="emailAttrs"
-                type="email"
-                autocomplete="email"
-                placeholder="name@example.com"
-                class="block w-full bg-[#F9FAFB] rounded-md border-0 px-3 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-              >
-              <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
-            </div>
-          </div>
+          <UFormField
+            label="Email address"
+            :error="errors.email"
+          >
+            <UInput
+              v-model="email"
+              v-bind="emailAttrs"
+              type="email"
+              autocomplete="email"
+              placeholder="name@example.com"
+              size="lg"
+              class="w-full"
+            />
+          </UFormField>
 
-          <div>
-            <label for="password" class="block text-sm font-medium leading-6 text-gray-900">Password</label>
-            <div class="mt-2 relative">
-              <input
-                id="password"
-                v-model="password"
-                v-bind="passwordAttrs"
-                :type="showPassword ? 'text' : 'password'"
-                autocomplete="current-password"
-                placeholder="••••••••••"
-                class="block w-full bg-[#F9FAFB] rounded-md border-0 px-3 py-1.5 pr-10 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-              >
-              <button
-                type="button"
-                class="absolute inset-y-0 end-0 flex items-center px-3 text-gray-400"
-                @click="showPassword = !showPassword"
-              >
-                <i class="ph" :class="showPassword ? 'ph-eye-slash' : 'ph-eye'" />
-              </button>
-            </div>
-            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
-          </div>
+          <UFormField
+            label="Password"
+            :error="errors.password"
+          >
+            <UInput
+              v-model="password"
+              v-bind="passwordAttrs"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              placeholder="••••••••••"
+              size="lg"
+              class="w-full"
+            >
+              <template #trailing>
+                <UButton
+                  color="neutral"
+                  variant="link"
+                  size="sm"
+                  :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  @click="showPassword = !showPassword"
+                />
+              </template>
+            </UInput>
+          </UFormField>
 
           <div class="text-sm leading-6">
             <NuxtLink
               to="/auth/forgot-password"
-              class="font-semibold text-secondary-900 hover:text-secondary-700"
+              class="font-semibold text-primary hover:text-primary/80"
             >
               Forgot password?
             </NuxtLink>
           </div>
 
-          <div
+          <UAlert
             v-if="errorMessage"
-            class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {{ errorMessage }}
-          </div>
+            color="error"
+            variant="subtle"
+            icon="i-lucide-circle-alert"
+            :title="errorMessage"
+          />
 
-          <button
+          <UButton
             type="submit"
-            class="flex w-full justify-center rounded-md bg-secondary-900 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-secondary-700 disabled:opacity-50"
-            :disabled="loading"
+            color="primary"
+            size="lg"
+            block
+            :loading="loading"
           >
             {{ loading ? 'Signing in...' : 'Sign in' }}
-          </button>
+          </UButton>
 
-          <button
+          <UButton
             type="button"
-            class="flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            block
             :disabled="loading"
             @click="signInWithGoogle"
           >
             Continue with Google
-          </button>
+          </UButton>
 
-          <p class="text-center text-sm text-gray-600">
+          <p class="text-center text-sm text-muted">
             Don't have an account yet?
             <NuxtLink
               to="/auth/register"
-              class="text-secondary-900 font-medium hover:underline"
+              class="text-primary font-medium hover:underline"
             >
               Sign up here
             </NuxtLink>
