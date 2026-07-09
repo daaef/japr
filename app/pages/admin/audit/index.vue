@@ -40,6 +40,16 @@ const riskLevelItems = [
   { label: 'High', value: 'high' }
 ]
 
+const logColumns = [
+  { accessorKey: 'createdAt', header: 'Timestamp' },
+  { accessorKey: 'userName', header: 'Admin' },
+  { accessorKey: 'action', header: 'Action' },
+  { accessorKey: 'resourceType', header: 'Resource' },
+  { accessorKey: 'riskLevel', header: 'Risk' },
+  { accessorKey: 'ipAddress', header: 'IP' },
+  { id: 'actions', header: '' }
+]
+
 const query = computed(() => ({
   page: filters.page,
   pageSize: 15,
@@ -183,47 +193,35 @@ async function cleanupLogs() {
       <div v-else-if="!logs.length" class="p-6 text-center text-muted">
         No audit logs match the current filters.
       </div>
-      <!-- Table kept for a central UTable pass -->
-      <div v-else class="overflow-x-auto">
-        <table class="mb-0 w-full text-left text-sm">
-          <thead>
-            <tr class="border-b border-default">
-              <th class="p-3 font-semibold text-highlighted">Timestamp</th>
-              <th class="p-3 font-semibold text-highlighted">Admin</th>
-              <th class="p-3 font-semibold text-highlighted">Action</th>
-              <th class="p-3 font-semibold text-highlighted">Resource</th>
-              <th class="p-3 font-semibold text-highlighted">Risk</th>
-              <th class="p-3 font-semibold text-highlighted">IP</th>
-              <th class="p-3" />
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="log in logs" :key="log.id" class="border-b border-default">
-              <td class="p-3 text-toned">{{ new Date(log.createdAt).toLocaleString() }}</td>
-              <td class="p-3">
-                <span class="font-semibold text-highlighted">{{ log.userName ?? 'System' }}</span>
-                <span class="block text-sm text-muted">{{ log.userEmail }}</span>
-              </td>
-              <td class="p-3 capitalize text-toned">{{ log.action.replaceAll('_', ' ') }}</td>
-              <td class="p-3">
-                <span class="font-semibold text-highlighted">{{ log.resourceType }}</span>
-                <span v-if="log.resourceId" class="block text-sm text-muted">{{ log.resourceId }}</span>
-              </td>
-              <td class="p-3">
-                <UBadge :color="log.riskLevel === 'high' ? 'error' : log.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle">
-                  {{ log.riskLevel }}
-                </UBadge>
-              </td>
-              <td class="p-3 text-toned">{{ log.ipAddress ?? 'Unknown' }}</td>
-              <td class="p-3">
-                <UButton :to="`/admin/audit/${log.id}`" color="primary" variant="outline" size="xs">
-                  View
-                </UButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <UTable v-else :data="logs" :columns="logColumns">
+        <template #createdAt-cell="{ row }">
+          {{ new Date(row.original.createdAt).toLocaleString() }}
+        </template>
+        <template #userName-cell="{ row }">
+          <span class="font-semibold text-highlighted">{{ row.original.userName ?? 'System' }}</span>
+          <span class="block text-sm text-muted">{{ row.original.userEmail }}</span>
+        </template>
+        <template #action-cell="{ row }">
+          <span class="capitalize">{{ row.original.action.replaceAll('_', ' ') }}</span>
+        </template>
+        <template #resourceType-cell="{ row }">
+          <span class="font-semibold text-highlighted">{{ row.original.resourceType }}</span>
+          <span v-if="row.original.resourceId" class="block text-sm text-muted">{{ row.original.resourceId }}</span>
+        </template>
+        <template #riskLevel-cell="{ row }">
+          <UBadge :color="row.original.riskLevel === 'high' ? 'error' : row.original.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle">
+            {{ row.original.riskLevel }}
+          </UBadge>
+        </template>
+        <template #ipAddress-cell="{ row }">
+          {{ row.original.ipAddress ?? 'Unknown' }}
+        </template>
+        <template #actions-cell="{ row }">
+          <UButton :to="`/admin/audit/${row.original.id}`" color="primary" variant="outline" size="xs">
+            View
+          </UButton>
+        </template>
+      </UTable>
 
       <template #footer>
         <div class="flex flex-wrap items-center justify-between gap-3">

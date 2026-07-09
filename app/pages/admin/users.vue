@@ -43,6 +43,14 @@ const roleItems = computed(() => rolesData.value.roles.map(role => ({
   value: role.id
 })))
 
+const userColumns = [
+  { accessorKey: 'fullname', header: 'Name' },
+  { accessorKey: 'email', header: 'Email', meta: { class: { td: 'text-xs text-muted' } } },
+  { accessorKey: 'isActive', header: 'Status' },
+  { accessorKey: 'assignments', header: 'Roles' },
+  { id: 'actions', header: 'Actions', meta: { class: { th: 'text-center', td: 'text-center' } } }
+]
+
 const message = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
@@ -205,65 +213,41 @@ async function createUser() {
         </h5>
       </template>
 
-      <div class="overflow-x-auto">
-        <!-- Table kept for a central UTable pass (per migration mandate). -->
-        <table class="table mb-0">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Status</th>
-              <th>Roles</th>
-              <th class="text-center">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="user in usersData.users"
-              :key="user.id"
+      <UTable :data="usersData.users" :columns="userColumns">
+        <template #fullname-cell="{ row }">
+          <NuxtLink
+            :to="`/admin/users/${row.original.id}`"
+            class="text-highlighted font-medium hover:text-primary"
+          >
+            {{ row.original.fullname }}
+          </NuxtLink>
+        </template>
+        <template #isActive-cell="{ row }">
+          <JournalStatusBadge :status="row.original.isActive ? 'active' : 'suspended'" />
+        </template>
+        <template #assignments-cell="{ row }">
+          <div class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="assignment in row.original.assignments"
+              :key="assignment.roleId"
+              color="neutral"
+              variant="subtle"
             >
-              <td>
-                <NuxtLink
-                  :to="`/admin/users/${user.id}`"
-                  class="text-highlighted font-medium hover:text-primary"
-                >
-                  {{ user.fullname }}
-                </NuxtLink>
-              </td>
-              <td class="text-xs text-muted">
-                {{ user.email }}
-              </td>
-              <td>
-                <JournalStatusBadge :status="user.isActive ? 'active' : 'suspended'" />
-              </td>
-              <td>
-                <div class="flex flex-wrap gap-1">
-                  <UBadge
-                    v-for="assignment in user.assignments"
-                    :key="assignment.roleId"
-                    color="neutral"
-                    variant="subtle"
-                  >
-                    {{ assignment.roleName }}
-                  </UBadge>
-                </div>
-              </td>
-              <td class="text-center">
-                <UButton
-                  :to="`/admin/users/${user.id}`"
-                  color="primary"
-                  variant="outline"
-                  size="xs"
-                >
-                  Edit
-                </UButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              {{ assignment.roleName }}
+            </UBadge>
+          </div>
+        </template>
+        <template #actions-cell="{ row }">
+          <UButton
+            :to="`/admin/users/${row.original.id}`"
+            color="primary"
+            variant="outline"
+            size="xs"
+          >
+            Edit
+          </UButton>
+        </template>
+      </UTable>
     </UCard>
   </div>
 </template>

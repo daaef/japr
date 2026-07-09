@@ -35,6 +35,26 @@ const groupedPermissions = computed(() => {
     }))
     .sort((a, b) => a.resource.localeCompare(b.resource))
 })
+
+// Flatten the grouped-by-resource structure into rows UTable can render, keeping the
+// "resource label only on the group's first row" look the grouped <table> markup had.
+const permissionRows = computed(() =>
+  groupedPermissions.value.flatMap(group =>
+    group.permissions.map((permission, index) => ({
+      ...permission,
+      groupResource: group.resource,
+      isFirstInGroup: index === 0
+    }))
+  )
+)
+
+const permissionColumns = [
+  { accessorKey: 'groupResource', header: 'Resource' },
+  { accessorKey: 'name', header: 'Permission' },
+  { accessorKey: 'action', header: 'Action' },
+  { accessorKey: 'scope', header: 'Scope' },
+  { accessorKey: 'description', header: 'Description' }
+]
 </script>
 
 <template>
@@ -64,35 +84,22 @@ const groupedPermissions = computed(() => {
       <div v-else-if="!groupedPermissions.length" class="p-6 text-center text-muted">
         No permissions are configured yet.
       </div>
-      <!-- Table kept for a central UTable pass -->
-      <div v-else class="overflow-x-auto">
-        <table class="mb-0 w-full text-left text-sm">
-          <thead>
-            <tr class="border-b border-default">
-              <th class="p-3 font-semibold text-highlighted">Resource</th>
-              <th class="p-3 font-semibold text-highlighted">Permission</th>
-              <th class="p-3 font-semibold text-highlighted">Action</th>
-              <th class="p-3 font-semibold text-highlighted">Scope</th>
-              <th class="p-3 font-semibold text-highlighted">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="group in groupedPermissions" :key="group.resource">
-              <tr v-for="(permission, index) in group.permissions" :key="permission.id" class="border-b border-default">
-                <td class="p-3">
-                  <span v-if="index === 0" class="font-semibold capitalize text-highlighted">
-                    {{ group.resource.replaceAll('_', ' ') }}
-                  </span>
-                </td>
-                <td class="p-3 text-toned">{{ permission.name }}</td>
-                <td class="p-3 capitalize text-toned">{{ permission.action.replaceAll('_', ' ') }}</td>
-                <td class="p-3 text-toned">{{ permission.scope ?? 'any' }}</td>
-                <td class="p-3 text-toned">{{ permission.description ?? 'No description' }}</td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
+      <UTable v-else :data="permissionRows" :columns="permissionColumns">
+        <template #groupResource-cell="{ row }">
+          <span v-if="row.original.isFirstInGroup" class="font-semibold capitalize text-highlighted">
+            {{ row.original.groupResource.replaceAll('_', ' ') }}
+          </span>
+        </template>
+        <template #action-cell="{ row }">
+          <span class="capitalize">{{ row.original.action.replaceAll('_', ' ') }}</span>
+        </template>
+        <template #scope-cell="{ row }">
+          {{ row.original.scope ?? 'any' }}
+        </template>
+        <template #description-cell="{ row }">
+          {{ row.original.description ?? 'No description' }}
+        </template>
+      </UTable>
     </UCard>
   </div>
 </template>

@@ -4,6 +4,11 @@ import type { AdminTopReviewer } from '#shared/types/dashboard'
 defineProps<{
   reviewers: AdminTopReviewer[]
 }>()
+
+const columns = [
+  { accessorKey: 'name', header: 'Reviewer' },
+  { accessorKey: 'completedReviews', header: 'Reviews' }
+]
 </script>
 
 <template>
@@ -13,42 +18,20 @@ defineProps<{
         Top Performing Reviewers
       </h5>
     </template>
-    <div
+    <p
       v-if="!reviewers.length"
-      class="text-muted text-center py-24"
+      class="text-muted text-center py-6"
     >
       No performance data available yet.
-    </div>
-    <div
-      v-else
-      class="table-responsive"
-    >
-      <table class="table table-sm mb-0">
-        <thead>
-          <tr>
-            <th>Reviewer</th>
-            <th class="text-end">
-              Reviews
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="reviewer in reviewers"
-            :key="reviewer.userId"
-          >
-            <td>{{ reviewer.name }}</td>
-            <td class="text-end">
-              <UBadge
-                color="success"
-                variant="subtle"
-              >
-                {{ reviewer.completedReviews }}
-              </UBadge>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    </p>
+    <UTable v-else :data="reviewers" :columns="columns">
+      <template #completedReviews-cell="{ row }">
+        <div class="text-right">
+          <UBadge color="success" variant="subtle">
+            {{ row.original.completedReviews }}
+          </UBadge>
+        </div>
+      </template>
+    </UTable>
   </UCard>
 </template>

@@ -239,6 +239,26 @@ and zero legacy-artifact matches in the changed files. **W4 page sweep is now co
 app-wide legacy-artifact grep returns matches only in W5 (layouts, `JournalNavbar.vue`) and W6
 (CSS/SASS) scope.
 
+## W4-tables — landed 2026-07-09
+
+Converted the 4 kept `<table>`s to `UTable` (props/slots verified against `Table.vue.d.ts` — this
+was the first `UTable` usage in the codebase, no in-repo precedent to follow):
+
+- **`AdminTopReviewersTable.vue`**: 2-column table, a `completedReviews-cell` slot for the badge.
+- **`admin/users.vue`**: `fullname`/`isActive`/`assignments`/`actions` cell slots (link, status
+  badge, role-badge list, edit button); the email column uses `meta.class.td` instead of a slot
+  since it's styling-only.
+- **`admin/audit/index.vue`**: all 6 data columns + an unlabeled actions column, cell slots for the
+  timestamp format, admin name+email stack, risk badge, and the View button.
+- **`admin/permissions.vue`**: the grouped-by-resource table (resource label shown only on each
+  group's first row via manual "index === 0" conditional) doesn't map onto TanStack's flat-row
+  model directly, so `groupedPermissions` is flattened into a new `permissionRows` computed
+  (`{ ...permission, groupResource, isFirstInGroup }`) and the `groupResource-cell` slot reproduces
+  the original's "label once per group" look from `isFirstInGroup`.
+
+Verified: `nuxt typecheck` clean · `eslint` clean (4 files) · `pnpm test` 53/53 · zero `<table>`
+markup remains in any of the 4 files.
+
 ## W4 — Page sweep: public area — landed 2026-07-09
 
 - **`journals/[slug].vue`** (hand-rolled Tailwind, not Bootstrap): every `bg-white rounded-xl
