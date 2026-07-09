@@ -207,3 +207,24 @@ Bootstrap-grid grep of the changed files returns zero.
 
 Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact
 grep of the changed files returns zero.
+
+## W4 — Page sweep: author area — landed 2026-07-09
+
+- **`author/index.vue`** (hand-rolled Tailwind, not Bootstrap): the review-policy banner → `UAlert`
+  with an `:actions` button; the 4 hand-rolled inline-SVG stat tiles → the already-shared
+  `DashboardStatCard` atom (icon colors mapped to semantic: neutral/info/success/warning); the
+  empty-state and Quick-Actions inline SVGs → `UIcon`; the 3 Quick-Action link tiles →
+  `<UCard as="NuxtLink">`; the "Action Required" `bg-orange-100` pill → `UBadge color="warning"`.
+  `text-primary-600`/`bg-primary-600` etc. were already resolving to the brand palette (Nuxt UI
+  generates those utilities for the registered `primary` color) — left as-is, not legacy.
+- **`author/submissions/[id].vue`**: every `card` section → `UCard`; the dead `journal-title` class
+  (no matching CSS rule anywhere) and the `.meta-label` class (only styled under `.journal-site`,
+  which the author dashboard layout never wraps in — was already rendering unstyled here) dropped
+  in favor of real Tailwind/token classes; orange/emerald/red raw-color boxes → `warning`/`UAlert
+  color=success`/`UAlert color=error`; the revision-file `<input type=file>` + manual
+  `fileInput.value.files[0]` read → `UFileUpload` `v-model` (`uploadFile()` now reads the ref
+  directly — same two-step "select, then click Upload revision file" behavior, same
+  `uploadManuscript()` call).
+
+Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact
+grep of the changed files returns zero.

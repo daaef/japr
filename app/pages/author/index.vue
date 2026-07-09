@@ -104,221 +104,91 @@ function relativeTime(value: string) {
 
 <template>
   <div class="py-6">
-    <div class="border-b border-gray-200 pb-5 sm:flex w-full sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold text-gray-900">
+    <div class="w-full border-b border-default pb-5 sm:flex sm:items-center sm:justify-between">
+      <h3 class="text-lg font-bold text-highlighted">
         Dashboard
       </h3>
-      <span class="mt-2 sm:mt-0 text-sm text-gray-600">
+      <span class="mt-2 text-sm text-muted sm:mt-0">
         Welcome, {{ displayName }}
       </span>
     </div>
 
-    <div
+    <UAlert
       v-if="currentUser?.user && !currentUser.user.reviewPolicyAccepted"
-      class="mt-6 rounded-lg border border-orange-200 bg-orange-50 p-5"
-    >
-      <p class="text-sm text-orange-900">
-        Review policy acceptance is required before creating a manuscript.
-      </p>
-      <button
-        type="button"
-        class="btn btn-primary mt-4"
-        :disabled="acceptingPolicy"
-        @click="acceptPolicy"
-      >
-        Accept review policy
-      </button>
-    </div>
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-triangle-alert"
+      title="Review policy acceptance is required before creating a manuscript."
+      class="mt-6"
+      :actions="[{ label: 'Accept review policy', color: 'warning', loading: acceptingPolicy, disabled: acceptingPolicy, onClick: acceptPolicy }]"
+    />
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Total Submissions
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ submissions.submissions.length }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Under Review
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ underReviewCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Approved
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ approvedCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Revisions Needed
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ revisionsCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
+      <DashboardStatCard
+        label="Total Submissions"
+        :value="submissions.submissions.length"
+        icon="i-lucide-file-text"
+        icon-class="bg-neutral-600"
+      />
+      <DashboardStatCard
+        label="Under Review"
+        :value="underReviewCount"
+        icon="i-lucide-clock"
+        icon-class="bg-info-600"
+      />
+      <DashboardStatCard
+        label="Approved"
+        :value="approvedCount"
+        icon="i-lucide-circle-check"
+        icon-class="bg-success-600"
+      />
+      <DashboardStatCard
+        label="Revisions Needed"
+        :value="revisionsCount"
+        icon="i-lucide-circle-alert"
+        icon-class="bg-warning-600"
+      />
     </div>
 
     <div
       v-if="isNewAuthor"
-      class="mt-8 text-center py-12"
+      class="mt-8 py-12 text-center"
     >
-      <svg
-        class="mx-auto h-12 w-12 text-gray-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">
+      <UIcon name="i-lucide-file-text" class="mx-auto size-12 text-dimmed" />
+      <h3 class="mt-2 text-sm font-medium text-highlighted">
         Welcome to JAPR!
       </h3>
-      <p class="mt-1 text-sm text-gray-500">
+      <p class="mt-1 text-sm text-muted">
         Get started by submitting your first manuscript for review.
       </p>
-      <div class="mt-6">
-        <NuxtLink
-          to="/author/submit"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <svg
-            class="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Submit Your First Manuscript
-        </NuxtLink>
-      </div>
+      <UButton
+        to="/author/submit"
+        icon="i-lucide-plus"
+        color="primary"
+        class="mt-6"
+      >
+        Submit Your First Manuscript
+      </UButton>
     </div>
 
     <div
       v-if="recentSubmissions.length"
       class="mt-8"
     >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-medium text-gray-900">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-medium text-highlighted">
           Recent Submissions
         </h3>
         <NuxtLink
           to="/author/submissions"
-          class="text-sm text-primary-600 hover:text-primary-700"
+          class="text-sm text-primary hover:text-primary-700"
         >
           View all submissions
         </NuxtLink>
       </div>
 
-      <div class="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul class="divide-y divide-gray-200">
+      <UCard :ui="{ body: 'p-0 sm:p-0' }">
+        <ul class="divide-y divide-default">
           <li
             v-for="submission in recentSubmissions"
             :key="submission.id"
@@ -326,44 +196,41 @@ function relativeTime(value: string) {
             <div class="px-4 py-4 sm:px-6">
               <div class="flex items-center justify-between gap-4">
                 <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-primary-600 truncate">
+                  <p class="truncate text-sm font-medium text-primary">
                     <NuxtLink :to="`/author/submissions/${submission.id}`">
                       {{ submission.title }}
                     </NuxtLink>
                   </p>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                  <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
                     <JournalStatusBadge :status="submission.approvalStatus" />
                     <span>{{ submission.categoryName || 'Uncategorized' }}</span>
                     <span>{{ submission.reviewerCount }} reviewers</span>
-                    <span
-                      v-if="submission.approvalStatus === 'changes_requested'"
-                      class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800"
-                    >
+                    <UBadge v-if="submission.approvalStatus === 'changes_requested'" color="warning" variant="subtle">
                       Action Required
-                    </span>
+                    </UBadge>
                   </div>
                 </div>
-                <span class="text-xs text-gray-500 shrink-0">
+                <span class="shrink-0 text-xs text-muted">
                   Updated {{ relativeTime(submission.updatedAt) }}
                 </span>
               </div>
             </div>
           </li>
         </ul>
-      </div>
+      </UCard>
     </div>
 
     <div
       v-if="collectionJournals.length"
       class="mt-8"
     >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-medium text-gray-900">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-medium text-highlighted">
           My Journal Collections
         </h3>
         <NuxtLink
           to="/journals"
-          class="text-sm text-primary-600 hover:text-primary-700"
+          class="text-sm text-primary hover:text-primary-700"
         >
           Browse all journals
         </NuxtLink>
@@ -375,99 +242,53 @@ function relativeTime(value: string) {
       />
     </div>
 
-    <div class="bg-gray-50 rounded-lg p-6 mt-8">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">
-        Quick Actions
-      </h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <NuxtLink
-          to="/author/submit"
-          class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-        >
-          <div class="shrink-0">
-            <svg
-              class="h-8 w-8 text-primary-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
+    <UCard class="mt-8">
+      <template #header>
+        <h3 class="text-lg font-medium text-highlighted">
+          Quick Actions
+        </h3>
+      </template>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <UCard as="NuxtLink" to="/author/submit" class="flex items-center transition hover:shadow-md">
+          <div class="flex items-center gap-4">
+            <UIcon name="i-lucide-plus" class="size-8 shrink-0 text-primary" />
+            <div>
+              <p class="text-sm font-medium text-highlighted">
+                Submit New Manuscript
+              </p>
+              <p class="text-sm text-muted">
+                Upload your research for review
+              </p>
+            </div>
           </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-900">
-              Submit New Manuscript
-            </p>
-            <p class="text-sm text-gray-500">
-              Upload your research for review
-            </p>
+        </UCard>
+        <UCard as="NuxtLink" to="/author/submissions" class="flex items-center transition hover:shadow-md">
+          <div class="flex items-center gap-4">
+            <UIcon name="i-lucide-file-text" class="size-8 shrink-0 text-info" />
+            <div>
+              <p class="text-sm font-medium text-highlighted">
+                View All Submissions
+              </p>
+              <p class="text-sm text-muted">
+                Track your manuscript status
+              </p>
+            </div>
           </div>
-        </NuxtLink>
-        <NuxtLink
-          to="/author/submissions"
-          class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-        >
-          <div class="shrink-0">
-            <svg
-              class="h-8 w-8 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+        </UCard>
+        <UCard as="NuxtLink" to="/journals" class="flex items-center transition hover:shadow-md">
+          <div class="flex items-center gap-4">
+            <UIcon name="i-lucide-book-open" class="size-8 shrink-0 text-success" />
+            <div>
+              <p class="text-sm font-medium text-highlighted">
+                Browse Journals
+              </p>
+              <p class="text-sm text-muted">
+                Explore published research
+              </p>
+            </div>
           </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-900">
-              View All Submissions
-            </p>
-            <p class="text-sm text-gray-500">
-              Track your manuscript status
-            </p>
-          </div>
-        </NuxtLink>
-        <NuxtLink
-          to="/journals"
-          class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-        >
-          <div class="shrink-0">
-            <svg
-              class="h-8 w-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-900">
-              Browse Journals
-            </p>
-            <p class="text-sm text-gray-500">
-              Explore published research
-            </p>
-          </div>
-        </NuxtLink>
+        </UCard>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

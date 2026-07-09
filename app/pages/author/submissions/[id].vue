@@ -119,7 +119,7 @@ const form = reactive({
 const errorMessage = ref('')
 const successMessage = ref('')
 const actionLoading = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
+const revisionFile = ref<File | null>(null)
 const uploadedFile = ref<null | {
   fileKey: string
   journalFormat: string
@@ -139,7 +139,7 @@ watchEffect(() => {
 })
 
 async function uploadFile() {
-  if (!fileInput.value?.files?.length) {
+  if (!revisionFile.value) {
     return
   }
 
@@ -148,7 +148,7 @@ async function uploadFile() {
   successMessage.value = ''
 
   try {
-    uploadedFile.value = await uploadManuscript(fileInput.value.files[0] as File)
+    uploadedFile.value = await uploadManuscript(revisionFile.value)
     successMessage.value = uploadedFile.value ? `Uploaded ${uploadedFile.value.originalName}.` : ''
   } catch (error) {
     errorMessage.value = extractApiErrorMessage(error, 'Unable to upload this revision file.')
@@ -215,15 +215,12 @@ const showRevisionForm = computed(() =>
 
 <template>
   <div class="space-y-8">
-    <div
-      v-if="pending"
-      class="card p-6 text-muted"
-    >
-      Loading submission...
-    </div>
+    <UCard v-if="pending">
+      <p class="text-muted">Loading submission...</p>
+    </UCard>
 
     <template v-else-if="data.journal.id">
-      <section class="card p-8 sm:p-10">
+      <UCard>
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <AppPageHeader
             eyebrow="Submission"
@@ -234,31 +231,27 @@ const showRevisionForm = computed(() =>
           <JournalStatusBadge :status="data.journal.approvalStatus" />
         </div>
 
-        <div
-          v-if="hasManuscriptFile"
-          class="mt-6"
-        >
-          <a
-            :href="`/api/journals/${data.journal.id}/download`"
-            class="btn btn-primary"
-          >
+        <div v-if="hasManuscriptFile" class="mt-6">
+          <UButton :href="`/api/journals/${data.journal.id}/download`" color="primary">
             Download manuscript
-          </a>
+          </UButton>
         </div>
 
-        <div
+        <UAlert
           v-if="data.journal.editorDecisionComment"
-          class="mt-8 rounded-[1.5rem] border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900"
-        >
-          Editorial note: {{ data.journal.editorDecisionComment }}
-        </div>
-      </section>
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-triangle-alert"
+          class="mt-8"
+          :title="`Editorial note: ${data.journal.editorDecisionComment}`"
+        />
+      </UCard>
 
-      <section class="card p-8">
-        <h2 class="journal-title text-3xl font-semibold text-toned">
+      <UCard>
+        <h2 class="text-xl font-semibold text-toned">
           Manuscript preview
         </h2>
-        <div class="mt-6 overflow-hidden rounded-2xl border border-default" style="height: 600px;">
+        <div class="mt-6 h-150 overflow-hidden rounded-2xl border border-default">
           <div v-if="previewPending" class="flex h-full items-center justify-center text-sm text-muted">
             Loading preview…
           </div>
@@ -285,13 +278,10 @@ const showRevisionForm = computed(() =>
             Preview not available for this manuscript.
           </div>
         </div>
-      </section>
+      </UCard>
 
-      <section
-        v-if="pendingChangeRequests.length"
-        class="card p-8"
-      >
-        <h2 class="journal-title text-3xl font-semibold text-toned">
+      <UCard v-if="pendingChangeRequests.length">
+        <h2 class="text-xl font-semibold text-toned">
           Requested changes
         </h2>
         <p class="mt-2 text-sm text-muted">
@@ -302,9 +292,9 @@ const showRevisionForm = computed(() =>
           <div
             v-for="(request, index) in pendingChangeRequests"
             :key="`${request.field}-${index}`"
-            class="rounded-2xl border border-orange-200 bg-orange-50 p-5"
+            class="rounded-2xl border border-warning-200 bg-warning-50 p-5"
           >
-            <p class="font-semibold text-toned capitalize">
+            <p class="font-semibold capitalize text-toned">
               {{ request.field }}
             </p>
             <p
@@ -316,31 +306,23 @@ const showRevisionForm = computed(() =>
             <p class="mt-2 text-sm text-muted">
               Suggested: {{ request.suggested_change }}
             </p>
-            <input
+            <UInput
               v-if="request.field"
               v-model="changeRequestUpdates[request.field]"
               type="text"
-              class="form-control mt-3"
+              class="mt-3 w-full"
               :placeholder="`Enter updated ${request.field}`"
-            >
+            />
           </div>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-primary mt-6"
-          :disabled="actionLoading"
-          @click="submitChangeRequestUpdates"
-        >
+        <UButton color="primary" class="mt-6" :disabled="actionLoading" @click="submitChangeRequestUpdates">
           Submit change updates
-        </button>
-      </section>
+        </UButton>
+      </UCard>
 
-      <section
-        v-if="feedbackData.reviewerFeedback.length"
-        class="card p-8"
-      >
-        <h2 class="journal-title text-3xl font-semibold text-toned">
+      <UCard v-if="feedbackData.reviewerFeedback.length">
+        <h2 class="text-xl font-semibold text-toned">
           Reviewer feedback
         </h2>
 
@@ -348,153 +330,110 @@ const showRevisionForm = computed(() =>
           <div
             v-for="review in feedbackData.reviewerFeedback"
             :key="review.id"
-            class="rounded-2xl border border-default bg-white p-5"
+            class="rounded-2xl border border-default bg-elevated p-5"
           >
             <div class="flex flex-wrap items-center gap-3">
               <JournalStatusBadge :status="review.status" />
-              <span
-                v-if="review.recommendation"
-                class="meta-label"
-              >{{ review.recommendation.replaceAll('_', ' ') }}</span>
-              <span
-                v-if="review.rating"
-                class="meta-label"
-              >Rating {{ review.rating }}/5</span>
+              <span v-if="review.recommendation" class="text-sm font-semibold text-toned">
+                {{ review.recommendation.replaceAll('_', ' ') }}
+              </span>
+              <span v-if="review.rating" class="text-sm font-semibold text-toned">
+                Rating {{ review.rating }}/5
+              </span>
             </div>
             <p class="mt-3 whitespace-pre-wrap text-sm text-muted">
               {{ review.comment || 'No reviewer comments are visible yet.' }}
             </p>
           </div>
         </div>
-      </section>
+      </UCard>
 
-      <section
-        v-if="showRevisionForm"
-        class="card p-8"
-      >
-        <h2 class="journal-title text-3xl font-semibold text-toned">
+      <UCard v-if="showRevisionForm">
+        <h2 class="text-xl font-semibold text-toned">
           Submit a revision
         </h2>
 
-        <form
-          class="mt-6 space-y-5"
-          @submit.prevent="submitRevision"
-        >
-          <div class="space-y-2">
-            <label class="meta-label">Title</label>
-            <input
-              v-model="form.title"
-              type="text"
-              class="form-control"
-            >
-          </div>
+        <form class="mt-6 space-y-5" @submit.prevent="submitRevision">
+          <UFormField label="Title">
+            <UInput v-model="form.title" type="text" class="w-full" />
+          </UFormField>
 
-          <div class="space-y-2">
-            <label class="meta-label">Abstract</label>
-            <textarea
-              v-model="form.abstract"
-              rows="6"
-              class="form-control"
-            />
-          </div>
+          <UFormField label="Abstract">
+            <UTextarea v-model="form.abstract" :rows="6" class="w-full" />
+          </UFormField>
 
-          <div class="space-y-2">
-            <label class="meta-label">Revision content</label>
-            <textarea
-              v-model="form.content"
-              rows="8"
-              class="form-control"
-            />
-          </div>
+          <UFormField label="Revision content">
+            <UTextarea v-model="form.content" :rows="8" class="w-full" />
+          </UFormField>
 
-          <div class="space-y-2">
-            <label class="meta-label">Changes summary</label>
-            <textarea
-              v-model="form.changesSummary"
-              rows="5"
-              class="form-control"
-            />
-          </div>
+          <UFormField label="Changes summary">
+            <UTextarea v-model="form.changesSummary" :rows="5" class="w-full" />
+          </UFormField>
 
-          <div class="space-y-3 rounded-[1.5rem] border border-default bg-white/80 p-5">
-            <label class="meta-label">Updated manuscript file</label>
-            <input
-              ref="fileInput"
-              type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              class="block w-full text-sm text-muted"
-            >
+          <div class="space-y-3 rounded-2xl border border-default bg-elevated p-5">
+            <UFormField label="Updated manuscript file">
+              <UFileUpload
+                v-model="revisionFile"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              />
+            </UFormField>
             <div class="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                :disabled="actionLoading"
-                @click.prevent="uploadFile"
-              >
+              <UButton color="neutral" variant="outline" :disabled="actionLoading" @click.prevent="uploadFile">
                 Upload revision file
-              </button>
-              <span
-                v-if="uploadedFile"
-                class="text-sm text-muted"
-              >
+              </UButton>
+              <span v-if="uploadedFile" class="text-sm text-muted">
                 {{ uploadedFile.originalName }}
               </span>
             </div>
           </div>
 
-          <div
+          <UAlert
             v-if="successMessage"
-            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
-          >
-            {{ successMessage }}
-          </div>
+            color="success"
+            variant="subtle"
+            icon="i-lucide-circle-check"
+            :title="successMessage"
+          />
 
-          <div
+          <UAlert
             v-if="errorMessage"
-            class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {{ errorMessage }}
-          </div>
+            color="error"
+            variant="subtle"
+            icon="i-lucide-circle-alert"
+            :title="errorMessage"
+          />
 
-          <button
-            type="submit"
-            class="btn btn-primary"
-            :disabled="actionLoading"
-          >
+          <UButton type="submit" color="primary" :disabled="actionLoading">
             Submit revision
-          </button>
+          </UButton>
         </form>
-      </section>
+      </UCard>
 
-      <section class="card p-8">
+      <UCard>
         <div class="flex flex-wrap items-center justify-between gap-4">
-          <h2 class="journal-title text-3xl font-semibold text-toned">
+          <h2 class="text-xl font-semibold text-toned">
             Version history
           </h2>
-          <NuxtLink
+          <UButton
             v-if="data.journal.slug && data.versions.length"
             :to="`/journals/${data.journal.slug}/versions`"
-            class="btn btn-outline-primary btn-sm"
+            color="primary"
+            variant="outline"
+            size="sm"
           >
             Compare & revert versions
-          </NuxtLink>
+          </UButton>
         </div>
 
-        <div
-          v-if="!data.versions.length"
-          class="mt-6 text-sm text-muted"
-        >
+        <p v-if="!data.versions.length" class="mt-6 text-sm text-muted">
           No versions recorded yet.
-        </div>
+        </p>
 
-        <div
-          v-else
-          class="mt-6 grid gap-3"
-        >
+        <div v-else class="mt-6 grid gap-3">
           <div
             v-for="version in data.versions"
             :key="version.id"
-            class="rounded-2xl border border-default bg-white px-4 py-4 text-sm"
+            class="rounded-2xl border border-default bg-elevated px-4 py-4 text-sm"
           >
             <div class="flex items-center justify-between gap-4">
               <div>
@@ -513,59 +452,52 @@ const showRevisionForm = computed(() =>
               </div>
               <JournalStatusBadge :status="version.status" />
             </div>
-            <NuxtLink
+            <UButton
               v-if="data.journal.slug"
               :to="`/journals/${data.journal.slug}/versions/${version.id}`"
-              class="btn btn-outline-primary btn-sm mt-3"
+              color="primary"
+              variant="outline"
+              size="sm"
+              class="mt-3"
             >
               View version details
-            </NuxtLink>
+            </UButton>
           </div>
         </div>
-      </section>
+      </UCard>
 
-      <section class="card p-8">
-        <h2 class="journal-title text-3xl font-semibold text-toned">
+      <UCard>
+        <h2 class="text-xl font-semibold text-toned">
           Review activity
         </h2>
 
-        <div
-          v-if="!data.reviewers.length"
-          class="mt-6 text-sm text-muted"
-        >
+        <p v-if="!data.reviewers.length" class="mt-6 text-sm text-muted">
           No reviewer activity is visible yet.
-        </div>
+        </p>
 
-        <div
-          v-else
-          class="mt-6 grid gap-4"
-        >
+        <div v-else class="mt-6 grid gap-4">
           <div
             v-for="review in data.reviewers"
             :key="review.id"
-            class="rounded-2xl border border-default bg-white p-5"
+            class="rounded-2xl border border-default bg-elevated p-5"
           >
             <div class="flex flex-wrap items-center gap-3">
               <JournalStatusBadge :status="review.status" />
-              <span class="meta-label">{{ review.fullname }}</span>
-              <span
-                v-if="review.recommendation"
-                class="meta-label"
-              >{{ review.recommendation.replaceAll('_', ' ') }}</span>
+              <span class="text-sm font-semibold text-toned">{{ review.fullname }}</span>
+              <span v-if="review.recommendation" class="text-sm font-semibold text-toned">
+                {{ review.recommendation.replaceAll('_', ' ') }}
+              </span>
             </div>
             <p class="mt-3 whitespace-pre-wrap text-sm text-muted">
               {{ review.comment || 'No reviewer comments are visible yet.' }}
             </p>
           </div>
         </div>
-      </section>
+      </UCard>
     </template>
 
-    <div
-      v-else
-      class="card p-6 text-muted"
-    >
-      Submission not found.
-    </div>
+    <UCard v-else>
+      <p class="text-muted">Submission not found.</p>
+    </UCard>
   </div>
 </template>
