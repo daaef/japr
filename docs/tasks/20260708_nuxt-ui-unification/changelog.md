@@ -208,6 +208,26 @@ Bootstrap-grid grep of the changed files returns zero.
 Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact
 grep of the changed files returns zero.
 
+## W4 — Page sweep: public area — landed 2026-07-09
+
+- **`journals/[slug].vue`** (hand-rolled Tailwind, not Bootstrap): every `bg-white rounded-xl
+  border` card → `UCard`; every raw-color action button (`bg-blue-600`/`bg-green-600`/
+  `bg-gray-100`) → `UButton` with `primary`/`success`/`neutral` colors; the gradient
+  `from-slate-50 to-blue-50` manuscript-preview header simplified to a plain `#header` slot
+  (avoided guessing at `UCard`'s internal padding/radius tokens to fake an edge-to-edge tinted
+  banner); comment form → `UFormField`-free `UTextarea` + `UButton` (no validation existed to
+  preserve).
+- **`journals/[slug]/versions/{index,compare,[versionId]}.vue`**: `card` → `UCard`, filter
+  `<select>`s in `compare.vue` → `USelect` (items built from a new `versionItems` computed),
+  buttons → `UButton`. The `v-html` diff render and its `<ins>`/`<del>` scoped style are
+  untouched in logic; only the hardcoded `#dcfce7`/`#fee2e2` hex were swapped for the verified
+  `var(--color-success-100)`/`var(--color-error-100)` (confirmed present in the built
+  `.nuxt/ui.css`, not guessed).
+
+Verified: `nuxt typecheck` clean · `eslint` clean (4 files, 1 pre-existing/intentional `v-html`
+warning unrelated to this change) · `pnpm test` 53/53 · legacy-artifact grep of the changed files
+returns zero.
+
 ## W4 — Page sweep: author area — landed 2026-07-09
 
 - **`author/index.vue`** (hand-rolled Tailwind, not Bootstrap): the review-policy banner → `UAlert`

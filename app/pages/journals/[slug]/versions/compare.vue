@@ -20,6 +20,14 @@ const selected = reactive({
   right: ''
 })
 
+const versionItems = computed(() => [
+  { label: 'Select version', value: '' },
+  ...(versionsData.value?.versions || []).map(version => ({
+    label: `Version ${version.versionNumber}`,
+    value: version.id
+  }))
+])
+
 const compareResult = ref<{ html: string } | null>(null)
 const compareLoading = ref(false)
 const errorMessage = ref('')
@@ -54,77 +62,42 @@ async function runCompare() {
 
 <template>
   <div class="space-y-8">
-    <section class="card p-24 p-8 sm:p-10">
+    <UCard>
       <AppPageHeader
         eyebrow="Version Compare"
         :title="journalData?.journal.title || 'Compare versions'"
         description="Side-by-side text diff between any two manuscript versions."
       />
 
-      <form
-        class="mt-8 grid gap-4 md:grid-cols-2"
-        @submit.prevent="runCompare"
-      >
-        <div class="space-y-2">
-          <label class="meta-label">Left version</label>
-          <select
+      <form class="mt-8 grid gap-4 md:grid-cols-2" @submit.prevent="runCompare">
+        <UFormField label="Left version">
+          <USelect
             v-model="selected.left"
-            class="form-select"
-          >
-            <option value="">
-              Select version
-            </option>
-            <option
-              v-for="version in versionsData?.versions || []"
-              :key="version.id"
-              :value="version.id"
-            >
-              Version {{ version.versionNumber }}
-            </option>
-          </select>
-        </div>
+            :items="versionItems"
+            class="w-full"
+          />
+        </UFormField>
 
-        <div class="space-y-2">
-          <label class="meta-label">Right version</label>
-          <select
+        <UFormField label="Right version">
+          <USelect
             v-model="selected.right"
-            class="form-select"
-          >
-            <option value="">
-              Select version
-            </option>
-            <option
-              v-for="version in versionsData?.versions || []"
-              :key="version.id"
-              :value="version.id"
-            >
-              Version {{ version.versionNumber }}
-            </option>
-          </select>
-        </div>
+            :items="versionItems"
+            class="w-full"
+          />
+        </UFormField>
 
-        <div class="md:col-span-2 flex gap-3">
-          <button
-            type="submit"
-            class="btn btn-primary"
-            :disabled="compareLoading"
-          >
+        <div class="flex gap-3 md:col-span-2">
+          <UButton type="submit" color="primary" :loading="compareLoading" :disabled="compareLoading">
             Compare
-          </button>
-          <NuxtLink
-            :to="`/journals/${slug}/versions`"
-            class="btn btn-outline-secondary"
-          >
+          </UButton>
+          <UButton :to="`/journals/${slug}/versions`" color="neutral" variant="outline">
             Version history
-          </NuxtLink>
+          </UButton>
         </div>
       </form>
-    </section>
+    </UCard>
 
-    <section
-      v-if="compareResult"
-      class="card p-24 p-6"
-    >
+    <UCard v-if="compareResult">
       <h2 class="text-lg font-semibold text-toned">
         Diff result
       </h2>
@@ -134,12 +107,9 @@ async function runCompare() {
         class="prose mt-4 max-w-none text-sm"
         v-html="compareResult.html"
       />
-    </section>
+    </UCard>
 
-    <p
-      v-if="errorMessage"
-      class="text-sm text-red-600"
-    >
+    <p v-if="errorMessage" class="text-sm text-error">
       {{ errorMessage }}
     </p>
   </div>
@@ -147,11 +117,11 @@ async function runCompare() {
 
 <style scoped>
 :deep(ins) {
-  background: #dcfce7;
+  background: var(--color-success-100);
   text-decoration: none;
 }
 
 :deep(del) {
-  background: #fee2e2;
+  background: var(--color-error-100);
 }
 </style>

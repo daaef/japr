@@ -32,35 +32,33 @@ const { data, pending, error, refresh } = await useFetch<{
 
 <template>
   <div class="space-y-8">
-    <section class="card p-8 sm:p-10">
+    <UCard>
       <AppPageHeader
         eyebrow="Version Detail"
         :title="data?.version.title || journalData?.journal.title || 'Manuscript version'"
         :description="data?.version.changesSummary || 'Review this manuscript version snapshot.'"
       />
       <div class="mt-6 flex flex-wrap gap-3">
-        <NuxtLink :to="`/journals/${slug}/versions`" class="btn btn-outline-secondary">
+        <UButton :to="`/journals/${slug}/versions`" color="neutral" variant="outline">
           Back to version history
-        </NuxtLink>
-        <NuxtLink :to="`/journals/${slug}/versions/compare`" class="btn btn-primary">
+        </UButton>
+        <UButton :to="`/journals/${slug}/versions/compare`" color="primary">
           Compare versions
-        </NuxtLink>
+        </UButton>
       </div>
-    </section>
+    </UCard>
 
-    <div v-if="pending" class="card p-24 text-sm text-muted">
-      Loading version…
-    </div>
-    <div v-else-if="error" class="card p-24">
-      <DashboardSummaryError message="Version could not be loaded." @retry="refresh" />
-    </div>
-    <section v-else-if="data?.version" class="card p-8">
+    <UCard v-if="pending">
+      <p class="text-sm text-muted">Loading version…</p>
+    </UCard>
+    <DashboardSummaryError v-else-if="error" message="Version could not be loaded." @retry="refresh" />
+    <UCard v-else-if="data?.version">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p class="text-sm text-muted">
             Version {{ data.version.versionNumber }} · {{ new Date(data.version.createdAt).toLocaleString() }}
           </p>
-          <h2 class="journal-title text-3xl font-semibold text-toned">
+          <h2 class="text-3xl font-semibold text-toned">
             {{ data.version.title }}
           </h2>
         </div>
@@ -69,9 +67,9 @@ const { data, pending, error, refresh } = await useFetch<{
       <p v-if="data.version.abstract" class="mt-6 whitespace-pre-wrap text-sm text-muted">
         {{ data.version.abstract }}
       </p>
-      <div class="prose prose-sm mt-8 max-w-none whitespace-pre-wrap rounded-2xl border border-default bg-white p-6">
+      <div class="prose prose-sm mt-8 max-w-none whitespace-pre-wrap rounded-2xl border border-default bg-elevated p-6">
         {{ data.version.content }}
       </div>
-    </section>
+    </UCard>
   </div>
 </template>

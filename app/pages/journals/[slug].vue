@@ -93,261 +93,197 @@ useHead({
 
 <template>
   <div>
-    <div
-      v-if="pending"
-      class="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-500"
-    >
-      Loading journal...
-    </div>
+    <UCard v-if="pending">
+      <p class="text-sm text-muted">Loading journal...</p>
+    </UCard>
 
-    <div
-      v-else-if="error || !data?.journal"
-      class="bg-white rounded-xl border border-red-200 p-8 text-center"
-    >
-      <h1 class="text-xl font-bold text-gray-900">
+    <UCard v-else-if="error || !data?.journal" class="text-center">
+      <h1 class="text-xl font-bold text-highlighted">
         Journal not found
       </h1>
-      <p class="mt-2 text-sm text-gray-600">
+      <p class="mt-2 text-sm text-muted">
         The article you requested could not be loaded.
       </p>
-      <NuxtLink
-        to="/journals"
-        class="mt-6 inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-      >
+      <UButton to="/journals" color="neutral" variant="subtle" class="mt-6">
         Back to Journals
-      </NuxtLink>
-    </div>
+      </UButton>
+    </UCard>
 
     <template v-else>
       <div class="flex items-center justify-between pb-6">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">
+          <h1 class="text-2xl font-bold text-highlighted">
             {{ data.journal.title }}
           </h1>
-          <p class="text-sm text-gray-500 mt-1">
+          <p class="mt-1 text-sm text-muted">
             Journal Article Preview
           </p>
         </div>
-        <NuxtLink
-          to="/journals"
-          class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-        >
+        <UButton to="/journals" color="neutral" variant="subtle">
           Back to Journals
-        </NuxtLink>
+        </UButton>
       </div>
 
-      <div class="max-w-7xl mx-auto">
-        <div class="grid lg:grid-cols-[1fr_350px] gap-8">
+      <div class="mx-auto max-w-7xl">
+        <div class="grid gap-8 lg:grid-cols-[1fr_350px]">
           <div class="space-y-6">
-            <div
-              v-if="isAuthor && data.journal.hasManuscriptFile"
-              class="bg-white rounded-xl border border-gray-200 shadow-sm"
-            >
-              <div class="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900 leading-tight">
+            <UCard v-if="isAuthor && data.journal.hasManuscriptFile">
+              <template #header>
+                <h3 class="text-xl font-bold leading-tight text-highlighted">
                   Your Manuscript
                 </h3>
-                <p class="text-sm text-gray-600 mt-1">
+                <p class="mt-1 text-sm text-muted">
                   Preview your submitted document
                 </p>
-              </div>
-              <div class="p-6">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="previewOpen = true"
-                >
-                  Open document preview
-                </button>
-              </div>
-            </div>
+              </template>
+              <UButton color="primary" @click="previewOpen = true">
+                Open document preview
+              </UButton>
+            </UCard>
 
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div class="p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                  Abstract
-                </h2>
-                <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {{ data.journal.abstract || data.journal.description }}
-                </div>
+            <UCard>
+              <h2 class="mb-6 text-2xl font-bold text-highlighted">
+                Abstract
+              </h2>
+              <div class="whitespace-pre-wrap leading-relaxed text-toned">
+                {{ data.journal.abstract || data.journal.description }}
               </div>
-            </div>
+            </UCard>
           </div>
 
           <div class="space-y-6">
-            <div
-              v-if="isApproved"
-              class="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-            >
-              <h3 class="font-semibold text-gray-900 mb-4">
+            <UCard v-if="isApproved">
+              <h3 class="mb-4 font-semibold text-highlighted">
                 Actions
               </h3>
               <div class="space-y-3">
-                <a
+                <UButton
                   v-if="currentUser?.authenticated && data.journal.hasManuscriptFile"
                   :href="`/api/journals/${journalId}/download`"
-                  class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  color="primary"
+                  block
                 >
                   Download
-                </a>
+                </UButton>
 
-                <button
-                  type="button"
-                  class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-                  @click="previewOpen = true"
-                >
+                <UButton color="neutral" variant="subtle" block @click="previewOpen = true">
                   Preview document
-                </button>
+                </UButton>
 
                 <template v-if="currentUser?.authenticated">
-                  <button
-                    type="button"
-                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                    @click="toggleCollection"
-                  >
+                  <UButton color="success" block @click="toggleCollection">
                     Add to Collection
-                  </button>
-                  <div class="flex space-x-2">
-                    <button
-                      type="button"
-                      class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-                      @click="toggleLike"
-                    >
+                  </UButton>
+                  <div class="flex gap-2">
+                    <UButton color="neutral" variant="subtle" class="flex-1" @click="toggleLike">
                       Like
-                    </button>
-                    <button
-                      type="button"
-                      class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-                      @click="toggleDislike"
-                    >
+                    </UButton>
+                    <UButton color="neutral" variant="subtle" class="flex-1" @click="toggleDislike">
                       Dislike
-                    </button>
+                    </UButton>
                   </div>
                 </template>
               </div>
-            </div>
+            </UCard>
 
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div class="p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">
-                  Journal Information
-                </h3>
-                <div class="space-y-4">
-                  <div v-if="!isApproved">
-                    <p class="font-medium text-gray-900">
-                      Status
-                    </p>
-                    <p class="text-sm text-gray-600 capitalize">
-                      {{ data.journal.approvalStatus.replace(/-/g, ' ') }}
-                    </p>
-                  </div>
+            <UCard>
+              <h3 class="mb-4 font-semibold text-highlighted">
+                Journal Information
+              </h3>
+              <div class="space-y-4">
+                <div v-if="!isApproved">
+                  <p class="font-medium text-highlighted">
+                    Status
+                  </p>
+                  <p class="text-sm capitalize text-muted">
+                    {{ data.journal.approvalStatus.replace(/-/g, ' ') }}
+                  </p>
+                </div>
 
-                  <div v-if="data.journal.categoryName">
-                    <p class="font-medium text-gray-900">
-                      Category
-                    </p>
-                    <p class="text-sm text-gray-600">
-                      {{ data.journal.categoryName }}
-                    </p>
-                  </div>
+                <div v-if="data.journal.categoryName">
+                  <p class="font-medium text-highlighted">
+                    Category
+                  </p>
+                  <p class="text-sm text-muted">
+                    {{ data.journal.categoryName }}
+                  </p>
+                </div>
 
-                  <div>
-                    <p class="font-medium text-gray-900">
-                      Author
-                    </p>
-                    <p class="text-sm text-gray-600">
-                      {{ data.journal.author }}
-                    </p>
-                  </div>
+                <div>
+                  <p class="font-medium text-highlighted">
+                    Author
+                  </p>
+                  <p class="text-sm text-muted">
+                    {{ data.journal.author }}
+                  </p>
+                </div>
 
-                  <div v-if="data.journal.country">
-                    <p class="font-medium text-gray-900">
-                      Country
-                    </p>
-                    <p class="text-sm text-gray-600">
-                      {{ data.journal.country }}
-                    </p>
-                  </div>
+                <div v-if="data.journal.country">
+                  <p class="font-medium text-highlighted">
+                    Country
+                  </p>
+                  <p class="text-sm text-muted">
+                    {{ data.journal.country }}
+                  </p>
+                </div>
 
-                  <div>
-                    <p class="font-medium text-gray-900">
-                      Language
-                    </p>
-                    <p class="text-sm text-gray-600">
-                      {{ data.journal.journalLanguage || 'Unspecified' }}
-                    </p>
-                  </div>
+                <div>
+                  <p class="font-medium text-highlighted">
+                    Language
+                  </p>
+                  <p class="text-sm text-muted">
+                    {{ data.journal.journalLanguage || 'Unspecified' }}
+                  </p>
+                </div>
 
-                  <div>
-                    <p class="font-medium text-gray-900">
-                      Copyright
-                    </p>
-                    <p class="text-sm text-gray-600">
-                      Retained by author
-                    </p>
-                  </div>
+                <div>
+                  <p class="font-medium text-highlighted">
+                    Copyright
+                  </p>
+                  <p class="text-sm text-muted">
+                    Retained by author
+                  </p>
                 </div>
               </div>
-            </div>
+            </UCard>
 
-            <NuxtLink
-              :to="`/journals/${slug}/versions`"
-              class="block w-full text-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+            <UButton :to="`/journals/${slug}/versions`" color="neutral" variant="outline" block>
               Version history
-            </NuxtLink>
+            </UButton>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mt-8">
-        <h2 class="text-lg font-semibold text-gray-900">
+      <UCard class="mt-8">
+        <h2 class="text-lg font-semibold text-highlighted">
           Comments
         </h2>
-        <form
-          v-if="currentUser?.authenticated"
-          class="mt-4"
-          @submit.prevent="submitComment"
-        >
-          <textarea
-            v-model="commentText"
-            rows="3"
-            class="form-control"
-            placeholder="Add a comment"
-          />
-          <button
-            type="submit"
-            class="btn btn-primary mt-3"
-          >
+        <form v-if="currentUser?.authenticated" class="mt-4" @submit.prevent="submitComment">
+          <UTextarea v-model="commentText" :rows="3" placeholder="Add a comment" class="w-full" />
+          <UButton type="submit" color="primary" class="mt-3">
             Post comment
-          </button>
+          </UButton>
         </form>
         <div class="mt-6 space-y-4">
           <article
             v-for="comment in commentsData?.comments || []"
             :key="comment.id"
-            class="rounded-lg border p-4"
+            class="rounded-lg border border-default p-4"
           >
-            <p class="text-sm font-medium">
+            <p class="text-sm font-medium text-highlighted">
               {{ comment.authorName }}
             </p>
-            <p class="mt-2 text-sm text-gray-600">
+            <p class="mt-2 text-sm text-muted">
               {{ comment.comment }}
             </p>
           </article>
-          <p
-            v-if="!(commentsData?.comments?.length)"
-            class="text-sm text-gray-500"
-          >
+          <p v-if="!(commentsData?.comments?.length)" class="text-sm text-muted">
             No comments yet.
           </p>
         </div>
-      </div>
+      </UCard>
 
-      <p
-        v-if="message"
-        class="mt-4 text-sm text-gray-600"
-      >
+      <p v-if="message" class="mt-4 text-sm text-muted">
         {{ message }}
       </p>
 

@@ -54,7 +54,7 @@ async function revertVersion(versionId: string) {
 
 <template>
   <div class="space-y-8">
-    <section class="card p-8 sm:p-10">
+    <UCard>
       <AppPageHeader
         eyebrow="Version History"
         :title="journalData?.journal.title || 'Manuscript versions'"
@@ -62,37 +62,21 @@ async function revertVersion(versionId: string) {
       />
 
       <div class="mt-6 flex flex-wrap gap-3">
-        <NuxtLink
-          :to="`/journals/${slug}`"
-          class="btn btn-outline-secondary"
-        >
+        <UButton :to="`/journals/${slug}`" color="neutral" variant="outline">
           Back to journal
-        </NuxtLink>
-        <NuxtLink
-          :to="`/journals/${slug}/versions/compare`"
-          class="btn btn-primary"
-        >
+        </UButton>
+        <UButton :to="`/journals/${slug}/versions/compare`" color="primary">
           Compare versions
-        </NuxtLink>
+        </UButton>
       </div>
-    </section>
+    </UCard>
 
-    <div
-      v-if="pending"
-      class="card p-6 text-sm text-muted"
-    >
-      Loading versions...
-    </div>
+    <UCard v-if="pending">
+      <p class="text-sm text-muted">Loading versions...</p>
+    </UCard>
 
-    <div
-      v-else
-      class="grid gap-4"
-    >
-      <div
-        v-for="version in data?.versions || []"
-        :key="version.id"
-        class="card p-6"
-      >
+    <div v-else class="grid gap-4">
+      <UCard v-for="version in data?.versions || []" :key="version.id">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p class="font-semibold text-toned">
@@ -109,31 +93,26 @@ async function revertVersion(versionId: string) {
             </p>
           </div>
 
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <JournalStatusBadge :status="version.status" />
-            <NuxtLink
-              :to="`/journals/${slug}/versions/${version.id}`"
-              class="btn btn-outline-primary btn-sm"
-            >
+            <UButton :to="`/journals/${slug}/versions/${version.id}`" color="primary" variant="outline" size="sm">
               View details
-            </NuxtLink>
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
               :disabled="revertLoading === version.id"
               @click="revertVersion(version.id)"
             >
               Revert to this
-            </button>
+            </UButton>
           </div>
         </div>
-      </div>
+      </UCard>
     </div>
 
-    <p
-      v-if="message"
-      class="text-sm text-muted"
-    >
+    <p v-if="message" class="text-sm text-muted">
       {{ message }}
     </p>
   </div>
