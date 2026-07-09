@@ -112,3 +112,64 @@ wiring kept; `<UFormField :error="errors.x"><UInput v-model=x v-bind=xAttrs/></U
 ### Remaining in W3 (held back for careful direct handling)
 - `reviewer/journals/[uuid]/review.vue` (review submission — behavior-critical) and
   `author/submit.vue` (vee-validate manuscript submit). See `CONTINUATION-PROMPT.md` §7.
+
+## W3 — Forms (finish) — landed 2026-07-09
+
+The two behavior-critical forms held back from the batch above.
+
+### What landed
+- **`reviewer/journals/[uuid]/review.vue`**: invitation accept/decline + decline-with-comment →
+  `UCard`/`UButton`/`UFormField`/`UTextarea`; the 6 criteria ranges + overall rating →
+  `USlider` (`:min`/`:max`/`:step`, numeric `v-model` — no `.number` modifier needed); the
+  recommendation `<select>` → `URadioGroup` (4 fixed items, same `accept`/`minor_revision`/
+  `major_revision`/`reject` values sent); peer-review badges → `UBadge`; request-change field
+  select → `USelect`. Every `$fetch` call, request body, and the `requestExtension`/
+  `submitReview`/`requestChange` flows are byte-for-byte unchanged — only the input widgets moved.
+- **`author/submit.vue`**: full vee-validate field set → `UFormField`/`UInput`/`UTextarea`/
+  `USelect` (`v-bind="xAttrs"` preserved on every field, including the 3 that don't display an
+  error); the hand-rolled drag-and-drop zone (refs, `onDrop`/`onDragOver`/`onFileInputChange`) →
+  `UFileUpload` (`v-model` File, built-in dropzone+dialog), with the color-coded file-status
+  message reimplemented as a `watch(selectedFile, …)` (a `rejectingFile` flag stops the watcher's
+  own corrective `selectedFile.value = null` from wiping the message it just set — matches the
+  original's "message survives file rejection" behavior exactly); policy checkboxes → `UCheckbox`
+  (`#label` slot for the rich inline-link content); both modals' raw gray/blue/red utilities →
+  semantic tokens; spinners → `UIcon` `animate-spin`. `useForm`/`defineField`/`handleSubmit`, the
+  derived `submitFormSchema`, the file-size check, `describeValidationError`, and the upload/create
+  logic are untouched — one narrow exception: the local `submitFormSchema.extend({ license: … })`
+  drops the shared schema's `.nullable()` (this form only ever produces `''` or a label string,
+  never `null`) so `USelect`'s typed `v-model` compiles; the request body still sends
+  `license: values.license || null` exactly as before.
+- **`CountrySelect.vue`** (tracked follow-up from W1/W3): now calls `useFormField(props)` and binds
+  its `id` from that instead of the raw `id` prop, so a parent `UFormField`'s auto-generated label
+  `for` actually matches the control when used inside one (falls back to the `id` prop standalone,
+  so the already-migrated auth/settings usages are unaffected).
+
+### Verified
+- `nuxt typecheck` clean · `eslint` clean (3 changed files) · `pnpm test` 53/53 · zero legacy
+  artifacts in either file · every introduced component (`UCard`/`USlider`/`URadioGroup`/
+  `UFileUpload`/`UCheckbox`/`UModal`/…) confirmed present in the installed `@nuxt/ui` package.
+
+W3 is now fully complete. Next: W4 page sweep.
+
+## W4 — Page sweep: admin area — landed 2026-07-09
+
+- **`admin/index.vue`**: Bootstrap `row`/`col-*` grid → Tailwind grid; the raw-hex `bg-[#ff830c]`
+  greeting hero → `bg-primary` (brand maroon); Quick Actions card → `UCard` + stacked `UButton
+  block`; `DashboardStatCard` `icon-class` values converted to brand/semantic (`bg-main-600`→
+  `bg-primary-600`, `bg-main-two-600`→`bg-secondary-600`, `bg-purple-600`→`bg-warning-600`/
+  `bg-secondary-600` by context, `bg-danger-600`→`bg-error-600`; `bg-success-600`/`bg-info-600`
+  were already live semantic classes, left as-is) — the W4 half of the section-8 tracked
+  `iconClass` follow-up (the other 3 consumer pages land with their own areas).
+- **`admin/journals.vue`**, **`admin/permissions.vue`**, **`admin/audit/{index,[id],dashboard}.vue`**:
+  `card`/`card-body`/`card-header`/`card-footer` → `UCard` (`#header`/`#footer` slots), raw filter
+  `<input>`/`<select>` → `UFormField`/`UInput`/`USelect`, `btn btn-*` → `UButton` (`btn-main`→
+  `color="primary"`, `btn-outline-secondary`→`color="neutral" variant="outline"`), `badge bg-*` →
+  `UBadge` with semantic `color`. The two kept `<table>`s (`admin/audit/index.vue`,
+  `admin/permissions.vue`) are tokenized and flagged `<!-- Table kept for a central UTable pass -->`
+  per §5 — contents deferred to W4-tables. `hover-bg-main-50`/`rounded-8`/`p-12`/`text-13`/
+  `text-gray-*` tokenized to Tailwind/semantic while these files were already open for their card
+  conversion (pre-empting part of the W6 utility sweep, not a new scope item). Every `$fetch`/
+  `refresh`/filter/pagination/cleanup handler is untouched — only markup moved.
+
+Verified: `nuxt typecheck` clean · `eslint` clean (6 files) · `pnpm test` 53/53 · legacy-artifact +
+Bootstrap-grid grep of the changed files returns zero.

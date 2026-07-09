@@ -33,6 +33,13 @@ const cleanupMessage = ref('')
 const cleanupError = ref('')
 const cleaning = ref(false)
 
+const riskLevelItems = [
+  { label: 'All', value: '' },
+  { label: 'Low', value: 'low' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'High', value: 'high' }
+]
+
 const query = computed(() => ({
   page: filters.page,
   pageSize: 15,
@@ -96,160 +103,146 @@ async function cleanupLogs() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-body flex-between flex-wrap gap-12">
-          <div>
-            <h3 class="mb-1">
-              Audit Logs
-            </h3>
-            <p class="text-13 text-gray-600 mb-0">
-              Filter, inspect, export, and clean administrator activity logs.
-            </p>
-          </div>
-          <div class="d-flex gap-2">
-            <NuxtLink to="/admin/audit/dashboard" class="btn btn-outline-primary btn-sm">
-              Audit Dashboard
-            </NuxtLink>
-            <a :href="exportUrl" class="btn btn-outline-secondary btn-sm">
-              Export CSV
-            </a>
-          </div>
+  <div class="flex flex-col gap-4">
+    <UCard>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="mb-1 text-lg font-semibold text-highlighted">
+            Audit Logs
+          </h3>
+          <p class="mb-0 text-sm text-muted">
+            Filter, inspect, export, and clean administrator activity logs.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <UButton to="/admin/audit/dashboard" color="primary" variant="outline" size="sm">
+            Audit Dashboard
+          </UButton>
+          <UButton :href="exportUrl" color="neutral" variant="outline" size="sm">
+            Export CSV
+          </UButton>
         </div>
       </div>
-    </div>
+    </UCard>
 
-    <div class="col-12">
-      <div class="card">
-        <div class="card-body">
-          <div class="row gy-3">
-            <div class="col-md-2">
-              <label class="form-label">Action</label>
-              <input v-model="filters.action" class="form-control" placeholder="delete">
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Resource</label>
-              <input v-model="filters.resourceType" class="form-control" placeholder="user">
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Risk</label>
-              <select v-model="filters.riskLevel" class="form-select">
-                <option value="">All</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">From</label>
-              <input v-model="filters.from" type="date" class="form-control">
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">To</label>
-              <input v-model="filters.to" type="date" class="form-control">
-            </div>
-            <div class="col-md-2 d-flex align-items-end gap-2">
-              <button type="button" class="btn btn-main btn-sm" @click="filters.page = 1; refresh()">
-                Apply
-              </button>
-              <button type="button" class="btn btn-outline-secondary btn-sm" @click="resetFilters">
-                Reset
-              </button>
-            </div>
-          </div>
+    <UCard>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-6">
+        <UFormField label="Action">
+          <UInput v-model="filters.action" placeholder="delete" class="w-full" />
+        </UFormField>
+        <UFormField label="Resource">
+          <UInput v-model="filters.resourceType" placeholder="user" class="w-full" />
+        </UFormField>
+        <UFormField label="Risk">
+          <USelect v-model="filters.riskLevel" :items="riskLevelItems" class="w-full" />
+        </UFormField>
+        <UFormField label="From">
+          <UInput v-model="filters.from" type="date" class="w-full" />
+        </UFormField>
+        <UFormField label="To">
+          <UInput v-model="filters.to" type="date" class="w-full" />
+        </UFormField>
+        <div class="flex items-end gap-2">
+          <UButton color="primary" size="sm" @click="filters.page = 1; refresh()">
+            Apply
+          </UButton>
+          <UButton color="neutral" variant="outline" size="sm" @click="resetFilters">
+            Reset
+          </UButton>
         </div>
       </div>
-    </div>
+    </UCard>
 
-    <div v-if="cleanupMessage || cleanupError" class="col-12">
-      <UAlert
-        :color="cleanupError ? 'error' : 'success'"
-        variant="subtle"
-        :icon="cleanupError ? 'i-lucide-circle-alert' : 'i-lucide-circle-check'"
-        :title="cleanupError || cleanupMessage"
-      />
-    </div>
+    <UAlert
+      v-if="cleanupMessage || cleanupError"
+      :color="cleanupError ? 'error' : 'success'"
+      variant="subtle"
+      :icon="cleanupError ? 'i-lucide-circle-alert' : 'i-lucide-circle-check'"
+      :title="cleanupError || cleanupMessage"
+    />
 
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header flex-between flex-wrap gap-12">
-          <h5 class="mb-0">Logs</h5>
-          <div class="d-flex align-items-center gap-2">
-            <input v-model.number="cleanupDays" type="number" min="30" max="365" class="form-control form-control-sm w-100" aria-label="Days to keep">
-            <button type="button" class="btn btn-outline-danger btn-sm" :disabled="cleaning" @click="cleanupLogs">
+    <UCard :ui="{ body: 'p-0' }">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h4 class="text-base font-semibold text-highlighted">Logs</h4>
+          <div class="flex items-center gap-2">
+            <UInput v-model.number="cleanupDays" type="number" :min="30" :max="365" size="sm" class="w-24" aria-label="Days to keep" />
+            <UButton color="error" variant="outline" size="sm" :loading="cleaning" :disabled="cleaning" @click="cleanupLogs">
               {{ cleaning ? 'Cleaning…' : 'Cleanup' }}
-            </button>
+            </UButton>
           </div>
         </div>
-        <div class="card-body p-0">
-          <div v-if="error" class="p-24">
-            <DashboardSummaryError message="Audit logs could not be loaded." @retry="refresh" />
-          </div>
-          <div v-else-if="pending" class="p-24 text-center text-muted">
-            Loading audit logs…
-          </div>
-          <div v-else-if="!logs.length" class="p-24 text-center text-muted">
-            No audit logs match the current filters.
-          </div>
-          <div v-else class="table-responsive">
-            <table class="table mb-0">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Admin</th>
-                  <th>Action</th>
-                  <th>Resource</th>
-                  <th>Risk</th>
-                  <th>IP</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="log in logs" :key="log.id">
-                  <td>{{ new Date(log.createdAt).toLocaleString() }}</td>
-                  <td>
-                    <span class="fw-semibold">{{ log.userName ?? 'System' }}</span>
-                    <span class="d-block text-13 text-gray-500">{{ log.userEmail }}</span>
-                  </td>
-                  <td class="text-capitalize">{{ log.action.replaceAll('_', ' ') }}</td>
-                  <td>
-                    <span class="fw-semibold">{{ log.resourceType }}</span>
-                    <span v-if="log.resourceId" class="d-block text-13 text-gray-500">{{ log.resourceId }}</span>
-                  </td>
-                  <td>
-                    <span class="badge" :class="log.riskLevel === 'high' ? 'bg-danger' : log.riskLevel === 'medium' ? 'bg-warning' : 'bg-success'">
-                      {{ log.riskLevel }}
-                    </span>
-                  </td>
-                  <td>{{ log.ipAddress ?? 'Unknown' }}</td>
-                  <td>
-                    <NuxtLink :to="`/admin/audit/${log.id}`" class="btn btn-outline-primary btn-sm">
-                      View
-                    </NuxtLink>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card-footer flex-between flex-wrap gap-12">
-          <span class="text-13 text-gray-600">
+      </template>
+
+      <div v-if="error" class="p-6">
+        <DashboardSummaryError message="Audit logs could not be loaded." @retry="refresh" />
+      </div>
+      <div v-else-if="pending" class="p-6 text-center text-muted">
+        Loading audit logs…
+      </div>
+      <div v-else-if="!logs.length" class="p-6 text-center text-muted">
+        No audit logs match the current filters.
+      </div>
+      <!-- Table kept for a central UTable pass -->
+      <div v-else class="overflow-x-auto">
+        <table class="mb-0 w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-default">
+              <th class="p-3 font-semibold text-highlighted">Timestamp</th>
+              <th class="p-3 font-semibold text-highlighted">Admin</th>
+              <th class="p-3 font-semibold text-highlighted">Action</th>
+              <th class="p-3 font-semibold text-highlighted">Resource</th>
+              <th class="p-3 font-semibold text-highlighted">Risk</th>
+              <th class="p-3 font-semibold text-highlighted">IP</th>
+              <th class="p-3" />
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in logs" :key="log.id" class="border-b border-default">
+              <td class="p-3 text-toned">{{ new Date(log.createdAt).toLocaleString() }}</td>
+              <td class="p-3">
+                <span class="font-semibold text-highlighted">{{ log.userName ?? 'System' }}</span>
+                <span class="block text-sm text-muted">{{ log.userEmail }}</span>
+              </td>
+              <td class="p-3 capitalize text-toned">{{ log.action.replaceAll('_', ' ') }}</td>
+              <td class="p-3">
+                <span class="font-semibold text-highlighted">{{ log.resourceType }}</span>
+                <span v-if="log.resourceId" class="block text-sm text-muted">{{ log.resourceId }}</span>
+              </td>
+              <td class="p-3">
+                <UBadge :color="log.riskLevel === 'high' ? 'error' : log.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle">
+                  {{ log.riskLevel }}
+                </UBadge>
+              </td>
+              <td class="p-3 text-toned">{{ log.ipAddress ?? 'Unknown' }}</td>
+              <td class="p-3">
+                <UButton :to="`/admin/audit/${log.id}`" color="primary" variant="outline" size="xs">
+                  View
+                </UButton>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <template #footer>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <span class="text-sm text-muted">
             {{ meta.total }} total logs
           </span>
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="filters.page <= 1" @click="filters.page -= 1">
+          <div class="flex items-center gap-2">
+            <UButton color="neutral" variant="outline" size="sm" :disabled="filters.page <= 1" @click="filters.page -= 1">
               Previous
-            </button>
-            <span class="text-13 text-gray-600 align-self-center">
+            </UButton>
+            <span class="text-sm text-muted">
               Page {{ meta.page }} of {{ meta.pageCount }}
             </span>
-            <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="filters.page >= meta.pageCount" @click="filters.page += 1">
+            <UButton color="neutral" variant="outline" size="sm" :disabled="filters.page >= meta.pageCount" @click="filters.page += 1">
               Next
-            </button>
+            </UButton>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </UCard>
   </div>
 </template>

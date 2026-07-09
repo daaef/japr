@@ -90,182 +90,152 @@ async function sendTestEmail() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-lg-9">
-      <div class="grettings-box position-relative rounded-16 bg-[#ff830c] overflow-hidden gap-16 flex-wrap z-1 mb-24">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <div class="flex flex-col gap-4 lg:col-span-9">
+      <div class="relative z-1 mb-2 overflow-hidden rounded-2xl bg-primary p-6">
         <img
           src="/assets/images/bg/grettings-pattern.png"
           alt=""
-          class="position-absolute inset-block-start-0 inset-inline-start-0 z-n1 w-100 h-100 opacity-6"
+          class="absolute inset-0 -z-1 h-full w-full opacity-10"
         >
-        <div class="row gy-4">
-          <div class="col-sm-7">
-            <div class="grettings-box__content py-xl-4">
-              <h2 class="text-white mb-0">
-                Hello {{ displayName }}!
-              </h2>
-              <p class="text-15 fw-light mt-4 text-white">
-                Monitor manuscripts, users, reviewers, and system health.
-              </p>
-            </div>
-          </div>
+        <div class="relative sm:max-w-md">
+          <h2 class="mb-0 text-2xl font-semibold text-white">
+            Hello {{ displayName }}!
+          </h2>
+          <p class="mt-2 text-sm font-light text-white/90">
+            Monitor manuscripts, users, reviewers, and system health.
+          </p>
         </div>
       </div>
 
       <DashboardSummaryError
         v-if="summaryError"
         message="Admin dashboard data could not be loaded."
-        class="mb-24"
         @retry="refreshSummary"
       />
 
-      <div class="row gy-4">
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Total Journals"
-            :value="summary.totalJournals"
-            icon="i-lucide-book-open"
-            icon-class="bg-main-600"
-            :meta="`+${summary.recentSubmissions} this month`"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Journals Approved"
-            :value="summary.approvedJournals"
-            icon="i-lucide-award"
-            icon-class="bg-main-two-600"
-            :meta="`${summary.averageProcessingTimeDays} days avg`"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Pending Manuscripts"
-            :value="summary.pendingManuscripts"
-            icon="i-lucide-clock"
-            icon-class="bg-purple-600"
-            :meta="summary.overdueReviews > 0 ? `${summary.overdueReviews} overdue` : 'On track'"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Total Users"
-            :value="summary.totalUsers"
-            icon="i-lucide-users"
-            icon-class="bg-success-600"
-            :meta="`+${summary.newUsersThisMonth} new`"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Roles"
-            :value="summary.totalRoles"
-            icon="i-lucide-shield-check"
-            icon-class="bg-main-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Categories"
-            :value="summary.totalCategories"
-            icon="i-lucide-graduation-cap"
-            icon-class="bg-purple-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Declined Journals"
-            :value="summary.declinedJournals"
-            icon="i-lucide-circle-x"
-            icon-class="bg-danger-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Active Reviewers"
-            :value="summary.activeReviewers"
-            icon="i-lucide-user-check"
-            icon-class="bg-info-600"
-            :loading="summaryPending"
-          />
-        </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard
+          label="Total Journals"
+          :value="summary.totalJournals"
+          icon="i-lucide-book-open"
+          icon-class="bg-primary-600"
+          :meta="`+${summary.recentSubmissions} this month`"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Journals Approved"
+          :value="summary.approvedJournals"
+          icon="i-lucide-award"
+          icon-class="bg-secondary-600"
+          :meta="`${summary.averageProcessingTimeDays} days avg`"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Pending Manuscripts"
+          :value="summary.pendingManuscripts"
+          icon="i-lucide-clock"
+          icon-class="bg-warning-600"
+          :meta="summary.overdueReviews > 0 ? `${summary.overdueReviews} overdue` : 'On track'"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Total Users"
+          :value="summary.totalUsers"
+          icon="i-lucide-users"
+          icon-class="bg-success-600"
+          :meta="`+${summary.newUsersThisMonth} new`"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Roles"
+          :value="summary.totalRoles"
+          icon="i-lucide-shield-check"
+          icon-class="bg-primary-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Categories"
+          :value="summary.totalCategories"
+          icon="i-lucide-graduation-cap"
+          icon-class="bg-secondary-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Declined Journals"
+          :value="summary.declinedJournals"
+          icon="i-lucide-circle-x"
+          icon-class="bg-error-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Active Reviewers"
+          :value="summary.activeReviewers"
+          icon="i-lucide-user-check"
+          icon-class="bg-info-600"
+          :loading="summaryPending"
+        />
       </div>
 
-      <div class="row gy-4 mt-1">
-        <div class="col-md-4">
-          <AdminHealthCard :health="summary.systemHealth" />
-        </div>
-        <div class="col-md-4">
-          <AdminReviewPerformanceCard
-            :active-reviewers="summary.activeReviewers"
-            :average-review-time-days="summary.averageReviewTimeDays"
-            :reviews-completed-this-month="summary.reviewsCompletedThisMonth"
-            :overdue-reviews="summary.overdueReviews"
-          />
-        </div>
-        <div class="col-md-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="mb-3">
-                Quick Actions
-              </h5>
-              <div class="d-grid gap-2">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  :disabled="sendingTestEmail"
-                  @click="sendTestEmail"
-                >
-                  {{ sendingTestEmail ? 'Sending…' : 'Test Email System' }}
-                </button>
-                <NuxtLink to="/admin/audit/dashboard" class="btn btn-outline-danger btn-sm">
-                  View Audit Logs
-                </NuxtLink>
-                <NuxtLink to="/admin/users" class="btn btn-outline-secondary btn-sm">
-                  Manage Users
-                </NuxtLink>
-                <NuxtLink to="/admin/roles" class="btn btn-outline-warning btn-sm">
-                  Manage Roles
-                </NuxtLink>
-                <NuxtLink to="/admin/permissions" class="btn btn-outline-dark btn-sm">
-                  Manage Permissions
-                </NuxtLink>
-                <NuxtLink to="/admin/categories" class="btn btn-outline-primary btn-sm">
-                  Manage Categories
-                </NuxtLink>
-              </div>
-              <p
-                v-if="testEmailMessage"
-                class="text-13 text-success mt-3 mb-0"
-              >
-                {{ testEmailMessage }}
-              </p>
-              <p
-                v-if="testEmailError"
-                class="text-13 text-danger mt-3 mb-0"
-              >
-                {{ testEmailError }}
-              </p>
-            </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <AdminHealthCard :health="summary.systemHealth" />
+        <AdminReviewPerformanceCard
+          :active-reviewers="summary.activeReviewers"
+          :average-review-time-days="summary.averageReviewTimeDays"
+          :reviews-completed-this-month="summary.reviewsCompletedThisMonth"
+          :overdue-reviews="summary.overdueReviews"
+        />
+        <UCard class="h-full">
+          <template #header>
+            <h3 class="text-base font-semibold text-highlighted">
+              Quick Actions
+            </h3>
+          </template>
+          <div class="flex flex-col gap-2">
+            <UButton
+              color="success"
+              variant="outline"
+              size="xs"
+              block
+              :loading="sendingTestEmail"
+              :disabled="sendingTestEmail"
+              @click="sendTestEmail"
+            >
+              {{ sendingTestEmail ? 'Sending…' : 'Test Email System' }}
+            </UButton>
+            <UButton to="/admin/audit/dashboard" color="error" variant="outline" size="xs" block>
+              View Audit Logs
+            </UButton>
+            <UButton to="/admin/users" color="neutral" variant="outline" size="xs" block>
+              Manage Users
+            </UButton>
+            <UButton to="/admin/roles" color="warning" variant="outline" size="xs" block>
+              Manage Roles
+            </UButton>
+            <UButton to="/admin/permissions" color="neutral" variant="outline" size="xs" block>
+              Manage Permissions
+            </UButton>
+            <UButton to="/admin/categories" color="primary" variant="outline" size="xs" block>
+              Manage Categories
+            </UButton>
           </div>
-        </div>
+          <p v-if="testEmailMessage" class="mb-0 mt-3 text-sm text-success">
+            {{ testEmailMessage }}
+          </p>
+          <p v-if="testEmailError" class="mb-0 mt-3 text-sm text-error">
+            {{ testEmailError }}
+          </p>
+        </UCard>
       </div>
 
-      <div class="row gy-4 mt-1">
-        <div class="col-md-8">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+        <div class="md:col-span-8">
           <SimpleTrendChart
             title="Submission Trends"
             :points="summary.submissionsByMonth"
           />
         </div>
-        <div class="col-md-4">
+        <div class="md:col-span-4">
           <AdminDistributionPanel
             title="Journal Status Distribution"
             :rows="statusRows"
@@ -273,19 +243,15 @@ async function sendTestEmail() {
         </div>
       </div>
 
-      <div class="row gy-4 mt-1">
-        <div class="col-md-6">
-          <AdminTopReviewersTable :reviewers="summary.topReviewers" />
-        </div>
-        <div class="col-md-6">
-          <AdminDistributionPanel
-            title="User Distribution by Role"
-            :rows="roleRows"
-          />
-        </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <AdminTopReviewersTable :reviewers="summary.topReviewers" />
+        <AdminDistributionPanel
+          title="User Distribution by Role"
+          :rows="roleRows"
+        />
       </div>
     </div>
-    <div class="col-lg-3">
+    <div class="lg:col-span-3">
       <DashboardCalendarPanel />
     </div>
   </div>

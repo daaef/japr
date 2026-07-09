@@ -54,106 +54,84 @@ function formatJson(value: Record<string, unknown> | null) {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-body flex-between flex-wrap gap-12">
-          <div>
-            <NuxtLink to="/admin/audit" class="text-13 text-main-600">
-              ← Back to audit logs
-            </NuxtLink>
-            <h3 class="mb-1 mt-2">
-              Audit Log Detail
-            </h3>
-            <p class="text-13 text-gray-600 mb-0">
-              {{ log.description || 'Review administrator activity details.' }}
-            </p>
-          </div>
-          <span class="badge text-capitalize" :class="log.riskLevel === 'high' ? 'bg-danger' : log.riskLevel === 'medium' ? 'bg-warning' : 'bg-success'">
-            {{ log.riskLevel }} risk
-          </span>
+  <div class="flex flex-col gap-4">
+    <UCard>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <NuxtLink to="/admin/audit" class="text-sm text-primary">
+            ← Back to audit logs
+          </NuxtLink>
+          <h3 class="mb-1 mt-2 text-lg font-semibold text-highlighted">
+            Audit Log Detail
+          </h3>
+          <p class="mb-0 text-sm text-muted">
+            {{ log.description || 'Review administrator activity details.' }}
+          </p>
         </div>
+        <UBadge :color="log.riskLevel === 'high' ? 'error' : log.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle" class="capitalize">
+          {{ log.riskLevel }} risk
+        </UBadge>
       </div>
-    </div>
+    </UCard>
 
-    <div v-if="error" class="col-12">
-      <DashboardSummaryError message="Audit log could not be loaded." @retry="refresh" />
-    </div>
-    <div v-else-if="pending" class="col-12 text-center text-muted py-24">
-      Loading audit log…
-    </div>
+    <DashboardSummaryError v-if="error" message="Audit log could not be loaded." @retry="refresh" />
+    <UCard v-else-if="pending">
+      <p class="py-6 text-center text-muted">
+        Loading audit log…
+      </p>
+    </UCard>
     <template v-else>
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-header">
-            <h5 class="mb-0">Actor</h5>
-          </div>
-          <div class="card-body">
-            <p class="mb-1 fw-semibold">{{ log.userName ?? 'System' }}</p>
-            <p class="mb-3 text-13 text-gray-500">{{ log.userEmail ?? 'No email recorded' }}</p>
-            <p class="mb-1"><span class="fw-semibold">IP:</span> {{ log.ipAddress ?? 'Unknown' }}</p>
-            <p class="mb-0"><span class="fw-semibold">User agent:</span> {{ log.userAgent ?? 'Unknown' }}</p>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <UCard>
+          <template #header>
+            <h4 class="text-base font-semibold text-highlighted">Actor</h4>
+          </template>
+          <p class="mb-1 font-semibold text-highlighted">{{ log.userName ?? 'System' }}</p>
+          <p class="mb-3 text-sm text-muted">{{ log.userEmail ?? 'No email recorded' }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">IP:</span> {{ log.ipAddress ?? 'Unknown' }}</p>
+          <p class="mb-0"><span class="font-semibold text-highlighted">User agent:</span> {{ log.userAgent ?? 'Unknown' }}</p>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <h4 class="text-base font-semibold text-highlighted">Action</h4>
+          </template>
+          <p class="mb-1 capitalize"><span class="font-semibold text-highlighted">Action:</span> {{ log.action.replaceAll('_', ' ') }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">Resource:</span> {{ log.resourceType }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">Resource ID:</span> {{ log.resourceId ?? 'None' }}</p>
+          <p class="mb-0"><span class="font-semibold text-highlighted">Time:</span> {{ new Date(log.createdAt).toLocaleString() }}</p>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <h4 class="text-base font-semibold text-highlighted">Description</h4>
+          </template>
+          <p class="mb-0">{{ log.description }}</p>
+        </UCard>
       </div>
 
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-header">
-            <h5 class="mb-0">Action</h5>
-          </div>
-          <div class="card-body">
-            <p class="mb-1 text-capitalize"><span class="fw-semibold">Action:</span> {{ log.action.replaceAll('_', ' ') }}</p>
-            <p class="mb-1"><span class="fw-semibold">Resource:</span> {{ log.resourceType }}</p>
-            <p class="mb-1"><span class="fw-semibold">Resource ID:</span> {{ log.resourceId ?? 'None' }}</p>
-            <p class="mb-0"><span class="fw-semibold">Time:</span> {{ new Date(log.createdAt).toLocaleString() }}</p>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <UCard>
+          <template #header>
+            <h4 class="text-base font-semibold text-highlighted">Before</h4>
+          </template>
+          <pre class="mb-0 overflow-auto rounded-lg bg-muted p-3 text-sm">{{ formatJson(log.oldValues) }}</pre>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <h4 class="text-base font-semibold text-highlighted">After</h4>
+          </template>
+          <pre class="mb-0 overflow-auto rounded-lg bg-muted p-3 text-sm">{{ formatJson(log.newValues) }}</pre>
+        </UCard>
       </div>
 
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-header">
-            <h5 class="mb-0">Description</h5>
-          </div>
-          <div class="card-body">
-            <p class="mb-0">{{ log.description }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header">
-            <h5 class="mb-0">Before</h5>
-          </div>
-          <div class="card-body">
-            <pre class="mb-0 p-12 rounded-8 bg-main-50 text-13 overflow-auto">{{ formatJson(log.oldValues) }}</pre>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header">
-            <h5 class="mb-0">After</h5>
-          </div>
-          <div class="card-body">
-            <pre class="mb-0 p-12 rounded-8 bg-main-50 text-13 overflow-auto">{{ formatJson(log.newValues) }}</pre>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">Metadata</h5>
-          </div>
-          <div class="card-body">
-            <pre class="mb-0 p-12 rounded-8 bg-main-50 text-13 overflow-auto">{{ formatJson(log.metadata) }}</pre>
-          </div>
-        </div>
-      </div>
+      <UCard>
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">Metadata</h4>
+        </template>
+        <pre class="mb-0 overflow-auto rounded-lg bg-muted p-3 text-sm">{{ formatJson(log.metadata) }}</pre>
+      </UCard>
     </template>
   </div>
 </template>
