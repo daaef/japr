@@ -173,3 +173,26 @@ W3 is now fully complete. Next: W4 page sweep.
 
 Verified: `nuxt typecheck` clean · `eslint` clean (6 files) · `pnpm test` 53/53 · legacy-artifact +
 Bootstrap-grid grep of the changed files returns zero.
+
+## W4 — Page sweep: editor area — landed 2026-07-09
+
+- **`editor/index.vue`**: same hero/stat-card/grid treatment as `admin/index.vue`; the 3
+  "Submission queue"/"Review outcomes"/"Copy desk" link-cards → `<UCard as="NuxtLink" :to="…">`.
+- **`editor/journals/[uuid].vue`** (the single biggest file): full conversion — detail header,
+  document-preview card (watermark badge → `UBadge`, empty state icon → `UIcon`), the reviewer-
+  suggestion checkbox list (native array-bound `<input type=checkbox>` → `UCheckbox` with a new
+  `toggleReviewerSelection()` helper reproducing the exact push/splice semantics Vue's native
+  array-checkbox `v-model` used to do for free — `selectedReviewerIds` ends up with the identical
+  set of ids sent to `assign-reviewers`), the 5 conditional editorial-action panels (desk review /
+  publication handoff / deadline extensions / managing-editor notice / reviewed-state actions) →
+  `UFormField`+`UTextarea`+`UButton` inside their existing semantic-tinted containers (`bg-warning-
+  50`/`bg-success-50`/`bg-info-50`/`bg-primary-50` were already live theme colors, not legacy
+  classes — left as-is), reviewer records list, and the peer-review bundle's 6 hand-rolled
+  criteria-rating bars → `UProgress` (verified props against `Progress.vue.d.ts`; replaces the
+  raw-color `bg-orange-500` fill with brand `color="primary"`). Every `$fetch` call and the 8
+  editorial action handlers (`sendToReview`/`deskDecline`/`approveForPublication`/
+  `approveExtension`/`sendApprovalNotice`/`sendDeclineNotice`/`approve`/`requestRevisions`/
+  `declineManuscript`) are untouched.
+
+Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact +
+Bootstrap-grid grep of the changed files returns zero.
