@@ -259,6 +259,45 @@ was the first `UTable` usage in the codebase, no in-repo precedent to follow):
 Verified: `nuxt typecheck` clean · `eslint` clean (4 files) · `pnpm test` 53/53 · zero `<table>`
 markup remains in any of the 4 files.
 
+## End-of-W4 mandatory checkpoint — `pnpm build` + per-role browser pass — 2026-07-09
+
+Per §9: ran a full production build, then drove the app with Playwright (Chromium) as
+admin/editor/reviewer/author/public/auth, screenshotting every remaining page from §7.
+
+- **`pnpm build`: green** (exit 0, 45.5 MB output, no errors).
+- **Auth note:** the login *form* is unusable by Playwright's `fill()`/`pressSequentially()` — the
+  native `<input>`'s DOM value updates correctly but vee-validate's tracked field value doesn't, so
+  `handleSubmit` blocks with "Invalid email address"/"Password is required" despite correct visible
+  input. This reproduces on `auth/login.vue`, which nothing in this session touched (migrated in an
+  earlier session) — logged here as a real, pre-existing finding for someone to look at, but out of
+  this task's scope. Worked around for verification by authenticating directly against
+  `POST /api/auth/sign-in/email` and injecting the resulting session cookie into the browser context.
+- **Structural result: no regressions found.** Every converted page — admin dashboard, `admin/users`
+  (UTable), `admin/permissions` (UTable, grouped-row rendering confirmed correct), `admin/audit/*`
+  (UTable), editor dashboard, reviewer dashboard, `author/index`, `author/submit` (UFileUpload
+  end-to-end), public journal pages — rendered its real data, controls, and layout correctly.
+- **Cosmetic-only, already-expected finding:** on every dashboard page (admin/editor/reviewer — not
+  `author/submit`, which is on the `public` layout), `bg-primary`/`text-primary`/etc. render
+  **Bootstrap blue**, not brand maroon. Root cause confirmed: `admin.vue` (and the other dashboard
+  layouts) still `useHead`-link `bootstrap.min.css` + the legacy `main.css`, and Bootstrap ships its
+  own unsuffixed `.bg-primary`/`.text-primary`/etc. utility classes under the *same names* as the
+  Tailwind ones Nuxt UI generates from `app.config.ts`'s `primary: 'maroon'` — whichever stylesheet
+  wins the cascade wins the color. Shade-suffixed classes (`bg-primary-50`, `bg-success-600`, …)
+  don't collide (Bootstrap has no such classes) and do render on-brand already, as seen in the
+  Review Performance tiles. This is exactly what **W5** (remove `bootstrap.min.css`/`main.css` from
+  the layouts) and **W6** (delete the sheets outright) exist to fix — not a defect in this session's
+  markup, confirmed by `author/submit.vue` (public layout, no Bootstrap) rendering fully on-brand.
+- **One pre-existing, unrelated `pageerror`:** `$(...).fileUpload is not a function` fires on every
+  dashboard page load. Root-caused to `public/assets/js/main.js:91` (`$("#fileUpload").fileUpload()`)
+  calling a jQuery plugin method that was never loaded (`file-upload.js` is dead/unreferenced,
+  already on the W6 deletion list) — throws regardless of page markup, present before this session.
+- **One flaky, non-deterministic Vue hydration-mismatch warning**, seen once each on
+  `admin/audit/dashboard` (touched this session) and `author/submissions` (an *index* page nothing
+  in this session touched). Did not reproduce across 3 repeat loads of the same page — consistent
+  with a benign SSR/CSR timing artifact (e.g. a timestamp), not a markup defect introduced here.
+
+**W4 is fully closed.** Next: W5 shell rebuild.
+
 ## W4 — Page sweep: public area — landed 2026-07-09
 
 - **`journals/[slug].vue`** (hand-rolled Tailwind, not Bootstrap): every `bg-white rounded-xl
