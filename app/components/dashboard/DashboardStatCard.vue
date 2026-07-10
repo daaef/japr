@@ -15,9 +15,9 @@ defineProps<{
       {{ loading ? '…' : value }}
     </h4>
     <span class="text-muted">{{ label }}</span>
-    <div class="flex-between gap-8 mt-16">
+    <div class="flex items-center justify-between gap-2 mt-4">
       <span
-        class="shrink-0 w-48 h-48 flex-center rounded-circle text-white text-2xl"
+        class="shrink-0 size-12 flex items-center justify-center rounded-full text-white text-2xl"
         :class="iconClass"
       >
         <UIcon :name="icon" />

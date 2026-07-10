@@ -338,3 +338,112 @@ returns zero.
 
 Verified: `nuxt typecheck` clean · `eslint` clean (2 files) · `pnpm test` 53/53 · legacy-artifact
 grep of the changed files returns zero.
+
+## W5 — Shell rebuild (jQuery + Bootstrap + Preline killed from the shells) — landed 2026-07-10
+
+The 4 dashboard layouts, the public/auth layouts, and `JournalNavbar.vue` rebuilt in Vue +
+Tailwind + Nuxt UI. This is the first **behavior**-rebuild workstream (not just markup swap) — the
+sidebar accordion, mobile drawer, and account menu are new reactive implementations, not moved
+Bootstrap/jQuery/Preline ones.
+
+### Prerequisite safety fix (found before touching the layouts, not scoped in the original plan)
+
+Removing `bootstrap.min.css`/`main.css`/`journal-dashboard-overrides.css` from the 4 dashboard
+layouts' `useHead` — the actual W5 instruction — would have silently unstyled 7 shared dashboard
+components that still used legacy theme-only utility classes only that stylesheet defined
+(`flex-between`/`flex-align`/`flex-center`, `rounded-circle`, `d-flex`/`d-block`/`align-items-*`/
+`justify-content-*`, `w-100`/`h-100`, the px-keyed `w-24/40/44/48`/`h-24/40/44/48`/`h-160`/`py-24`/
+`py-40`/`gap-8/12/16`/`mt-12/16`/`mb-12/16/20`/`text-13/15` set — verified via the theme's own
+`--size-N: N × 0.0625rem` custom properties that `N` really does mean `N`px, distinct from
+Tailwind's `N × 0.25rem` scale — and `bg-main-600`). Converted all of them to real Tailwind first
+(`DashboardStatCard`, `ReviewerAssignmentCards`, `AdminHealthCard`, `SimpleTrendChart`,
+`AdminDistributionPanel`, `ReviewerQueueList`, `JournalQueueList`), *then* dropped the stylesheet
+links. Also found and fixed two components that a prior W1 pass had wrapped in `UCard` but never
+finished: `ReviewerQueueList.vue`/`JournalQueueList.vue` still had a raw Bootstrap `row`/`col-lg-12`
+grid wrapper and a semantic `<table class="table">` (undetected by W1's narrower verification grep,
+which didn't cover Bootstrap grid or `<table>`) — both converted to `UTable` following the W4-tables
+pattern (`:columns`/`#<col>-cell` slots), and the redundant grid wrapper dropped (both were already
+single, full-width cards).
+
+### What landed
+
+- **`useDashboardNavigation.ts`**: added `useSidebarGroup(childPaths)` — a reactive dropdown-group
+  helper (`isGroupActive` computed off the route, `open` ref that auto-opens via a `watch` whenever
+  the route enters the group, `toggle()` for manual open/close) replacing jQuery's
+  `slideToggle`/`activePage`-class accordion (`main.js:25-31`), which never re-evaluated on
+  client-side navigation in the old code (the "Manage Journals stays highlighted" bug). Also added
+  `dashboardSubLinkClass`/`linkClass` so the composable's active-state classes are real Tailwind
+  (`bg-primary text-white` / `text-muted hover:...`) instead of the old `{ active: bool }` object
+  that relied on a CSS class named literally `active` (defined only in the sheet being deleted).
+- **`admin/editor/reviewer/author.vue` layouts**: sidebar + topbar + footer rebuilt as a single
+  `<aside>` that's always in the DOM, shown via `xl:translate-x-0` at desktop width and toggled via
+  a `sidebarOpen` ref + `-translate-x-full`/`translate-x-0` below it (replaces
+  `main.js:72-80`'s jQuery drawer). `admin.vue` has 3 dropdown groups (Categories/Roles/Users),
+  editor/reviewer have 1 (with per-item `UBadge` counts, same semantic color mapping as before:
+  warning/info/primary/success/error), author has 1 (Manage Manuscripts) plus its pre-existing
+  topbar search form (kept, now a `UInput` with a submit-button `#leading` icon) and local
+  `isActive()` helper (left in place for the Dashboard link — it was already correct — while every
+  other author nav item, which previously had **no** active-state binding at all, now uses
+  `dashboardLinkClass`/`dashboardSubLinkClass` for consistency with the other three layouts).
+  `ph-*` icons → `UIcon` per `icon-map.md`. Preloader div dropped (no loading state to preserve).
+  `useHead` no longer loads bootstrap.min.css/main.css/journal-dashboard-overrides.css/jquery/
+  bootstrap-bundle/phosphor-icon/main.js — just the page title.
+- **`public.vue`/`auth.vue`**: dropped the vestigial `jquery-3.7.1.min.js` script tag (was loaded,
+  never called).
+- **`JournalNavbar.vue`**: the Preline `hs-collapse` mobile menu (`data-hs-collapse`,
+  `hs-collapse-toggle`, `hs-collapse-open:*` variants) → a `mobileMenuOpen` ref toggling
+  `block`/`hidden` directly, hamburger/X `UIcon` swap on the toggle button; the hand-rolled account
+  dropdown (`accountMenuOpen` ref + a manual `document.addEventListener('click', ...)` outside-click
+  handler) → `UPopover` (verified `dismissible` defaults to `true` — real click-outside/Escape
+  handling built in, so no extra `onClickOutside` needed), with the same nav links each still calling
+  the popover's `close()` on click exactly as the old `closeAccountMenu()` did. Dropped the one
+  `dark:text-white` class (dark mode is a Track-2 decision, not wired up). Renamed the leftover
+  `hs-navbar-alignment*` element ids (no longer Preline-managed) to `navbar-alignment*`.
+- **`JournalFooter.vue`**: the 4 hand-pasted inline `<svg>` icons (map-pin-check-inside, instagram,
+  twitter, mail) → `UIcon` (all 4 lucide names verified present before use).
+- **Not added**: `@vueuse/nuxt`, despite the original plan calling for it. Ended up with no genuine
+  use for any VueUse composable — the drawer/menu state is a plain `ref`, and `UPopover` handles
+  click-outside/Escape natively (no manual `onClickOutside` needed). Adding an unused dependency
+  would violate the project's own "no unjustified library" rule, so this is a deliberate, disclosed
+  deviation from the original workstream instructions rather than an oversight.
+
+### A real bug found and fixed during verification
+
+The sidebar close button (`absolute end-2 top-2 z-10`) and the sticky logo link (`sticky top-0 z-10`,
+full-width `block`) had equal z-index; since the logo comes later in DOM order it painted on top and
+silently ate the close button's clicks (no console error — it just did nothing). Fixed by bumping
+the close button to `z-20` in all four layouts.
+
+### Discovered, not fixed (pre-existing, out of this task's scope): `author.vue` layout is unreachable
+
+`app/utils/workspace.ts`'s `resolveRoleLayout()` returns `'public'` for the `author` role (never
+`'author'`), and `app/pages/author.vue` (the nested-route wrapper for `/author/*`, a different file
+from `app/layouts/author.vue`) hardcodes `definePageMeta({ layout: 'public' })`. No page anywhere
+sets `layout: 'author'`. So `app/layouts/author.vue` — migrated and verified in this workstream like
+the other three — currently has no live route rendering it; authors get the public-site tabs UI
+(`JournalUserNavbar`) instead. Not touched here (a routing/product decision, not a markup-migration
+one) — flagging for a deliberate decision: wire a page to it, or delete it in W6.
+
+### Verified
+
+- `nuxt typecheck` clean · `eslint` clean · `pnpm test` 53/53 · `pnpm build` green · app-wide
+  `grep -rniE "bootstrap|jquery|preline"` over `app/` returns matches only in W6 scope (CSS/SASS
+  files, `preline.client.ts`).
+- **Browser verification finding:** clicks (even on pre-existing, already-shipped components like
+  `DashboardProfileDropdown`) were inert under `nuxt dev` in this session's environment — confirmed
+  via a plain native `.click()`, confirmed to reproduce on the unmodified last-committed code (via
+  `git stash`), and confirmed unrelated to headless-vs-headed Chromium. It disappeared entirely
+  against a fresh production build (`pnpm build` + `node .output/server/index.mjs`) — so this is a
+  `nuxt dev`-mode-only quirk of this local setup, not a defect in the app or this session's code
+  (apps run in production, not `nuxt dev`, so this doesn't affect real usage). All interactive
+  verification below was done against the production build. Confirmed via Playwright + screenshots:
+  admin/editor/reviewer sidebar drawer open (button) → overlay visible → closes via overlay click
+  and via the X button; a dropdown group (Categories) opens/closes on click; navigating directly to
+  a route inside a group (`/admin/roles`) auto-expands that group and highlights its parent (the
+  named bug fix); the public navbar's mobile hamburger menu opens/closes; the account popover opens
+  on click and closes on outside click. All dashboard pages render in the brand maroon palette, not
+  Bootstrap blue (confirmed by the same screenshots this session captured, not by rerunning the W4
+  regression pass).
+
+W5 is now closed. Next: W6 cleanup (utility sweep → remove Preline → delete dead assets → reconcile
+CSS → DoD grep = 0 → `pnpm build`).

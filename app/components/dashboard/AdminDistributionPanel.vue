@@ -14,7 +14,7 @@ defineProps<{
     </template>
     <div
       v-if="!rows.length"
-      class="text-center text-muted py-24"
+      class="text-center text-muted py-6"
     >
       No data available.
     </div>

@@ -16,22 +16,22 @@ const maxCount = computed(() => Math.max(1, ...props.points.map(point => point.c
     </template>
     <div
       v-if="!points.length"
-      class="text-center text-muted py-24"
+      class="text-center text-muted py-6"
     >
       No trend data available.
     </div>
     <div
       v-else
-      class="d-flex align-items-end gap-12 h-160"
+      class="flex items-end gap-3 h-40"
     >
       <div
         v-for="point in points"
         :key="point.label"
-        class="grow d-flex flex-column align-items-center justify-content-end h-100"
+        class="grow flex flex-col items-center justify-end h-full"
       >
         <small class="text-muted mb-2">{{ point.count }}</small>
         <div
-          class="w-100 bg-primary rounded-top"
+          class="w-full bg-primary rounded-t"
           :style="{ height: `${Math.max(8, (point.count / maxCount) * 120)}px` }"
           :aria-label="`${point.label}: ${point.count}`"
         />

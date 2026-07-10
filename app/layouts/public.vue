@@ -9,13 +9,6 @@ const showAuthorTabs = computed(() => {
   return route.path === '/author'
     || route.path.startsWith('/author/')
 })
-
-useHead({
-  link: [],
-  script: [
-    { src: '/assets/js/jquery-3.7.1.min.js', defer: true }
-  ]
-})
 </script>
 
 <template>

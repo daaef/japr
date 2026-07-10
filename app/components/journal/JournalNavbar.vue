@@ -37,35 +37,7 @@ async function signOut() {
   await navigateTo('/')
 }
 
-const accountMenuOpen = ref(false)
-const accountMenuRoot = ref<HTMLElement | null>(null)
-
-function toggleAccountMenu() {
-  accountMenuOpen.value = !accountMenuOpen.value
-}
-
-function closeAccountMenu() {
-  accountMenuOpen.value = false
-}
-
-onMounted(() => {
-  const onDocumentClick = (event: MouseEvent) => {
-    if (!accountMenuOpen.value) {
-      return
-    }
-
-    const target = event.target as Node | null
-    if (accountMenuRoot.value && target && !accountMenuRoot.value.contains(target)) {
-      closeAccountMenu()
-    }
-  }
-
-  document.addEventListener('click', onDocumentClick)
-
-  onUnmounted(() => {
-    document.removeEventListener('click', onDocumentClick)
-  })
-})
+const mobileMenuOpen = ref(false)
 </script>
 
 <template>
@@ -73,7 +45,7 @@ onMounted(() => {
     <nav class="container w-full mx-auto px-4 flex flex-wrap basis-full items-center justify-between relative">
       <div class="flex gap-5 items-center">
         <NuxtLink
-          class="flex-none text-xl lg:static lg:translate-y-0 absolute top-[30px] left-[20px] translate-y-[-50%] font-semibold dark:text-white focus:outline-none focus:opacity-80"
+          class="flex-none text-xl lg:static lg:translate-y-0 absolute top-[30px] left-[20px] translate-y-[-50%] font-semibold focus:outline-none focus:opacity-80"
           to="/"
         >
           <img
@@ -83,9 +55,10 @@ onMounted(() => {
           >
         </NuxtLink>
         <div
-          id="hs-navbar-alignment"
-          class="hs-collapse hidden overflow-hidden top-[80px] transition-all duration-300 basis-full grow lg:grow-0 lg:basis-auto lg:static lg:px-0 px-[20px] max-[1023px]:container max-[1023px]:translate-x-[-50%] max-[1023px]:left-[50%] py-[20px] fixed left-0 bg-white w-full lg:block"
-          aria-labelledby="hs-navbar-alignment-collapse"
+          id="navbar-alignment"
+          class="overflow-hidden top-[80px] transition-all duration-300 basis-full grow lg:grow-0 lg:basis-auto lg:static lg:px-0 px-[20px] max-[1023px]:container max-[1023px]:translate-x-[-50%] max-[1023px]:left-[50%] py-[20px] fixed left-0 bg-white w-full lg:block"
+          :class="mobileMenuOpen ? 'block' : 'hidden'"
+          aria-labelledby="navbar-alignment-toggle"
         >
           <div class="flex flex-col gap-5 mt-5 lg:flex-row lg:items-center lg:mt-0 lg:ps-5">
             <NuxtLink
@@ -222,100 +195,85 @@ onMounted(() => {
           >
             Submit Manuscript
           </NuxtLink>
-          <div
-            ref="accountMenuRoot"
-            class="relative pr-[40px]"
-          >
-            <button
-              id="hs-navbar-example-dropdown"
-              type="button"
-              class="flex items-center w-full text-gray-600 hover:text-gray-400 focus:outline-none focus:text-gray-400 font-medium"
-              aria-haspopup="menu"
-              :aria-expanded="accountMenuOpen"
-              aria-label="Account menu"
-              @click.stop="toggleAccountMenu"
-            >
-              {{ displayName }}
-              <svg
-                class="duration-300 ms-1 shrink-0 size-4 transition-transform"
-                :class="{ 'rotate-180': accountMenuOpen }"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+          <UPopover class="pr-[40px]">
+            <template #default="{ open }">
+              <button
+                type="button"
+                class="flex items-center w-full text-gray-600 hover:text-gray-400 focus:outline-none focus:text-gray-400 font-medium"
+                aria-label="Account menu"
               >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
+                {{ displayName }}
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="duration-300 ms-1 shrink-0 size-4 transition-transform"
+                  :class="{ 'rotate-180': open }"
+                />
+              </button>
+            </template>
 
-            <div
-              v-show="accountMenuOpen"
-              class="absolute end-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-100 bg-white p-1 shadow-md"
-              role="menu"
-              aria-orientation="vertical"
-              aria-labelledby="hs-navbar-example-dropdown"
-            >
-              <NuxtLink
-                v-if="hasRole('admin')"
-                class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                :class="navClass(route.path.startsWith('/admin'), 'text-gray-800 font-medium')"
-                to="/admin"
-                @click="closeAccountMenu"
+            <template #content="{ close }">
+              <div
+                class="w-48 rounded-lg border border-gray-100 bg-white p-1 shadow-md"
+                role="menu"
+                aria-orientation="vertical"
               >
-                Dashboard
-              </NuxtLink>
-              <NuxtLink
-                v-if="hasAnyRole(['editor_in_chief', 'managing_editor'])"
-                class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                :class="navClass(route.path.startsWith('/editor'), 'text-gray-800 font-medium')"
-                to="/editor"
-                @click="closeAccountMenu"
-              >
-                Dashboard
-              </NuxtLink>
-              <NuxtLink
-                v-if="hasRole('copy_desk_editor')"
-                class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                :class="navClass(route.path.startsWith('/editor/copy-desk'), 'text-gray-800 font-medium')"
-                to="/editor/copy-desk"
-                @click="closeAccountMenu"
-              >
-                Copy Desk
-              </NuxtLink>
-              <NuxtLink
-                v-if="hasRole('author')"
-                class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                :class="navClass(route.path.startsWith('/author') && route.path !== '/author/settings', 'text-gray-800 font-medium')"
-                :to="workspacePath"
-                @click="closeAccountMenu"
-              >
-                Dashboard
-              </NuxtLink>
-              <NuxtLink
-                v-if="hasRole('author')"
-                class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                :class="navClass(route.path === '/author/settings', 'font-medium')"
-                to="/author/settings"
-                @click="closeAccountMenu"
-              >
-                Profile
-              </NuxtLink>
-              <NuxtLink
-                v-if="hasAnyRole(['associate_editor', 'desk_editor', 'external_reviewer'])"
-                class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                :class="navClass(route.path.startsWith('/reviewer'), 'text-gray-800 font-medium')"
-                to="/reviewer"
-                @click="closeAccountMenu"
-              >
-                Dashboard
-              </NuxtLink>
-            </div>
-          </div>
+                <NuxtLink
+                  v-if="hasRole('admin')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  :class="navClass(route.path.startsWith('/admin'), 'text-gray-800 font-medium')"
+                  to="/admin"
+                  @click="close"
+                >
+                  Dashboard
+                </NuxtLink>
+                <NuxtLink
+                  v-if="hasAnyRole(['editor_in_chief', 'managing_editor'])"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  :class="navClass(route.path.startsWith('/editor'), 'text-gray-800 font-medium')"
+                  to="/editor"
+                  @click="close"
+                >
+                  Dashboard
+                </NuxtLink>
+                <NuxtLink
+                  v-if="hasRole('copy_desk_editor')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  :class="navClass(route.path.startsWith('/editor/copy-desk'), 'text-gray-800 font-medium')"
+                  to="/editor/copy-desk"
+                  @click="close"
+                >
+                  Copy Desk
+                </NuxtLink>
+                <NuxtLink
+                  v-if="hasRole('author')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  :class="navClass(route.path.startsWith('/author') && route.path !== '/author/settings', 'text-gray-800 font-medium')"
+                  :to="workspacePath"
+                  @click="close"
+                >
+                  Dashboard
+                </NuxtLink>
+                <NuxtLink
+                  v-if="hasRole('author')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  :class="navClass(route.path === '/author/settings', 'font-medium')"
+                  to="/author/settings"
+                  @click="close"
+                >
+                  Profile
+                </NuxtLink>
+                <NuxtLink
+                  v-if="hasAnyRole(['associate_editor', 'desk_editor', 'external_reviewer'])"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  :class="navClass(route.path.startsWith('/reviewer'), 'text-gray-800 font-medium')"
+                  to="/reviewer"
+                  @click="close"
+                >
+                  Dashboard
+                </NuxtLink>
+              </div>
+            </template>
+          </UPopover>
           <button
             type="button"
             class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
@@ -345,60 +303,18 @@ onMounted(() => {
           </NuxtLink>
         </template>
         <button
+          id="navbar-alignment-toggle"
           type="button"
-          class="lg:hidden hs-collapse-toggle absolute top-[30px] right-[20px] translate-y-[-50%] size-7 flex justify-center items-center gap-x-2 rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-          id="hs-navbar-alignment-collapse"
-          aria-expanded="false"
-          aria-controls="hs-navbar-alignment"
+          class="lg:hidden absolute top-[30px] right-[20px] translate-y-[-50%] size-7 flex justify-center items-center gap-x-2 rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+          :aria-expanded="mobileMenuOpen"
+          aria-controls="navbar-alignment"
           aria-label="Toggle navigation"
-          data-hs-collapse="#hs-navbar-alignment"
+          @click="mobileMenuOpen = !mobileMenuOpen"
         >
-          <svg
-            class="hs-collapse-open:hidden shrink-0 size-4"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line
-              x1="3"
-              x2="21"
-              y1="6"
-              y2="6"
-            />
-            <line
-              x1="3"
-              x2="21"
-              y1="12"
-              y2="12"
-            />
-            <line
-              x1="3"
-              x2="21"
-              y1="18"
-              y2="18"
-            />
-          </svg>
-          <svg
-            class="hs-collapse-open:block hidden shrink-0 size-4"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
+          <UIcon
+            :name="mobileMenuOpen ? 'i-lucide-x' : 'i-lucide-menu'"
+            class="shrink-0 size-4"
+          />
           <span class="sr-only">Toggle</span>
         </button>
       </div>

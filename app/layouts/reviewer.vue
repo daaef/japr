@@ -4,7 +4,7 @@ import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 
 const { data: currentUser, refresh } = useCurrentUser()
-const { dashboardLinkClass } = useDashboardNavigation()
+const { dashboardLinkClass, dashboardSubLinkClass, linkClass, useSidebarGroup } = useDashboardNavigation()
 
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
@@ -33,18 +33,7 @@ const { data: dashboardSummary } = await useFetch<{ summary: ReviewerDashboardSu
 const summary = computed(() => dashboardSummary.value.summary)
 
 useHead({
-  title: 'JAPR Website | Dashboard',
-  link: [
-    { rel: 'stylesheet', href: '/assets/css/bootstrap.min.css' },
-    { rel: 'stylesheet', href: '/assets/css/main.css' },
-    { rel: 'stylesheet', href: '/assets/css/journal-dashboard-overrides.css' }
-  ],
-  script: [
-    { src: '/assets/js/jquery-3.7.1.min.js', defer: true },
-    { src: '/assets/js/boostrap.bundle.min.js', defer: true },
-    { src: '/assets/js/phosphor-icon.js', defer: true },
-    { src: '/assets/js/main.js', defer: true }
-  ]
+  title: 'JAPR Website | Dashboard'
 })
 
 async function signOut() {
@@ -52,200 +41,264 @@ async function signOut() {
   await refresh()
   await navigateTo('/')
 }
+
+const sidebarOpen = ref(false)
+function openSidebar() {
+  sidebarOpen.value = true
+}
+function closeSidebar() {
+  sidebarOpen.value = false
+}
+
+const journalsGroup = useSidebarGroup([
+  '/reviewer/pending',
+  '/reviewer/in-progress',
+  '/reviewer/reviewed',
+  '/reviewer/approved',
+  '/reviewer/declined',
+  '/reviewer/declined-invitations'
+])
 </script>
 
 <template>
-  <div class="dashboard-layout">
-    <div class="preloader">
-      <div class="loader" />
-    </div>
-    <div class="side-overlay" />
+  <div class="relative flex min-h-screen">
+    <div
+      v-if="sidebarOpen"
+      class="fixed inset-0 z-40 bg-gray-900/50 xl:hidden"
+      @click="closeSidebar"
+    />
 
-    <aside class="sidebar">
+    <aside
+      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-default bg-default transition-transform duration-200 xl:translate-x-0"
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    >
       <button
         type="button"
-        class="sidebar-close-btn text-gray-500 hover-text-white hover-bg-main-600 text-md w-24 h-24 border border-gray-100 hover-border-main-600 d-xl-none d-flex flex-center rounded-circle position-absolute"
+        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-default text-muted hover:border-primary hover:bg-primary hover:text-white xl:hidden"
+        aria-label="Close sidebar"
+        @click="closeSidebar"
       >
-        <i class="ph ph-x" />
+        <UIcon name="i-lucide-x" />
       </button>
 
       <NuxtLink
         to="/reviewer"
-        class="sidebar__logo text-center p-20 position-sticky inset-block-start-0 bg-white w-100 z-1 pb-10"
+        class="sticky top-0 z-10 block bg-default px-5 pb-3 pt-6 text-center"
       >
         <img
-          class="w-25s"
+          class="mx-auto h-10 w-auto"
           src="/images/japr-logo.png"
           alt="Logo"
         >
       </NuxtLink>
 
-      <div class="sidebar-menu-wrapper overflow-y-auto scroll-sm">
-        <div class="p-20 pt-10">
-          <ul class="sidebar-menu">
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/reviewer"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/reviewer', true)"
-              >
-                <span class="icon"><i class="ph ph-squares-four" /></span>
-                <span class="text">Dashboard</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item has-dropdown">
-              <a
-                href="javascript:void(0)"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-graduation-cap" /></span>
-                <span class="text">Manage Journals</span>
-              </a>
-              <ul class="sidebar-submenu">
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/reviewer/pending"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/reviewer/pending')"
-                  >
-                    <span class="d-flex align-items-center justify-content-between w-100">
-                      Pending
-                      <span
-                        v-if="summary.pending"
-                        class="badge bg-warning ms-2"
-                      >{{ summary.pending }}</span>
-                    </span>
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/reviewer/in-progress"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/reviewer/in-progress')"
-                  >
-                    <span class="d-flex align-items-center justify-content-between w-100">
-                      In Progress
-                      <span
-                        v-if="summary.inProgress"
-                        class="badge bg-primary ms-2"
-                      >{{ summary.inProgress }}</span>
-                    </span>
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/reviewer/reviewed"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/reviewer/reviewed')"
-                  >
-                    <span class="d-flex align-items-center justify-content-between w-100">
-                      Reviewed
-                      <span
-                        v-if="summary.reviewed"
-                        class="badge bg-success ms-2"
-                      >{{ summary.reviewed }}</span>
-                    </span>
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/reviewer/approved"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/reviewer/approved')"
-                  >
-                    <span class="d-flex align-items-center justify-content-between w-100">
-                      Approved
-                      <span
-                        v-if="summary.approved"
-                        class="badge bg-success ms-2"
-                      >{{ summary.approved }}</span>
-                    </span>
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/reviewer/declined"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/reviewer/declined')"
-                  >
-                    <span class="d-flex align-items-center justify-content-between w-100">
-                      Declined Manuscripts
-                      <span
-                        v-if="summary.declinedManuscripts"
-                        class="badge bg-danger ms-2"
-                      >{{ summary.declinedManuscripts }}</span>
-                    </span>
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/reviewer/declined-invitations"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/reviewer/declined-invitations')"
-                  >
-                    <span class="d-flex align-items-center justify-content-between w-100">
-                      Declined Invitations
-                      <span
-                        v-if="summary.declinedInvitations"
-                        class="badge bg-danger ms-2"
-                      >{{ summary.declinedInvitations }}</span>
-                    </span>
-                  </NuxtLink>
-                </li>
-              </ul>
-            </li>
+      <nav class="flex-1 overflow-y-auto px-4 pb-6">
+        <ul class="flex flex-col gap-3">
+          <li>
+            <NuxtLink
+              to="/reviewer"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClass('/reviewer', true)"
+            >
+              <UIcon
+                name="i-lucide-layout-grid"
+                class="text-xl"
+              />
+              <span>Dashboard</span>
+            </NuxtLink>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <span class="text-gray-300 text-sm px-20 pt-20 fw-semibold border-top border-gray-100 d-block text-uppercase">Settings</span>
-            </li>
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
+              :class="linkClass(journalsGroup.isGroupActive)"
+              :aria-expanded="journalsGroup.open"
+              @click="journalsGroup.toggle"
+            >
+              <UIcon
+                name="i-lucide-graduation-cap"
+                class="text-xl"
+              />
+              <span>Manage Journals</span>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="ms-auto shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': journalsGroup.open }"
+              />
+            </button>
+            <ul
+              v-show="journalsGroup.open"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-default ps-4"
+            >
+              <li>
+                <NuxtLink
+                  to="/reviewer/pending"
+                  class="flex items-center justify-between gap-2 text-sm"
+                  :class="dashboardSubLinkClass('/reviewer/pending')"
+                >
+                  <span>Pending</span>
+                  <UBadge
+                    v-if="summary.pending"
+                    color="warning"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ summary.pending }}
+                  </UBadge>
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/reviewer/in-progress"
+                  class="flex items-center justify-between gap-2 text-sm"
+                  :class="dashboardSubLinkClass('/reviewer/in-progress')"
+                >
+                  <span>In Progress</span>
+                  <UBadge
+                    v-if="summary.inProgress"
+                    color="primary"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ summary.inProgress }}
+                  </UBadge>
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/reviewer/reviewed"
+                  class="flex items-center justify-between gap-2 text-sm"
+                  :class="dashboardSubLinkClass('/reviewer/reviewed')"
+                >
+                  <span>Reviewed</span>
+                  <UBadge
+                    v-if="summary.reviewed"
+                    color="success"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ summary.reviewed }}
+                  </UBadge>
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/reviewer/approved"
+                  class="flex items-center justify-between gap-2 text-sm"
+                  :class="dashboardSubLinkClass('/reviewer/approved')"
+                >
+                  <span>Approved</span>
+                  <UBadge
+                    v-if="summary.approved"
+                    color="success"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ summary.approved }}
+                  </UBadge>
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/reviewer/declined"
+                  class="flex items-center justify-between gap-2 text-sm"
+                  :class="dashboardSubLinkClass('/reviewer/declined')"
+                >
+                  <span>Declined Manuscripts</span>
+                  <UBadge
+                    v-if="summary.declinedManuscripts"
+                    color="error"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ summary.declinedManuscripts }}
+                  </UBadge>
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/reviewer/declined-invitations"
+                  class="flex items-center justify-between gap-2 text-sm"
+                  :class="dashboardSubLinkClass('/reviewer/declined-invitations')"
+                >
+                  <span>Declined Invitations</span>
+                  <UBadge
+                    v-if="summary.declinedInvitations"
+                    color="error"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ summary.declinedInvitations }}
+                  </UBadge>
+                </NuxtLink>
+              </li>
+            </ul>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/reviewer/notifications"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/reviewer/notifications')"
-              >
-                <span class="icon"><i class="ph ph-bell" /></span>
-                <span class="text">Notifications</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/reviewer/notifications/preferences"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/reviewer/notifications/preferences')"
-              >
-                <span class="icon"><i class="ph ph-sliders-horizontal" /></span>
-                <span class="text">Notification Preferences</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/reviewer/settings"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/reviewer/settings')"
-              >
-                <span class="icon"><i class="ph ph-gear" /></span>
-                <span class="text">Account Settings</span>
-              </NuxtLink>
-            </li>
-          </ul>
-        </div>
-      </div>
+          <li class="border-t border-default pt-5">
+            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-dimmed">Settings</span>
+          </li>
+
+          <li>
+            <NuxtLink
+              to="/reviewer/notifications"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClass('/reviewer/notifications')"
+            >
+              <UIcon
+                name="i-lucide-bell"
+                class="text-xl"
+              />
+              <span>Notifications</span>
+            </NuxtLink>
+          </li>
+
+          <li>
+            <NuxtLink
+              to="/reviewer/notifications/preferences"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClass('/reviewer/notifications/preferences')"
+            >
+              <UIcon
+                name="i-lucide-sliders-horizontal"
+                class="text-xl"
+              />
+              <span>Notification Preferences</span>
+            </NuxtLink>
+          </li>
+
+          <li>
+            <NuxtLink
+              to="/reviewer/settings"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClass('/reviewer/settings')"
+            >
+              <UIcon
+                name="i-lucide-settings"
+                class="text-xl"
+              />
+              <span>Account Settings</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </nav>
     </aside>
 
-    <div class="dashboard-main-wrapper">
-      <div class="top-navbar flex-between gap-16">
-        <div class="flex-align gap-16">
-          <button
-            type="button"
-            class="toggle-btn d-xl-none d-flex text-26 text-gray-500"
-          >
-            <i class="ph ph-list" />
-          </button>
+    <div class="flex min-h-screen flex-1 flex-col bg-primary-50 xl:ms-64">
+      <div class="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-default bg-default px-4 py-4 sm:px-6">
+        <div class="flex items-center gap-4">
+          <UButton
+            icon="i-lucide-menu"
+            color="neutral"
+            variant="ghost"
+            class="xl:hidden"
+            aria-label="Open sidebar"
+            @click="openSidebar"
+          />
         </div>
 
-        <div class="flex-align gap-16">
+        <div class="flex items-center gap-4">
           <NotificationDropdown />
 
           <DashboardProfileDropdown
@@ -257,16 +310,14 @@ async function signOut() {
         </div>
       </div>
 
-      <div class="dashboard-body">
+      <main class="flex-1 px-4 py-6 sm:px-6">
         <slot />
-      </div>
+      </main>
 
-      <div class="dashboard-footer">
-        <div class="flex-between justify-center flex-wrap gap-16">
-          <p class="text-gray-300 text-13 fw-normal">
-            &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
-          </p>
-        </div>
+      <div class="mt-auto flex justify-center rounded-t-2xl bg-default px-5 py-5">
+        <p class="text-xs text-dimmed">
+          &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
+        </p>
       </div>
     </div>
   </div>

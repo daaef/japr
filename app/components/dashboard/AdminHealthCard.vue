@@ -13,7 +13,7 @@ defineProps<{
 
 <template>
   <UCard>
-    <div class="flex-between">
+    <div class="flex items-center justify-between">
       <div class="grow">
         <h5 class="text-base font-semibold text-highlighted mb-2">
           System Health
@@ -29,7 +29,7 @@ defineProps<{
         <small class="text-muted">{{ health.overallScore }}% Healthy</small>
       </div>
       <span
-        class="w-48 h-48 flex-center rounded-circle text-white"
+        class="size-12 flex items-center justify-center rounded-full text-white"
         :class="health.overallScore >= 75 ? 'bg-success' : health.overallScore >= 50 ? 'bg-warning' : 'bg-error'"
       >
         <UIcon :name="health.overallScore >= 75 ? 'i-lucide-circle-check' : 'i-lucide-circle-alert'" />
@@ -37,19 +37,19 @@ defineProps<{
     </div>
     <div class="mt-3">
       <small
-        class="d-block"
+        class="block"
         :class="health.emailEnabled ? 'text-success' : 'text-error'"
       >
         <UIcon :name="health.emailEnabled ? 'i-lucide-check' : 'i-lucide-x'" /> Email System
       </small>
       <small
-        class="d-block"
+        class="block"
         :class="!health.storageMeasured ? 'text-muted' : health.storageAccessible ? 'text-success' : 'text-error'"
       >
         <UIcon :name="!health.storageMeasured ? 'i-lucide-minus' : health.storageAccessible ? 'i-lucide-check' : 'i-lucide-x'" /> File Storage
         <span v-if="!health.storageMeasured">(not measured)</span>
       </small>
-      <small class="d-block text-muted">
+      <small class="block text-muted">
         <template v-if="health.recentErrorsMeasured">
           {{ health.recentErrors }} recent errors
         </template>

@@ -53,8 +53,8 @@ function formatDate(value: string | null) {
 </script>
 
 <template>
-  <UCard class="mt-24">
-    <div class="mb-20 flex-between flex-wrap gap-8">
+  <UCard class="mt-6">
+    <div class="mb-5 flex items-center justify-between flex-wrap gap-2">
       <div>
         <h4 class="text-lg font-semibold text-highlighted mb-2">
           Journals Assigned to You
@@ -63,7 +63,7 @@ function formatDate(value: string | null) {
           Review invitations and active assignments.
         </p>
       </div>
-      <div class="flex-align gap-8 flex-wrap">
+      <div class="flex items-center gap-2 flex-wrap">
         <UButton
           v-for="filter in filterOptions"
           :key="filter.value"
@@ -80,11 +80,11 @@ function formatDate(value: string | null) {
 
     <div
       v-if="!filteredAssignments.length"
-      class="text-center py-40"
+      class="text-center py-10"
     >
       <UIcon
         name="i-lucide-book-open"
-        class="text-5xl text-dimmed mb-16"
+        class="text-5xl text-dimmed mb-4"
       />
       <p class="text-muted mb-0">
         No assignments in this filter.
@@ -95,18 +95,18 @@ function formatDate(value: string | null) {
       <div
         v-for="assignment in filteredAssignments"
         :key="assignment.id"
-        class="p-xl-4 py-16 px-12 rounded-8 border border-default hover:border-accented transition-1 mb-16"
+        class="xl:p-6 py-4 px-3 rounded-lg border border-default hover:border-accented transition duration-100 ease-linear mb-4"
       >
-        <div class="flex-between gap-8 mb-12">
-          <div class="flex-align flex-wrap gap-8">
-            <span class="text-primary-600 bg-primary-50 w-44 h-44 rounded-circle flex-center text-2xl shrink-0">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="flex items-center flex-wrap gap-2">
+            <span class="text-primary-600 bg-primary-50 size-11 rounded-full flex items-center justify-center text-2xl shrink-0">
               <UIcon name="i-lucide-graduation-cap" />
             </span>
             <div class="grow">
               <h6 class="text-base font-semibold text-highlighted mb-2">
                 {{ assignment.journalTitle }}
               </h6>
-              <div class="flex-align flex-wrap gap-12 mb-2">
+              <div class="flex items-center flex-wrap gap-3 mb-2">
                 <JournalStatusBadge :status="assignment.status" />
                 <span class="text-xs text-muted">
                   Due {{ formatDate(assignment.reviewDeadline) }}
@@ -134,7 +134,7 @@ function formatDate(value: string | null) {
           </div>
         </div>
 
-        <div class="flex-align gap-8 mt-12">
+        <div class="flex items-center gap-2 mt-3">
           <UButton
             :to="`/reviewer/journals/${assignment.journalId}/review`"
             color="primary"
