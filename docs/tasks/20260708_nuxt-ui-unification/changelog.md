@@ -569,9 +569,25 @@ gated behind separate, explicit sign-off — not started.
 
 ### Discovered, not fixed (carried forward)
 
-- `app/layouts/author.vue` is still unreachable (from W5) — `resolveRoleLayout()` sends the
-  `author` role to `public`, not `author`.
+- ~~`app/layouts/author.vue` is still unreachable...~~ **Resolved 2026-07-10** in the
+  `ui-consistency-pass` session (see `docs/tasks/20260710_ui-consistency-pass/changelog.md`):
+  `resolveRoleLayout()` now returns `'author'`, and `app/pages/author.vue` sets `layout: 'author'`.
 - `DashboardFormField.vue` / `JournalFilterBar.vue` are orphaned components with zero references.
-- The homepage's category-filter form (`index.vue`) has never actually collapsed to a single
+  Still open.
+- ~~The homepage's category-filter form (`index.vue`) has never actually collapsed to a single
   column below 1024px width — the CSS rules that would have done it were scoped to `#hero`, an id
-  that has never existed in this component's history. Pre-existing, unrelated to this migration.
+  that has never existed in this component's history. Pre-existing, unrelated to this migration.~~
+  **This bullet was wrong — see correction below.**
+
+### Correction (2026-07-10, found during the `ui-consistency-pass` session)
+
+The bullet above was based on an incomplete check: `id="hero"` was searched for only in
+`app/pages/index.vue`'s own git history, which never had it — but `#hero` is actually set on
+`app/layouts/public.vue`'s `<section>` that wraps every public page's `<slot />`. The 5
+`.journal-site #hero …` rules removed from `journal.css` and `main.css` in the "Reconcile
+`journal.css` and `journal-layout-extras.css`" section above were **not dead** — they control the
+homepage hero's mobile responsive collapse (verified: `index.vue`'s hero `<form>` has exactly the
+two children, including an `<img>`, that the deleted rules targeted) and a link-underline reset. All
+5 rules were restored in the `ui-consistency-pass` session. Lesson for next time: tracing whether a
+selector is dead requires checking the full rendered ancestor chain (layout + page), not just the
+file being edited.

@@ -103,67 +103,32 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
 
       <ReviewerAssignmentCards :assignments="summary.assignments" />
 
-      <UCard>
-        <div class="mb-5">
-          <h3 class="mb-2 text-lg font-semibold text-highlighted">
-            Review Performance
-          </h3>
-          <p class="mb-0 text-muted">
-            Your review activity and deadline signals.
-          </p>
-        </div>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-          <div class="rounded-lg bg-primary-50 p-4 text-center">
-            <h4 class="mb-1 text-sm font-semibold text-highlighted">
-              Avg. Review Time
-            </h4>
-            <p class="mb-0 text-sm text-muted">
-              {{ summary.averageReviewTimeDays }} days
-            </p>
-          </div>
-          <div class="rounded-lg bg-success-50 p-4 text-center">
-            <h4 class="mb-1 text-sm font-semibold text-highlighted">
-              Completion Rate
-            </h4>
-            <p class="mb-0 text-sm text-muted">
-              {{ summary.completionRate }}%
-            </p>
-          </div>
-          <div class="rounded-lg bg-warning-50 p-4 text-center">
-            <h4 class="mb-1 text-sm font-semibold text-highlighted">
-              This Month
-            </h4>
-            <p class="mb-0 text-sm text-muted">
-              {{ summary.completedThisMonth }} reviews
-            </p>
-          </div>
-          <div class="rounded-lg bg-error-50 p-4 text-center">
-            <h4 class="mb-1 text-sm font-semibold text-highlighted">
-              Overdue
-            </h4>
-            <p class="mb-0 text-sm text-muted">
-              {{ summary.overdueReviews }} reviews
-            </p>
-          </div>
-        </div>
-
-        <div class="mt-5 border-t border-default pt-5">
-          <h4 class="mb-3 text-sm font-semibold text-highlighted">
-            Quick Actions
-          </h4>
-          <div class="flex flex-wrap items-center gap-2">
-            <UButton to="/reviewer/pending" color="warning" variant="outline" size="sm" class="rounded-full">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <ReviewerReviewPerformanceCard
+          :average-review-time-days="summary.averageReviewTimeDays"
+          :completion-rate="summary.completionRate"
+          :completed-this-month="summary.completedThisMonth"
+          :overdue-reviews="summary.overdueReviews"
+        />
+        <UCard class="h-full">
+          <template #header>
+            <h3 class="text-base font-semibold text-highlighted">
+              Quick Actions
+            </h3>
+          </template>
+          <div class="flex flex-col gap-2">
+            <UButton to="/reviewer/pending" color="warning" variant="outline" size="xs" block>
               View Pending Reviews
             </UButton>
-            <UButton to="/notifications" color="primary" variant="outline" size="sm" class="rounded-full">
+            <UButton to="/notifications" color="primary" variant="outline" size="xs" block>
               View Notifications
             </UButton>
-            <UButton to="/reviewer/settings" color="neutral" variant="outline" size="sm" class="rounded-full">
+            <UButton to="/reviewer/settings" color="neutral" variant="outline" size="xs" block>
               Settings
             </UButton>
           </div>
-        </div>
-      </UCard>
+        </UCard>
+      </div>
     </div>
     <div class="lg:col-span-3">
       <DashboardCalendarPanel />

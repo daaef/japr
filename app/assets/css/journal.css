@@ -54,8 +54,30 @@
   transform: rotate(90deg);
 }
 
-/* Homepage category filter responsive grid (welcome.blade.php) */
+/* Homepage hero + category filter (welcome.blade.php) */
 @media (max-width: 1023px) {
+  .journal-site #hero form.grid-cols-\[300px_1fr\] {
+    grid-template-columns: 1fr;
+  }
+
+  .journal-site #hero form > div:first-child {
+    border-right-width: 1px;
+    border-radius: 15px;
+    height: auto;
+    max-height: 360px;
+  }
+
+  .journal-site #hero form > div:last-child {
+    border-radius: 15px;
+    height: auto;
+    min-height: 420px;
+    grid-template-columns: 1fr;
+  }
+
+  .journal-site #hero form > div:last-child img {
+    height: 280px;
+  }
+
   .journal-site #most_viewed .grid-cols-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;

@@ -268,7 +268,7 @@ useHead({
           <article
             v-for="comment in commentsData?.comments || []"
             :key="comment.id"
-            class="rounded-lg border border-default p-4"
+            class="rounded-2xl border border-default p-4"
           >
             <p class="text-sm font-medium text-highlighted">
               {{ comment.authorName }}

@@ -61,7 +61,7 @@ async function runCompare() {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
     <UCard>
       <AppPageHeader
         eyebrow="Version Compare"

@@ -214,7 +214,7 @@ const showRevisionForm = computed(() =>
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
     <UCard v-if="pending">
       <p class="text-muted">Loading submission...</p>
     </UCard>

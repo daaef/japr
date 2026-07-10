@@ -31,7 +31,7 @@ const { data, pending, error, refresh } = await useFetch<{
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
     <UCard>
       <AppPageHeader
         eyebrow="Version Detail"

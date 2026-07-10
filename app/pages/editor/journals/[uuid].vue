@@ -401,7 +401,7 @@ function declineManuscript() {
             v-for="reviewer in suggestionsData.suggestions"
             :key="reviewer.id"
             :model-value="selectedReviewerIds.includes(reviewer.id)"
-            class="mb-3 rounded-xl border border-default p-4"
+            class="mb-3 rounded-2xl border border-default p-4"
             @update:model-value="checked => toggleReviewerSelection(reviewer.id, checked)"
           >
             <template #label>
@@ -432,7 +432,7 @@ function declineManuscript() {
         </template>
         <div
           v-if="showDeskReviewActions"
-          class="mb-5 rounded-xl border border-warning-100 bg-warning-50 p-4"
+          class="mb-5 rounded-2xl border border-warning-100 bg-warning-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
             Desk review
@@ -455,7 +455,7 @@ function declineManuscript() {
 
         <div
           v-if="showPublicationAction"
-          class="mb-5 rounded-xl border border-success-100 bg-success-50 p-4"
+          class="mb-5 rounded-2xl border border-success-100 bg-success-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
             Publication handoff
@@ -473,7 +473,7 @@ function declineManuscript() {
 
         <div
           v-if="pendingExtensionRequests.length"
-          class="mb-5 rounded-xl border border-info-100 bg-info-50 p-4"
+          class="mb-5 rounded-2xl border border-info-100 bg-info-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
             Deadline extension requests
@@ -493,7 +493,7 @@ function declineManuscript() {
 
         <div
           v-if="showReadyForNotice"
-          class="mb-5 rounded-xl border border-primary-100 bg-primary-50 p-4"
+          class="mb-5 rounded-2xl border border-primary-100 bg-primary-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
             Managing editor notice
@@ -584,7 +584,7 @@ function declineManuscript() {
           <div
             v-for="reviewer in detailData.reviewers"
             :key="reviewer.id"
-            class="mb-3 rounded-xl border border-default p-4"
+            class="mb-3 rounded-2xl border border-default p-4"
           >
             <div class="flex items-center justify-between gap-3">
               <p class="font-semibold text-toned">{{ reviewer.fullname }}</p>
@@ -626,7 +626,7 @@ function declineManuscript() {
           <div
             v-for="review in reviewBundle.reviews"
             :key="review.id"
-            class="mb-3 rounded-xl border border-default p-4"
+            class="mb-3 rounded-2xl border border-default p-4"
           >
             <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>

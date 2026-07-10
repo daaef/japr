@@ -56,52 +56,36 @@ function relativeTime(value: string) {
 </script>
 
 <template>
-  <div class="py-6">
-    <div class="border-b border-default pb-5 sm:flex w-full sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold text-highlighted">
-        My Submissions
-      </h3>
-      <span class="mt-2 sm:mt-0 text-sm text-muted">
+  <div class="space-y-6">
+    <div class="flex w-full flex-col gap-1 border-b border-default pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <AppPageHeader title="My Submissions" />
+      <span class="text-sm text-muted">
         {{ displayName }}
       </span>
     </div>
 
     <UCard
       v-if="pending"
-      class="mt-8 text-center"
+      class="text-center"
     >
       <p class="text-sm text-muted">
         Loading submissions…
       </p>
     </UCard>
 
-    <div
+    <AppEmptyState
       v-else-if="!data?.submissions.length"
-      class="mt-8 text-center py-12"
-    >
-      <UIcon
-        name="i-lucide-file-text"
-        class="mx-auto size-12 text-dimmed"
-      />
-      <h3 class="mt-2 text-sm font-medium text-highlighted">
-        No manuscripts submitted
-      </h3>
-      <p class="mt-1 text-sm text-muted">
-        Get started by submitting your first manuscript.
-      </p>
-      <UButton
-        to="/author/submit"
-        color="primary"
-        icon="i-lucide-plus"
-        class="mt-6"
-      >
-        Submit Manuscript
-      </UButton>
-    </div>
+      icon="i-lucide-file-text"
+      title="No manuscripts submitted"
+      description="Get started by submitting your first manuscript."
+      action-label="Submit Manuscript"
+      action-to="/author/submit"
+      action-icon="i-lucide-plus"
+    />
 
     <div
       v-else
-      class="mt-8 space-y-6"
+      class="space-y-6"
     >
       <UCard
         v-for="submission in data.submissions"

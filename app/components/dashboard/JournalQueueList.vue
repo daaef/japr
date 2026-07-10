@@ -61,11 +61,9 @@ const columns = [
     :ui="{ body: 'p-0 sm:p-0' }"
   >
     <template #header>
-      <div class="mb-0 flex items-center justify-between flex-wrap gap-2">
-        <h4 class="mb-0">
-          {{ title }} ({{ data?.meta.total ?? 0 }})
-        </h4>
-      </div>
+      <h4 class="text-base font-semibold text-highlighted mb-0">
+        {{ title }} ({{ data?.meta.total ?? 0 }})
+      </h4>
     </template>
     <div
       v-if="error"
@@ -86,12 +84,11 @@ const columns = [
       >
         Loading manuscripts...
       </div>
-      <p
+      <AppEmptyState
         v-else-if="!data?.journals.length"
-        class="text-center py-6 text-xs text-muted"
-      >
-        {{ emptyMessage ?? 'No manuscripts in this queue.' }}
-      </p>
+        compact
+        :title="emptyMessage ?? 'No manuscripts in this queue.'"
+      />
       <UTable
         v-else
         :data="data?.journals ?? []"
@@ -106,7 +103,7 @@ const columns = [
               />
             </div>
             <div>
-              <h6 class="mb-0">
+              <h6 class="text-sm font-medium text-highlighted mb-0">
                 {{ row.original.title }}
               </h6>
               <span class="text-xs text-muted">{{ formatDate(row.original.createdAt ?? row.original.updatedAt) }}</span>

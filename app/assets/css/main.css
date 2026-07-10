@@ -45,6 +45,7 @@ body {
 }
 
 /* Public site: neutralize Nuxt UI link defaults inside journal marketing shell */
-.journal-site header a {
+.journal-site header a,
+.journal-site #hero a:not(.btn):not([class*="bg-"]) {
   text-decoration: none;
 }

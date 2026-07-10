@@ -15,14 +15,12 @@ const firstName = computed(() => {
 </script>
 
 <template>
-  <div class="py-6">
-    <div class="border-b border-gray-200 pb-5 sm:flex w-full sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold text-gray-900">
-        Settings
-      </h3>
-      <h4 class="mt-2 sm:mt-0 text-base text-gray-700">
+  <div class="space-y-6">
+    <div class="flex w-full flex-col gap-1 border-b border-default pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <AppPageHeader title="Settings" />
+      <span class="text-sm text-muted">
         {{ firstName }}'s Dashboard
-      </h4>
+      </span>
     </div>
 
     <SettingsForm

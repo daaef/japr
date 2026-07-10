@@ -126,7 +126,7 @@ const stats = computed(() => data.value)
             v-for="log in stats.recentHighRisk"
             :key="log.id"
             :to="`/admin/audit/${log.id}`"
-            class="block rounded-lg border border-default p-3 hover:bg-primary-50"
+            class="block rounded-2xl border border-default p-3 hover:bg-primary-50"
           >
             <div class="flex items-center justify-between gap-2">
               <span class="font-semibold capitalize text-highlighted">{{ log.action.replaceAll('_', ' ') }}</span>

@@ -61,18 +61,17 @@ async function submit() {
 </script>
 
 <template>
-  <section class="max-w-2xl mx-auto py-6">
-    <div class="border-b border-gray-200 pb-5 mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">
-        Contact us
-      </h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Reach the editorial team with questions about submissions, access, or partnerships.
-      </p>
+  <section class="max-w-2xl mx-auto space-y-6">
+    <div class="border-b border-default pb-5">
+      <AppPageHeader
+        title="Contact us"
+        description="Reach the editorial team with questions about submissions, access, or partnerships."
+      />
     </div>
 
-    <form
-      class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6"
+    <UCard
+      as="form"
+      :ui="{ body: 'space-y-6' }"
       @submit.prevent="submit"
     >
       <div class="grid gap-4 sm:grid-cols-2">
@@ -165,6 +164,6 @@ async function submit() {
       >
         {{ loading ? 'Sending...' : 'Send message' }}
       </UButton>
-    </form>
+    </UCard>
   </section>
 </template>

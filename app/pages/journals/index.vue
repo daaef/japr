@@ -139,10 +139,8 @@ const page = computed(() => data.value?.meta.page ?? 1)
 
 <template>
   <div>
-    <div class="border-b border-gray-200 pb-5 sm:flex w-full sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold leading-6 text-gray-900">
-        Journals
-      </h3>
+    <div class="border-b border-default pb-5 sm:flex w-full sm:items-center sm:justify-between">
+      <AppPageHeader title="Journals" />
       <div>
         <form
           class="flex rounded-lg border min-w-full"
@@ -224,12 +222,14 @@ const page = computed(() => data.value?.meta.page ?? 1)
           />
         </div>
 
-        <div
+        <UCard
           v-if="pending"
-          class="text-sm text-gray-500 py-6"
+          class="text-center"
         >
-          Loading journals...
-        </div>
+          <p class="text-sm text-muted">
+            Loading journals…
+          </p>
+        </UCard>
 
         <div
           v-else
@@ -242,7 +242,7 @@ const page = computed(() => data.value?.meta.page ?? 1)
           />
           <p
             v-if="data.journals.length === 0"
-            class="text-sm text-gray-500"
+            class="text-sm text-muted"
           >
             No published journals at the moment
           </p>
@@ -252,7 +252,7 @@ const page = computed(() => data.value?.meta.page ?? 1)
           v-if="data.meta.total > 0"
           class="flex justify-between items-center mt-6"
         >
-          <div class="text-sm text-gray-700">
+          <div class="text-sm text-muted">
             Showing {{ ((data.meta.page - 1) * data.meta.pageSize) + 1 }}
             to {{ Math.min(data.meta.page * data.meta.pageSize, data.meta.total) }}
             of {{ data.meta.total }} results

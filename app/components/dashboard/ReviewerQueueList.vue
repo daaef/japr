@@ -62,7 +62,7 @@ const columns = [
     :ui="{ body: 'p-0 sm:p-0' }"
   >
     <template #header>
-      <h4 class="mb-0">
+      <h4 class="text-base font-semibold text-highlighted mb-0">
         {{ title }} ({{ data?.meta.total ?? 0 }})
       </h4>
     </template>
@@ -85,19 +85,18 @@ const columns = [
       >
         Loading assignments...
       </div>
-      <p
+      <AppEmptyState
         v-else-if="!reviews.length"
-        class="text-center py-6 text-xs text-muted"
-      >
-        {{ emptyMessage ?? 'No assignments in this queue.' }}
-      </p>
+        compact
+        :title="emptyMessage ?? 'No assignments in this queue.'"
+      />
       <UTable
         v-else
         :data="reviews"
         :columns="columns"
       >
         <template #journalTitle-cell="{ row }">
-          <h6 class="mb-0">
+          <h6 class="text-sm font-medium text-highlighted mb-0">
             {{ row.original.journalTitle }}
           </h6>
           <div class="flex gap-2 mt-2">
