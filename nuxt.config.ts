@@ -17,9 +17,9 @@ export default defineNuxtConfig({
 
   // Force light mode for the Nuxt UI migration. Color mode was previously unconfigured, so
   // @nuxtjs/color-mode (bundled by @nuxt/ui) defaulted to `preference: 'system'` — an OS-dark
-  // visitor got a broken half-dark UI (only 1 `dark:` variant exists app-wide; the ported
-  // Bootstrap CSS uses hardcoded light hex that never flips). Whether the product supports dark
-  // mode is a redesign (Track 2) decision; until then, pin light.
+  // visitor got a broken half-dark UI (only 1 `dark:` variant exists app-wide; the legacy
+  // theme's ported CSS used hardcoded light hex that never flips). Whether the product supports
+  // dark mode is a redesign (Track 2) decision; until then, pin light.
   colorMode: {
     preference: 'light',
     fallback: 'light'
@@ -27,8 +27,7 @@ export default defineNuxtConfig({
 
   css: [
     '~/assets/css/main.css',
-    '~/assets/css/journal.css',
-    '~/assets/css/journal-layout-extras.css'
+    '~/assets/css/journal.css'
   ],
 
   runtimeConfig: {

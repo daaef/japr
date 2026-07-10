@@ -37,48 +37,6 @@
   --color-gold-900: #6b3617;
   --color-gold-950: #3e1c09;
 
-  /*
-   * Legacy Tailwind utility ramps still referenced by un-migrated templates
-   * (`*-primary-*` in 22 files, `*-secondary-*` in 7, `*-orange-*` in 7). Re-pointed to
-   * the brand so those pages stay on-brand until the W1–W4 sweep replaces the literals;
-   * delete these blocks once the sweep is done. (`rose` had 0 usages — removed.)
-   */
-  --color-primary-50: #fcf4f5;
-  --color-primary-100: #f8e7e9;
-  --color-primary-200: #f0ccd2;
-  --color-primary-300: #e2a6b0;
-  --color-primary-400: #cd7382;
-  --color-primary-500: #9a2f42;
-  --color-primary-600: #862a3a;
-  --color-primary-700: #6f2530;
-  --color-primary-800: #5f232c;
-  --color-primary-900: #522028;
-  --color-primary-950: #2e0e14;
-
-  --color-secondary-50: #fdf8ec;
-  --color-secondary-100: #f9edc9;
-  --color-secondary-200: #f2d88d;
-  --color-secondary-300: #ebbf54;
-  --color-secondary-400: #e5a833;
-  --color-secondary-500: #d5871b;
-  --color-secondary-600: #bd6c12;
-  --color-secondary-700: #9c5014;
-  --color-secondary-800: #7f4017;
-  --color-secondary-900: #6b3617;
-  --color-secondary-950: #3e1c09;
-
-  --color-orange-50: #fcf4f5;
-  --color-orange-100: #f8e7e9;
-  --color-orange-200: #f0ccd2;
-  --color-orange-300: #e2a6b0;
-  --color-orange-400: #cd7382;
-  --color-orange-500: #9a2f42;
-  --color-orange-600: #862a3a;
-  --color-orange-700: #6f2530;
-  --color-orange-800: #5f232c;
-  --color-orange-900: #522028;
-  --color-orange-950: #2e0e14;
-
   --container-center: true;
 }
 
@@ -87,11 +45,6 @@ body {
 }
 
 /* Public site: neutralize Nuxt UI link defaults inside journal marketing shell */
-.journal-site header a,
-.journal-site #hero a:not(.btn):not([class*="bg-"]) {
+.journal-site header a {
   text-decoration: none;
-}
-
-.journal-site a.bg-secondary-800:visited {
-  color: white !important;
 }

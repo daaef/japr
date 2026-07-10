@@ -22,7 +22,7 @@ defineProps<{
         <span
           v-if="index > 0"
           aria-hidden="true"
-          class="text-orange-300"
+          class="text-dimmed"
         >
           /
         </span>

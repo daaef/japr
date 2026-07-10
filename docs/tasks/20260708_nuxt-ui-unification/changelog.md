@@ -447,3 +447,131 @@ one) — flagging for a deliberate decision: wire a page to it, or delete it in 
 
 W5 is now closed. Next: W6 cleanup (utility sweep → remove Preline → delete dead assets → reconcile
 CSS → DoD grep = 0 → `pnpm build`).
+
+## W6 — Cleanup + Definition of Done — landed 2026-07-10
+
+### Theme-utility sweep
+
+Re-ran the app-wide legacy-utility grep from §7 of the continuation prompt (`w-24/40/44/48`,
+`gap-8/12/16`, `text-13/15`, `py-24/40`, `flex-between`, `rounded-circle`, `bg-main-*`, etc.) and
+found 9 candidate hits in `.vue` files. Rather than converting on sight, traced each one via
+`git log -L` (was it touched by W1–W5, or original/never-migrated code?) and its actual render
+path (which layout wraps it — did that layout ever load the legacy `public/assets/css/main.css`
+sheet?). Result: **zero fixes needed** — every hit was already correct:
+
+- `SimpleTrendChart.vue`'s `h-40` and `admin/audit/index.vue`'s `w-24` are real Tailwind values
+  (verified functionally: the chart's bars scale up to 120px and need a ≥140px container; the
+  "days to keep" number input needs to fit 3 digits) landed in W4/W5, days after `main.css` had
+  already been dropped from the dashboard layouts' `useHead` — the developer was working against
+  Tailwind's real scale, not the legacy px one.
+- `JournalFooter.vue`, `index.vue`, `JournalNavbar.vue`, `author/submit.vue`, `JournalFilterBar.vue`
+  all render under `public`/`auth` layouts, which — per `git show` of the very first commit — never
+  linked the legacy theme sheet in the first place (only the 4 dashboard layouts did, until W5
+  removed it). Their `gap-8`/`mt-12`/`w-48`/`w-40` etc. were always real Tailwind values.
+- The shared dashboard components named in the W1/W5 "tracked follow-up" notes
+  (`DashboardStatCard`, `ReviewerAssignmentCards`, `AdminHealthCard`, the queue lists, etc.) are
+  already clean — confirmed W5's prerequisite fix converted them as claimed.
+
+**Found, not fixed:** `DashboardFormField.vue` and `JournalFilterBar.vue` (the two components W1/W3
+migrated) have **zero references anywhere in `app/`** — both are orphaned dead code, not wired into
+any page. Left as-is (deleting or wiring up a component is a product decision, not a utility-class
+fix) — flagging for a decision alongside the existing `author.vue`-layout-unreachable item from W5.
+
+### Remove Preline
+
+Deleted `app/plugins/preline.client.ts` (confirmed zero other references — no `tailwind.config`
+exists to hook a Preline plugin into, Tailwind v4 is CSS-only) and the `preline` entry from
+`package.json`; `pnpm install` updated the lockfile.
+
+### Delete dead assets
+
+Verified zero references (`grep` across `app/` and `nuxt.config.ts`) before deleting each set:
+
+- `app/assets/journal/sass/**` (73 files) — the SCSS source for the legacy theme.
+- **`public/assets/sass/**` (63 files) — not on the original W6 file list, discovered while
+  auditing `public/assets/`: the compiled `public/assets/css/main.css` this SCSS built into was
+  already dead, making the source dead too.** Same class of orphaned legacy-theme asset as the
+  planned deletions, so removed in the same pass.
+- 15 dead scripts in `public/assets/js/` (jQuery, Bootstrap bundle, phosphor-icon, main.js,
+  apexcharts, calendar, slick, plyr, jquery-ui, jquery-jvectormap ×2, counterup, editor-quill,
+  file-upload, full-calendar).
+- 12 dead stylesheets in `public/assets/css/` (bootstrap.min.css, main.css + .map,
+  journal-dashboard-overrides.css, apexcharts, calendar, editor-quill, file-upload, full-calendar,
+  jquery-ui, jquery-jvectormap, plyr, slick).
+
+### Reconcile `journal.css` + `journal-layout-extras.css`
+
+Went selector-by-selector (all rules are scoped `.journal-site …`) and checked each target
+class/id against live template usage:
+
+- **`journal.css`**: kept the font-family rule, the category-tree rules (`.sidebar`, `.tree`,
+  `.category/subcategory/subsubcategory-*`, `.caret-icon`, `.collapsed …`) — all live, matching
+  `app/pages/index.vue`'s hand-rolled tree (deliberately left native per the W4 changelog) — and
+  the `#most_viewed`/`#stats` responsive-grid rules (both ids exist in `index.vue`). Removed:
+  `.category-label .caret-icon.down` (dead — `.caret-icon` isn't nested inside `.category-label`
+  in the live markup, and no `.down` class exists anywhere), the entire `#hero`-scoped
+  media-query block (4 rules — **`id="hero"` does not exist anywhere in `index.vue`'s git
+  history**, so these were dead since the very first commit, not something this migration broke),
+  `.masonry-item`, `.checker`/`.hello`, `.meta-label` (already known dead per the W4 changelog),
+  and the entire `.form-control`/`.form-select`/`.form-check-*`/`.card*`/`.btn*` block (zero
+  remaining raw-Bootstrap usages anywhere).
+- **`journal-layout-extras.css`**: every rule targets a class with zero live usages
+  (`.settings-form` — `SettingsForm.vue` never applies that wrapper class; `.table`/`.table-striped`/
+  `.action-btn*` — all tables converted to `UTable` in W4-tables; `.swiper-wrapper`/`.mySwiper`/
+  `.teamswiper` — no matching classes exist, `editorial/index.vue`'s `swiper-slide` markup is inert
+  and unstyled by this sheet already). Reconciled to **fully empty** → deleted the file and dropped
+  it from `nuxt.config.ts`'s `css: []`.
+- **`main.css`**: removed the `.journal-site #hero a:not(.btn)…` selector (same dead `#hero`, see
+  above) and `.journal-site a.bg-secondary-800:visited` (zero `bg-secondary-800` usages anywhere);
+  kept `.journal-site header a` (live — `JournalNavbar.vue` has a `<header>`).
+
+### Drop the legacy `--color-primary-*`/`--color-secondary-*`/`--color-orange-*` ramps
+
+Before deleting, found two files with live literal `-orange-` utility classes that predate the
+brand rename and were **missed by every prior workstream**:
+
+- **`app/pages/author/submissions/index.vue`** — not on the original W4 file list at all (its
+  sibling `author/submissions/[id].vue` was converted; this one, the submissions *list* page, was
+  not). Fully pre-migration: raw `<i class="ph ph-eye">`/`<i class="ph ph-upload-simple">`
+  (silently rendering no icon since W5 removed the icon-font loader from `useHead` — a pre-existing
+  gap this session's asset deletion didn't cause), inline SVGs, plain `<article>`/styled-`<NuxtLink>`
+  in place of `UCard`/`UButton`, hardcoded `bg-gray-*`/`bg-orange-*`/`bg-primary-600` literals.
+  Converted in full to match the sibling page's established pattern: `UCard` (body padding zeroed
+  via `:ui="{ body: 'p-0 sm:p-0' }"` for the bordered-header layout, verified against
+  `Card.vue.d.ts`'s `data-slot="body"`), `UButton` (`icon="i-lucide-eye"`/`"i-lucide-upload"`, both
+  verified in the installed `@iconify-json/lucide` set and already in `icon-map.md`), `UBadge` for
+  the category/country/reviewer-count/"Action Required" tags (orange → `color="warning"`, matching
+  the sibling page's warning-toned change-request styling), `UIcon` for the empty state
+  (`i-lucide-file-text`) and its CTA (`i-lucide-plus`). All `$fetch`/`formatDate`/`relativeTime`
+  logic untouched.
+- **`Breadcrumbs.vue`**: one-line swap, `text-orange-300` → `text-dimmed` (the breadcrumb `/`
+  separator glyph).
+
+With both fixed, verified **empirically** (not assumed) that the manual `--color-primary-*`/
+`--color-secondary-*` ramp was fully redundant before deleting it: built the app, started the
+production server, and traced the actual served CSS variable chain — `--ui-color-primary-600:
+var(--color-maroon-600)` and `--ui-color-secondary-800: var(--color-gold-800)` are both generated
+by `@nuxt/ui`'s own runtime from `app.config.ts`'s `ui.colors` alias, independent of the deleted
+block, so raw utility classes like `bg-primary-600`/`bg-secondary-800` resolve to the same brand
+hex either way. Removed all three ramp blocks (`primary`/`secondary`/`orange`) and their comment
+from `main.css`.
+
+### Definition of Done
+
+`grep -rniE "bootstrap|jquery|toastr|preline" app/ nuxt.config.ts package.json` → **0 hits** (after
+rewording two explanatory code comments that mentioned "jQuery"/"Bootstrap" only as historical
+context, not as live references — `useDashboardNavigation.ts`, `nuxt.config.ts`). Verified:
+`nuxt typecheck` clean · `eslint` clean (1 pre-existing, intentional `v-html` warning, unrelated) ·
+`pnpm test` 53/53 · `pnpm build` green.
+
+**Track 1 (Nuxt UI unification) is now complete.** Track 2 (the full visual redesign) remains
+gated behind separate, explicit sign-off — not started.
+
+### Discovered, not fixed (carried forward)
+
+- `app/layouts/author.vue` is still unreachable (from W5) — `resolveRoleLayout()` sends the
+  `author` role to `public`, not `author`.
+- `DashboardFormField.vue` / `JournalFilterBar.vue` are orphaned components with zero references.
+- The homepage's category-filter form (`index.vue`) has never actually collapsed to a single
+  column below 1024px width — the CSS rules that would have done it were scoped to `#hero`, an id
+  that has never existed in this component's history. Pre-existing, unrelated to this migration.

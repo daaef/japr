@@ -27,8 +27,8 @@ export function useDashboardNavigation() {
   }
 
   // Sidebar dropdown-group accordion: auto-opens whenever the current route
-  // enters the group (fixes the old jQuery version never re-evaluating on
-  // client-side navigation), while still letting the user manually collapse
+  // enters the group (fixes the old script-driven version never re-evaluating
+  // on client-side navigation), while still letting the user manually collapse
   // or reopen it.
   function useSidebarGroup(childPaths: string[]) {
     const isGroupActive = computed(() => childPaths.some(path => isActivePath(path)))
