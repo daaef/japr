@@ -4,7 +4,7 @@ import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 
 const { data: currentUser, refresh } = useCurrentUser()
-const { dashboardLinkClass, dashboardSubLinkClass, linkClass, useSidebarGroup } = useDashboardNavigation()
+const { dashboardLinkClassDark, dashboardSubLinkClassDark, linkClassDark, useSidebarGroup } = useDashboardNavigation()
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
   return name.split(/\s+/)[0] ?? ''
@@ -89,12 +89,12 @@ const journalsGroup = useSidebarGroup([
     />
 
     <aside
-      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-default bg-default transition-transform duration-200 xl:translate-x-0"
+      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col bg-brick-950 transition-transform duration-200 xl:translate-x-0"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <button
         type="button"
-        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-default text-muted hover:border-primary hover:bg-primary hover:text-white xl:hidden"
+        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-white/20 text-brick-300 hover:border-primary hover:bg-primary hover:text-white xl:hidden"
         aria-label="Close sidebar"
         @click="closeSidebar"
       >
@@ -103,13 +103,21 @@ const journalsGroup = useSidebarGroup([
 
       <NuxtLink
         to="/editor"
-        class="sticky top-0 z-10 block bg-default px-5 pb-3 pt-6 text-center"
+        class="sticky top-0 z-10 flex items-center gap-2.5 bg-brick-950 px-6 pb-5 pt-7"
       >
         <img
-          class="mx-auto h-10 w-auto"
+          class="h-11 w-auto shrink-0 rounded-full bg-taupe-50 p-1.5"
           src="/images/japr-logo.png"
           alt="Logo"
         >
+        <div>
+          <p class="text-sm font-bold tracking-wide text-white">
+            JAPR
+          </p>
+          <p class="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-brick-400">
+            Editor Workspace
+          </p>
+        </div>
       </NuxtLink>
 
       <nav class="flex-1 overflow-y-auto px-4 pb-6">
@@ -118,7 +126,7 @@ const journalsGroup = useSidebarGroup([
             <NuxtLink
               to="/editor"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/editor', true)"
+              :class="dashboardLinkClassDark('/editor', true)"
             >
               <UIcon
                 name="i-lucide-layout-grid"
@@ -132,7 +140,7 @@ const journalsGroup = useSidebarGroup([
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClass(journalsGroup.isGroupActive)"
+              :class="linkClassDark(journalsGroup.isGroupActive)"
               :aria-expanded="journalsGroup.open"
               @click="journalsGroup.toggle"
             >
@@ -149,166 +157,148 @@ const journalsGroup = useSidebarGroup([
             </button>
             <ul
               v-show="journalsGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-default ps-4"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
             >
               <li>
                 <NuxtLink
                   to="/editor/submissions"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/submissions')"
+                  :class="dashboardSubLinkClassDark('/editor/submissions')"
                 >
                   <span>Pending Review</span>
-                  <UBadge
+                  <span
                     v-if="summary.pendingQueue"
-                    color="warning"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.pendingQueue }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/under-peer-review"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/under-peer-review')"
+                  :class="dashboardSubLinkClassDark('/editor/under-peer-review')"
                 >
                   <span>Under Peer Review</span>
-                  <UBadge
+                  <span
                     v-if="summary.underPeerReview"
-                    color="info"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.underPeerReview }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/in-progress"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/in-progress')"
+                  :class="dashboardSubLinkClassDark('/editor/in-progress')"
                 >
                   <span>In Progress</span>
-                  <UBadge
+                  <span
                     v-if="summary.inProgress"
-                    color="primary"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.inProgress }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/reviews"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/reviews')"
+                  :class="dashboardSubLinkClassDark('/editor/reviews')"
                 >
                   <span>Reviewed</span>
-                  <UBadge
+                  <span
                     v-if="summary.reviewed"
-                    color="success"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.reviewed }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li v-if="showReadyForNotice">
                 <NuxtLink
                   to="/editor/ready-for-notice"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/ready-for-notice')"
+                  :class="dashboardSubLinkClassDark('/editor/ready-for-notice')"
                 >
                   <span>Ready for Notice</span>
-                  <UBadge
+                  <span
                     v-if="summary.readyForNotice"
-                    color="primary"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.readyForNotice }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/approved"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/approved')"
+                  :class="dashboardSubLinkClassDark('/editor/approved')"
                 >
                   <span>Approved</span>
-                  <UBadge
+                  <span
                     v-if="summary.approved"
-                    color="success"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.approved }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/published"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/published')"
+                  :class="dashboardSubLinkClassDark('/editor/published')"
                 >
                   <span>Published</span>
-                  <UBadge
+                  <span
                     v-if="summary.published"
-                    color="success"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.published }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/revision-requested"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/revision-requested')"
+                  :class="dashboardSubLinkClassDark('/editor/revision-requested')"
                 >
                   <span>Revision Requested</span>
-                  <UBadge
+                  <span
                     v-if="summary.changesRequested"
-                    color="warning"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.changesRequested }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/declined"
                   class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClass('/editor/declined')"
+                  :class="dashboardSubLinkClassDark('/editor/declined')"
                 >
                   <span>Declined</span>
-                  <UBadge
+                  <span
                     v-if="summary.declined"
-                    color="error"
-                    variant="subtle"
-                    size="sm"
+                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
                   >
                     {{ summary.declined }}
-                  </UBadge>
+                  </span>
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
                   to="/editor/copy-desk"
                   class="block text-sm"
-                  :class="dashboardSubLinkClass('/editor/copy-desk')"
+                  :class="dashboardSubLinkClassDark('/editor/copy-desk')"
                 >
                   Copy Desk
                 </NuxtLink>
@@ -316,15 +306,15 @@ const journalsGroup = useSidebarGroup([
             </ul>
           </li>
 
-          <li class="border-t border-default pt-5">
-            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-dimmed">Settings</span>
+          <li class="border-t border-white/10 pt-5">
+            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Settings</span>
           </li>
 
           <li>
             <NuxtLink
               to="/editor/notifications"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/editor/notifications')"
+              :class="dashboardLinkClassDark('/editor/notifications')"
             >
               <UIcon
                 name="i-lucide-bell"
@@ -338,7 +328,7 @@ const journalsGroup = useSidebarGroup([
             <NuxtLink
               to="/editor/notifications/preferences"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/editor/notifications/preferences')"
+              :class="dashboardLinkClassDark('/editor/notifications/preferences')"
             >
               <UIcon
                 name="i-lucide-sliders-horizontal"
@@ -352,7 +342,7 @@ const journalsGroup = useSidebarGroup([
             <NuxtLink
               to="/editor/settings"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/editor/settings')"
+              :class="dashboardLinkClassDark('/editor/settings')"
             >
               <UIcon
                 name="i-lucide-settings"

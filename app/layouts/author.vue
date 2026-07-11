@@ -2,25 +2,23 @@
 import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 
-const route = useRoute()
 const searchQuery = ref('')
 const { data: currentUser, refresh } = useCurrentUser()
-const { dashboardLinkClass, dashboardSubLinkClass, linkClass, useSidebarGroup } = useDashboardNavigation()
+const { isExactPath, isActivePath } = useDashboardNavigation()
 
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
   return name.split(/\s+/)[0] ?? ''
 })
 
-// Kept alongside useDashboardNavigation()'s isExactPath: this is the one
-// nav item (Dashboard) that predates the shared composable and already
-// behaves identically, so it's left as-is rather than churned for its own sake.
-function isActive(path: string) {
-  if (path === '/author') {
-    return route.path === '/author' || route.path === '/author/'
-  }
-
-  return route.path === path || route.path.startsWith(`${path}/`)
+// Flat top-nav (JAPR Author Dashboard.dc.html) has no sub-menus, so these link
+// classes are simpler than useDashboardNavigation()'s rounded-pill/dark-sidebar
+// shapes — kept local rather than adding a third one-off variant to the composable.
+function navLinkClass(path: string, exact = false) {
+  const active = exact ? isExactPath(path) : isActivePath(path)
+  return active
+    ? 'text-brick-500 font-bold'
+    : 'text-taupe-600 font-semibold hover:text-brick-500'
 }
 
 async function submitSearch() {
@@ -44,221 +42,64 @@ useHead({
   title: 'JAPR Website | Dashboard'
 })
 
-const sidebarOpen = ref(false)
-function openSidebar() {
-  sidebarOpen.value = true
-}
-function closeSidebar() {
-  sidebarOpen.value = false
-}
-
-const manuscriptsGroup = useSidebarGroup(['/author/submit', '/author/submissions'])
+const mobileNavOpen = ref(false)
 </script>
 
 <template>
-  <div class="relative flex min-h-screen">
-    <div
-      v-if="sidebarOpen"
-      class="fixed inset-0 z-40 bg-gray-900/50 xl:hidden"
-      @click="closeSidebar"
-    />
+  <div class="flex min-h-screen flex-col bg-taupe-50">
+    <header class="sticky top-0 z-30 border-b border-taupe-200 bg-white">
+      <div class="mx-auto flex max-w-285 items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-8">
+          <NuxtLink to="/author">
+            <img
+              class="h-10 w-auto"
+              src="/images/japr-logo.png"
+              alt="JAPR"
+            >
+          </NuxtLink>
 
-    <aside
-      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-default bg-default transition-transform duration-200 xl:translate-x-0"
-      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-    >
-      <button
-        type="button"
-        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-default text-muted hover:border-primary hover:bg-primary hover:text-white xl:hidden"
-        aria-label="Close sidebar"
-        @click="closeSidebar"
-      >
-        <UIcon name="i-lucide-x" />
-      </button>
-
-      <NuxtLink
-        to="/author"
-        class="sticky top-0 z-10 block bg-default px-5 pb-3 pt-6 text-center"
-      >
-        <img
-          class="mx-auto h-10 w-auto"
-          src="/images/japr-logo.png"
-          alt="Logo"
-        >
-      </NuxtLink>
-
-      <nav class="flex-1 overflow-y-auto px-4 pb-6">
-        <ul class="flex flex-col gap-3">
-          <li>
+          <nav class="hidden items-center gap-6 lg:flex">
             <NuxtLink
               to="/author"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="linkClass(isActive('/author'))"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author', true)"
             >
-              <UIcon
-                name="i-lucide-layout-grid"
-                class="text-xl"
-              />
-              <span>Dashboard</span>
+              Dashboard
             </NuxtLink>
-          </li>
-
-          <li>
-            <button
-              type="button"
-              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClass(manuscriptsGroup.isGroupActive)"
-              :aria-expanded="manuscriptsGroup.open"
-              @click="manuscriptsGroup.toggle"
-            >
-              <UIcon
-                name="i-lucide-book-open"
-                class="text-xl"
-              />
-              <span>Manage Manuscripts</span>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="ms-auto shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-90': manuscriptsGroup.open }"
-              />
-            </button>
-            <ul
-              v-show="manuscriptsGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-default ps-4"
-            >
-              <li>
-                <NuxtLink
-                  to="/author/submit"
-                  class="block text-sm"
-                  :class="dashboardSubLinkClass('/author/submit')"
-                >
-                  Submit Manuscript
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/author/submissions"
-                  class="block text-sm"
-                  :class="dashboardSubLinkClass('/author/submissions')"
-                >
-                  My Submissions
-                </NuxtLink>
-              </li>
-            </ul>
-          </li>
-
-          <li>
             <NuxtLink
-              to="/journals"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/journals')"
+              to="/author/submissions"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author/submissions')"
             >
-              <UIcon
-                name="i-lucide-graduation-cap"
-                class="text-xl"
-              />
-              <span>Categories</span>
+              My Manuscripts
             </NuxtLink>
-          </li>
-
-          <li>
             <NuxtLink
               to="/author/collections"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/author/collections')"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author/collections')"
             >
-              <UIcon
-                name="i-lucide-bookmark"
-                class="text-xl"
-              />
-              <span>My Collections</span>
+              Collections
             </NuxtLink>
-          </li>
-
-          <li class="border-t border-default pt-5">
-            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-dimmed">Settings</span>
-          </li>
-
-          <li>
-            <NuxtLink
-              to="/notifications"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/notifications')"
-            >
-              <UIcon
-                name="i-lucide-bell"
-                class="text-xl"
-              />
-              <span>Notifications</span>
-            </NuxtLink>
-          </li>
-
-          <li>
-            <NuxtLink
-              to="/notifications/preferences"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/notifications/preferences')"
-            >
-              <UIcon
-                name="i-lucide-sliders-horizontal"
-                class="text-xl"
-              />
-              <span>Notification Preferences</span>
-            </NuxtLink>
-          </li>
-
-          <li>
-            <NuxtLink
-              to="/author/interests"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/author/interests')"
-            >
-              <UIcon
-                name="i-lucide-target"
-                class="text-xl"
-              />
-              <span>Research Interests</span>
-            </NuxtLink>
-          </li>
-
-          <li>
             <NuxtLink
               to="/author/settings"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/author/settings')"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author/settings')"
             >
-              <UIcon
-                name="i-lucide-settings"
-                class="text-xl"
-              />
-              <span>Account Settings</span>
+              Settings
             </NuxtLink>
-          </li>
-        </ul>
-      </nav>
-    </aside>
+          </nav>
+        </div>
 
-    <div class="flex min-h-screen flex-1 flex-col bg-primary-50 xl:ms-64">
-      <div class="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-default bg-default px-4 py-4 sm:px-6">
-        <div class="flex items-center gap-4">
-          <UButton
-            icon="i-lucide-menu"
-            color="neutral"
-            variant="ghost"
-            class="xl:hidden"
-            aria-label="Open sidebar"
-            @click="openSidebar"
-          />
-
+        <div class="flex items-center gap-3">
           <form
-            class="hidden w-80 sm:block"
+            class="hidden w-56 xl:block"
             @submit.prevent="submitSearch"
           >
             <UInput
               v-model="searchQuery"
               type="search"
               placeholder="Search journals..."
-              size="md"
+              size="sm"
               class="w-full"
             >
               <template #leading>
@@ -272,10 +113,16 @@ const manuscriptsGroup = useSidebarGroup(['/author/submit', '/author/submissions
               </template>
             </UInput>
           </form>
-        </div>
 
-        <div class="flex items-center gap-4">
           <NotificationDropdown />
+
+          <UButton
+            to="/author/submit"
+            color="primary"
+            class="hidden rounded-full sm:inline-flex"
+          >
+            Submit Manuscript
+          </UButton>
 
           <DashboardProfileDropdown
             :display-name="displayName"
@@ -283,18 +130,72 @@ const manuscriptsGroup = useSidebarGroup(['/author/submit', '/author/submissions
             settings-path="/author/settings"
             @sign-out="signOut"
           />
+
+          <UButton
+            icon="i-lucide-menu"
+            color="neutral"
+            variant="ghost"
+            class="lg:hidden"
+            aria-label="Open navigation"
+            @click="mobileNavOpen = !mobileNavOpen"
+          />
         </div>
       </div>
 
-      <main class="flex-1 px-4 py-6 sm:px-6">
-        <slot />
-      </main>
+      <nav
+        v-if="mobileNavOpen"
+        class="flex flex-col gap-1 border-t border-taupe-200 px-4 py-3 lg:hidden"
+      >
+        <NuxtLink
+          to="/author"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author', true)"
+          @click="mobileNavOpen = false"
+        >
+          Dashboard
+        </NuxtLink>
+        <NuxtLink
+          to="/author/submissions"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author/submissions')"
+          @click="mobileNavOpen = false"
+        >
+          My Manuscripts
+        </NuxtLink>
+        <NuxtLink
+          to="/author/collections"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author/collections')"
+          @click="mobileNavOpen = false"
+        >
+          Collections
+        </NuxtLink>
+        <NuxtLink
+          to="/author/settings"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author/settings')"
+          @click="mobileNavOpen = false"
+        >
+          Settings
+        </NuxtLink>
+        <NuxtLink
+          to="/author/submit"
+          class="mt-2 rounded-lg bg-brick-500 px-3 py-2 text-center text-sm font-semibold text-white"
+          @click="mobileNavOpen = false"
+        >
+          Submit Manuscript
+        </NuxtLink>
+      </nav>
+    </header>
 
-      <div class="mt-auto flex justify-center rounded-t-2xl bg-default px-5 py-5">
-        <p class="text-xs text-dimmed">
-          &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
-        </p>
-      </div>
+    <main class="mx-auto w-full max-w-285 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <slot />
+    </main>
+
+    <div class="mt-auto flex justify-center bg-white px-5 py-5">
+      <p class="text-xs text-taupe-400">
+        &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
+      </p>
     </div>
   </div>
 </template>

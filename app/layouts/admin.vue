@@ -3,7 +3,7 @@ import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 
 const { data: currentUser, refresh } = useCurrentUser()
-const { dashboardLinkClass, dashboardSubLinkClass, linkClass, useSidebarGroup } = useDashboardNavigation()
+const { dashboardLinkClassDark, dashboardSubLinkClassDark, linkClassDark, useSidebarGroup } = useDashboardNavigation()
 
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
@@ -46,12 +46,12 @@ const usersGroup = useSidebarGroup(['/admin/users'])
     />
 
     <aside
-      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col border-e border-default bg-default transition-transform duration-200 xl:translate-x-0"
+      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col bg-brick-950 transition-transform duration-200 xl:translate-x-0"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <button
         type="button"
-        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-default text-muted hover:border-primary hover:bg-primary hover:text-white xl:hidden"
+        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-white/20 text-brick-300 hover:border-primary hover:bg-primary hover:text-white xl:hidden"
         aria-label="Close sidebar"
         @click="closeSidebar"
       >
@@ -60,13 +60,21 @@ const usersGroup = useSidebarGroup(['/admin/users'])
 
       <NuxtLink
         to="/admin"
-        class="sticky top-0 z-10 block bg-default px-5 pb-3 pt-6 text-center"
+        class="sticky top-0 z-10 flex items-center gap-2.5 bg-brick-950 px-6 pb-5 pt-7"
       >
         <img
-          class="mx-auto h-10 w-auto"
+          class="h-11 w-auto shrink-0 rounded-full bg-taupe-50 p-1.5"
           src="/images/japr-logo.png"
           alt="Logo"
         >
+        <div>
+          <p class="text-sm font-bold tracking-wide text-white">
+            JAPR
+          </p>
+          <p class="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-brick-400">
+            Admin Workspace
+          </p>
+        </div>
       </NuxtLink>
 
       <nav class="flex-1 overflow-y-auto px-4 pb-6">
@@ -75,7 +83,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/admin"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/admin', true)"
+              :class="dashboardLinkClassDark('/admin', true)"
             >
               <UIcon
                 name="i-lucide-layout-grid"
@@ -89,7 +97,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClass(categoriesGroup.isGroupActive)"
+              :class="linkClassDark(categoriesGroup.isGroupActive)"
               :aria-expanded="categoriesGroup.open"
               @click="categoriesGroup.toggle"
             >
@@ -106,13 +114,13 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             </button>
             <ul
               v-show="categoriesGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-default ps-4"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
             >
               <li>
                 <NuxtLink
                   to="/admin/categories"
                   class="block text-sm"
-                  :class="dashboardSubLinkClass('/admin/categories')"
+                  :class="dashboardSubLinkClassDark('/admin/categories')"
                 >
                   Categories
                 </NuxtLink>
@@ -120,7 +128,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
               <li>
                 <NuxtLink
                   to="/admin/categories#subcategories"
-                  class="block text-sm text-muted hover:text-primary"
+                  class="block text-sm text-brick-300 hover:text-white"
                 >
                   Sub Categories
                 </NuxtLink>
@@ -128,7 +136,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
               <li>
                 <NuxtLink
                   to="/admin/categories#sub-subcategories"
-                  class="block text-sm text-muted hover:text-primary"
+                  class="block text-sm text-brick-300 hover:text-white"
                 >
                   Sub Subcategories
                 </NuxtLink>
@@ -140,7 +148,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/admin/journals"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/admin/journals')"
+              :class="dashboardLinkClassDark('/admin/journals')"
             >
               <UIcon
                 name="i-lucide-library"
@@ -154,7 +162,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/admin/audit/dashboard"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/admin/audit')"
+              :class="dashboardLinkClassDark('/admin/audit')"
             >
               <UIcon
                 name="i-lucide-clipboard-list"
@@ -164,15 +172,15 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             </NuxtLink>
           </li>
 
-          <li class="border-t border-default pt-5">
-            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-dimmed">Settings</span>
+          <li class="border-t border-white/10 pt-5">
+            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Settings</span>
           </li>
 
           <li>
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClass(rolesGroup.isGroupActive)"
+              :class="linkClassDark(rolesGroup.isGroupActive)"
               :aria-expanded="rolesGroup.open"
               @click="rolesGroup.toggle"
             >
@@ -189,13 +197,13 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             </button>
             <ul
               v-show="rolesGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-default ps-4"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
             >
               <li>
                 <NuxtLink
                   to="/admin/roles"
                   class="block text-sm"
-                  :class="dashboardSubLinkClass('/admin/roles')"
+                  :class="dashboardSubLinkClassDark('/admin/roles')"
                 >
                   Manage Roles
                 </NuxtLink>
@@ -204,7 +212,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                 <NuxtLink
                   to="/admin/permissions"
                   class="block text-sm"
-                  :class="dashboardSubLinkClass('/admin/permissions')"
+                  :class="dashboardSubLinkClassDark('/admin/permissions')"
                 >
                   Manage Permissions
                 </NuxtLink>
@@ -216,7 +224,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClass(usersGroup.isGroupActive)"
+              :class="linkClassDark(usersGroup.isGroupActive)"
               :aria-expanded="usersGroup.open"
               @click="usersGroup.toggle"
             >
@@ -233,13 +241,13 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             </button>
             <ul
               v-show="usersGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-default ps-4"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
             >
               <li>
                 <NuxtLink
                   to="/admin/users"
                   class="block text-sm"
-                  :class="dashboardSubLinkClass('/admin/users')"
+                  :class="dashboardSubLinkClassDark('/admin/users')"
                 >
                   Users
                 </NuxtLink>
@@ -251,7 +259,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/admin/notifications"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/admin/notifications')"
+              :class="dashboardLinkClassDark('/admin/notifications')"
             >
               <UIcon
                 name="i-lucide-bell"
@@ -265,7 +273,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/admin/notifications/preferences"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/admin/notifications/preferences')"
+              :class="dashboardLinkClassDark('/admin/notifications/preferences')"
             >
               <UIcon
                 name="i-lucide-sliders-horizontal"
@@ -279,7 +287,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/admin/settings"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/admin/settings')"
+              :class="dashboardLinkClassDark('/admin/settings')"
             >
               <UIcon
                 name="i-lucide-settings"
@@ -293,7 +301,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             <NuxtLink
               to="/mail"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClass('/mail')"
+              :class="dashboardLinkClassDark('/mail')"
             >
               <UIcon
                 name="i-lucide-mail"
