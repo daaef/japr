@@ -393,25 +393,25 @@ async function submitReview() {
                 <UTextarea v-model="form.review" :rows="5" minlength="20" maxlength="5000" required class="w-full" />
               </UFormField>
               <UFormField label="Originality">
-                <USlider v-model="form.originality" :min="0" :max="5" :step="1" />
+                <USlider id="review-slider-originality" v-model="form.originality" :min="0" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Methodology">
-                <USlider v-model="form.methodology" :min="0" :max="5" :step="1" />
+                <USlider id="review-slider-methodology" v-model="form.methodology" :min="0" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Significance">
-                <USlider v-model="form.significance" :min="0" :max="5" :step="1" />
+                <USlider id="review-slider-significance" v-model="form.significance" :min="0" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Clarity">
-                <USlider v-model="form.clarity" :min="0" :max="5" :step="1" />
+                <USlider id="review-slider-clarity" v-model="form.clarity" :min="0" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Literature review">
-                <USlider v-model="form.literatureReview" :min="0" :max="5" :step="1" />
+                <USlider id="review-slider-literature-review" v-model="form.literatureReview" :min="0" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Data analysis">
-                <USlider v-model="form.dataAnalysis" :min="0" :max="5" :step="1" />
+                <USlider id="review-slider-data-analysis" v-model="form.dataAnalysis" :min="0" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Overall rating">
-                <USlider v-model="form.rating" :min="1" :max="5" :step="1" />
+                <USlider id="review-slider-overall-rating" v-model="form.rating" :min="1" :max="5" :step="1" />
               </UFormField>
               <UFormField label="Recommendation">
                 <URadioGroup v-model="form.recommendation" :items="recommendationItems" />
