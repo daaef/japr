@@ -6,6 +6,8 @@ definePageMeta({
 const { applyRoleLayout } = useRoleLayout()
 await applyRoleLayout()
 
+usePageHeading().value = 'Notifications'
+
 const statusFilter = ref<'all' | 'unread' | 'read'>('all')
 const typeFilter = ref('all')
 const page = ref(1)

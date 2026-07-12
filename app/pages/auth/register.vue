@@ -63,13 +63,16 @@ const submit = handleSubmit(async (values) => {
       <div class="w-full max-w-sm py-12 mx-auto lg:w-96">
         <div>
           <img
-            class="w-auto h-20"
+            class="w-auto h-16"
             src="/images/japr-logo.png"
             alt="JAPR"
           >
-          <h2 class="mt-8 text-2xl font-bold leading-9 tracking-tight text-highlighted">
+          <h2 class="mt-7 font-serif text-[28px] leading-tight font-semibold text-highlighted">
             Create your account
           </h2>
+          <p class="mt-2 text-sm text-muted">
+            Join JAPR to submit manuscripts and track reviews.
+          </p>
         </div>
 
         <form
@@ -226,12 +229,9 @@ const submit = handleSubmit(async (values) => {
         </form>
       </div>
     </div>
-    <div class="relative hidden w-full flex-1 lg:block">
-      <img
-        class="absolute inset-0 object-cover w-full h-full"
-        src="/images/registerImg.png"
-        alt=""
-      >
-    </div>
+    <AuthPhotoPanel
+      image="/images/registerImg.png"
+      quote="Rigorous peer review. Pan-African reach. Immediate open access."
+    />
   </header>
 </template>

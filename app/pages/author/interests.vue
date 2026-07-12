@@ -136,15 +136,12 @@ async function save() {
 
 <template>
   <div class="py-6">
-    <div class="border-b border-gray-200 pb-5 sm:flex w-full sm:items-end sm:justify-between gap-4">
-      <div>
-        <h3 class="text-lg font-bold text-gray-900">
-          Research interests
-        </h3>
-        <p class="mt-1 text-sm text-gray-500">
-          Choose up to {{ maxSelections }} categories that best match your work. This helps structure your profile and reviewer matching.
-        </p>
-      </div>
+    <div class="border-b border-default pb-5 sm:flex w-full sm:items-end sm:justify-between gap-4">
+      <AppPageHeader
+        eyebrow="Research Profile"
+        title="Research Interests"
+        :description="`Choose up to ${maxSelections} categories that best match your work. This helps structure your profile and reviewer matching.`"
+      />
       <div class="mt-4 sm:mt-0 flex items-center gap-3 shrink-0">
         <UBadge
           :color="atSelectionLimit ? 'primary' : 'neutral'"
@@ -194,9 +191,9 @@ async function save() {
 
     <div
       v-if="selectedCategories.length"
-      class="mt-6 bg-white shadow rounded-lg p-5"
+      class="mt-6 rounded-2xl border border-default bg-default p-5"
     >
-      <p class="text-sm font-medium text-gray-700 mb-3">
+      <p class="text-sm font-bold text-highlighted mb-3">
         Your selections
       </p>
       <div class="flex flex-wrap gap-2">
@@ -204,7 +201,7 @@ async function save() {
           v-for="category in selectedCategories"
           :key="category.id"
           color="primary"
-          variant="soft"
+          variant="solid"
           size="sm"
           class="rounded-full"
           trailing-icon="i-lucide-x"
@@ -218,16 +215,16 @@ async function save() {
 
     <div
       v-if="!categories.length"
-      class="mt-6 bg-white shadow rounded-lg p-8 text-center text-sm text-gray-500"
+      class="mt-6 rounded-2xl border border-default bg-default p-8 text-center text-sm text-muted"
     >
       No categories are available yet. Contact support or try again later.
     </div>
 
     <div
       v-else
-      class="mt-6 bg-white shadow rounded-lg overflow-hidden"
+      class="mt-6 rounded-2xl border border-default bg-default overflow-hidden"
     >
-      <div class="p-5 border-b border-gray-200">
+      <div class="p-5 border-b border-taupe-100">
         <UInput
           id="interest-search"
           v-model="searchQuery"
@@ -237,21 +234,22 @@ async function save() {
           aria-label="Search categories"
           class="w-full"
         />
-        <p class="mt-2 text-xs text-gray-500">
+        <p class="mt-2 text-xs text-dimmed">
           {{ filteredCategories.length }} of {{ categories.length }} categories shown
         </p>
       </div>
 
       <div
         v-if="!filteredCategories.length"
-        class="p-8 text-center text-sm text-gray-500"
+        class="p-8 text-center text-sm text-muted"
       >
         No categories match your search.
       </div>
 
       <div
         v-else
-        class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-128 overflow-y-auto"
+        class="p-5 grid gap-3 max-h-128 overflow-y-auto"
+        style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));"
       >
         <UButton
           v-for="category in filteredCategories"
@@ -272,8 +270,8 @@ async function save() {
         </UButton>
       </div>
 
-      <div class="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-sm text-gray-600">
+      <div class="flex flex-col gap-3 border-t border-taupe-100 bg-taupe-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-muted">
           Tap a category to select or deselect. Maximum {{ maxSelections }} interests.
         </p>
         <UButton

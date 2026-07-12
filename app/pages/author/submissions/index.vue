@@ -57,11 +57,11 @@ function relativeTime(value: string) {
 
 <template>
   <div class="space-y-6">
-    <div class="flex w-full flex-col gap-1 border-b border-default pb-5 sm:flex-row sm:items-center sm:justify-between">
-      <AppPageHeader title="My Submissions" />
-      <span class="text-sm text-muted">
-        {{ displayName }}
-      </span>
+    <div class="border-b border-default pb-5">
+      <AppPageHeader
+        :eyebrow="`${displayName}'s Dashboard`"
+        title="My Submissions"
+      />
     </div>
 
     <UCard
@@ -90,12 +90,13 @@ function relativeTime(value: string) {
       <UCard
         v-for="submission in data.submissions"
         :key="submission.id"
+        :class="submission.approvalStatus === 'changes_requested' ? 'border-secondary-200' : ''"
         :ui="{ body: 'p-0 sm:p-0' }"
       >
         <div class="p-6 border-b border-default">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="min-w-0 flex-1">
-              <h3 class="text-xl font-semibold text-highlighted mb-2">
+              <h3 class="font-serif text-xl font-semibold text-highlighted mb-2">
                 {{ submission.title }}
               </h3>
               <p
@@ -142,7 +143,10 @@ function relativeTime(value: string) {
             </div>
           </div>
         </div>
-        <div class="px-6 py-4 flex flex-wrap gap-3">
+        <div
+          class="px-6 py-4 flex flex-wrap gap-3"
+          :class="submission.approvalStatus === 'changes_requested' ? 'bg-secondary-50' : ''"
+        >
           <UButton
             :to="`/author/submissions/${submission.id}`"
             color="neutral"

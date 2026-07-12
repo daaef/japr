@@ -9,12 +9,20 @@ type JournalRow = {
   updatedAt?: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   apiUrl: string
   detailPathPrefix: string
   emptyMessage?: string
-}>()
+  setPageHeading?: boolean
+}>(), {
+  emptyMessage: 'No manuscripts in this queue.',
+  setPageHeading: true
+})
+
+if (props.setPageHeading) {
+  usePageHeading().value = props.title
+}
 
 const page = ref(1)
 
@@ -87,7 +95,7 @@ const columns = [
       <AppEmptyState
         v-else-if="!data?.journals.length"
         compact
-        :title="emptyMessage ?? 'No manuscripts in this queue.'"
+        :title="emptyMessage"
       />
       <UTable
         v-else
@@ -96,10 +104,10 @@ const columns = [
       >
         <template #title-cell="{ row }">
           <div class="flex items-center gap-2">
-            <div class="size-10 rounded-full bg-primary-600 flex items-center justify-center shrink-0">
+            <div class="size-10 rounded-[10px] bg-primary-100 flex items-center justify-center shrink-0">
               <UIcon
                 name="i-lucide-file-text"
-                class="text-white text-lg"
+                class="text-primary-600 text-lg"
               />
             </div>
             <div>

@@ -52,15 +52,15 @@ const submit = handleSubmit(async (values) => {
     <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
       <div class="mx-auto w-full max-w-sm lg:w-96">
         <img
-          class="h-20 w-auto"
+          class="h-16 w-auto"
           src="/images/japr-logo.png"
           alt="JAPR"
         >
-        <h2 class="mt-8 text-2xl font-bold text-highlighted">
+        <h2 class="mt-7 font-serif text-[26px] leading-tight font-semibold text-highlighted">
           Reset your password
         </h2>
         <p class="mt-2 text-sm text-muted">
-          Enter your email and we will send you a reset link.
+          Enter your email and we'll send you a reset link.
         </p>
 
         <form
@@ -111,12 +111,6 @@ const submit = handleSubmit(async (values) => {
         </form>
       </div>
     </div>
-    <div class="relative hidden w-full flex-1 lg:block">
-      <img
-        class="absolute inset-0 h-full w-full object-cover"
-        src="/images/loginImg.png"
-        alt=""
-      >
-    </div>
+    <AuthPhotoPanel image="/images/loginImg.png" />
   </header>
 </template>

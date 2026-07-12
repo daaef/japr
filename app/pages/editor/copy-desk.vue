@@ -32,16 +32,20 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
 
 <template>
   <div>
+    <p class="mb-5 max-w-2xl text-[13.5px] text-muted">
+      Manuscripts approved for publication land here for final proofing. Mark a manuscript published once the copy desk has finished formatting.
+    </p>
+
     <UAlert
       v-if="errorMessage"
       color="error"
       variant="subtle"
       icon="i-lucide-circle-alert"
-      class="mt-6"
+      class="mb-6"
       :title="errorMessage"
     />
     <JournalQueueList
-      title="Copy desk"
+      title="Copy Desk Queue"
       api-url="/api/editor/journals/copy-desk"
       detail-path-prefix="/editor/journals"
       empty-message="No manuscripts are currently in the copy desk queue."
@@ -49,13 +53,12 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
       <template #row-actions="{ journal, refresh }">
         <UButton
           color="success"
-          variant="soft"
           size="sm"
           :loading="publishingId === journal.id"
           :disabled="publishingId === journal.id"
           @click="markPublished(journal.id, refresh)"
         >
-          {{ publishingId === journal.id ? 'Publishing…' : 'Mark published' }}
+          {{ publishingId === journal.id ? 'Publishing…' : 'Mark Published' }}
         </UButton>
       </template>
     </JournalQueueList>

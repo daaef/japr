@@ -138,6 +138,10 @@ const {
   enabled: computed(() => Boolean(detailData.value?.journal?.id))
 })
 
+watchEffect(() => {
+  usePageHeading().value = detailData.value?.journal?.title || 'Manuscript detail'
+})
+
 const selectedReviewerIds = ref<string[]>([])
 const approveComment = ref('')
 const revisionDetails = ref('')
@@ -286,9 +290,17 @@ function declineManuscript() {
   <div class="flex flex-col gap-4">
     <UCard>
       <template #header>
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h3 class="mb-2 text-lg font-semibold text-highlighted">
+            <UBadge
+              v-if="detailData.category?.name"
+              color="primary"
+              variant="subtle"
+              class="mb-3"
+            >
+              {{ detailData.category.name }}
+            </UBadge>
+            <h3 class="mb-2 font-serif text-2xl font-semibold text-highlighted">
               {{ detailData.journal.title || 'Manuscript detail' }}
             </h3>
             <p class="mb-0 text-sm text-muted">
@@ -308,7 +320,7 @@ function declineManuscript() {
         :title="`Latest editorial note: ${detailData.journal.editorDecisionComment}`"
       />
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
         <div>
           <p class="mb-1 text-sm text-muted">Author</p>
           <p class="mb-0 font-semibold text-highlighted">{{ detailData.journal.author || 'Not recorded' }}</p>

@@ -15,27 +15,13 @@ type Submission = {
   categoryId: string | null
   categoryName: string | null
   reviewerCount: number
-}
-
-type CollectionJournal = {
-  id: string
-  slug: string
-  title: string
-  author: string
-  abstract: string | null
+  editorDecisionComment: string | null
   country: string | null
-  approvalStatus: string
-  createdAt: string
 }
 
 const { data: currentUser, refresh: refreshCurrentUser } = useCurrentUser()
 const { data: submissions } = await useFetch<{ submissions: Submission[] }>('/api/author/submissions', {
   default: () => ({ submissions: [] })
-})
-const { data: collections } = await useFetch<{
-  collections: Array<{ id: string, journal: CollectionJournal | null }>
-}>('/api/author/collections', {
-  default: () => ({ collections: [] })
 })
 
 const acceptingPolicy = ref(false)
@@ -51,22 +37,41 @@ const underReviewCount = computed(() =>
   ).length
 )
 
-const approvedCount = computed(() =>
-  submissions.value.submissions.filter(submission => submission.approvalStatus === 'approved').length
-)
-
 const revisionsCount = computed(() =>
   submissions.value.submissions.filter(submission => submission.approvalStatus === 'changes_requested').length
 )
 
-const recentSubmissions = computed(() => submissions.value.submissions.slice(0, 3))
-const isNewAuthor = computed(() => !submissions.value.submissions.length && !collectionJournals.value.length)
+const totalCount = computed(() => submissions.value.submissions.length)
 
-const collectionJournals = computed(() =>
-  collections.value.collections
-    .map(item => item.journal)
-    .filter((journal): journal is CollectionJournal => journal !== null)
+const publishedCount = computed(() =>
+  submissions.value.submissions.filter(submission =>
+    ['approved', 'approved_with_comment', 'published'].includes(submission.approvalStatus)
+  ).length
 )
+
+// A cumulative funnel over the real approval-status enum: each stage counts
+// submissions that have reached at least that milestone. "Revision" is the one
+// non-cumulative bucket (a side-branch out of the main flow, not a forward stage).
+const journeyStages = computed(() => {
+  const all = submissions.value.submissions
+  return [
+    { label: 'Submitted', count: all.length },
+    { label: 'Desk Review', count: all.filter(s => s.approvalStatus !== 'desk_review').length },
+    {
+      label: 'Peer Review',
+      count: all.filter(s => ['under_peer_review', 'reviewed', 'ready_for_managing_editor_notice', 'approved', 'approved_with_comment', 'published'].includes(s.approvalStatus)).length
+    },
+    { label: 'Revision', count: all.filter(s => s.approvalStatus === 'changes_requested').length },
+    { label: 'Published', count: publishedCount.value }
+  ]
+})
+
+const spotlightSubmission = computed(() =>
+  submissions.value.submissions.find(submission => submission.approvalStatus === 'changes_requested') ?? null
+)
+
+const recentSubmissions = computed(() => submissions.value.submissions.slice(0, 3))
+const isNewAuthor = computed(() => !submissions.value.submissions.length)
 
 async function acceptPolicy() {
   acceptingPolicy.value = true
@@ -81,6 +86,26 @@ async function acceptPolicy() {
   } finally {
     acceptingPolicy.value = false
   }
+}
+
+// Same status→family grouping as JournalStatusBadge.vue, expressed as a solid
+// top-bar color instead of a badge.
+const statusBarClasses: Record<string, string> = {
+  desk_review: 'bg-warning-500',
+  pending: 'bg-warning-500',
+  'in-progress': 'bg-info-500',
+  under_peer_review: 'bg-info-500',
+  ready_for_managing_editor_notice: 'bg-primary-500',
+  reviewed: 'bg-primary-500',
+  approved: 'bg-success-500',
+  approved_with_comment: 'bg-success-500',
+  published: 'bg-success-500',
+  declined: 'bg-error-500',
+  changes_requested: 'bg-warning-500'
+}
+
+function journalStatusBarClass(status: string) {
+  return statusBarClasses[status] ?? 'bg-neutral-400'
 }
 
 function relativeTime(value: string) {
@@ -103,20 +128,34 @@ function relativeTime(value: string) {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-    <div class="flex flex-col gap-4 lg:col-span-9">
-      <div class="relative z-1 mb-2 overflow-hidden rounded-2xl bg-primary p-6">
-        <img
-          src="/assets/images/bg/grettings-pattern.png"
-          alt=""
-          class="absolute inset-0 -z-1 h-full w-full opacity-10"
-        >
-        <div class="relative sm:max-w-md">
-          <h2 class="mb-0 text-2xl font-semibold text-white">
-            Hello, {{ displayName }}!
-          </h2>
-          <p class="mt-2 text-sm font-light text-white/90">
+  <div>
+    <div class="flex flex-col gap-5">
+      <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
+        <div>
+          <p class="mb-2.5 text-xs font-bold uppercase tracking-wide text-secondary-800">
+            Welcome back
+          </p>
+          <h1 class="mb-3.5 font-serif text-3xl leading-tight font-semibold text-highlighted sm:text-4xl">
+            Hello, {{ displayName }}
+          </h1>
+          <p v-if="totalCount" class="max-w-md text-[15px] leading-relaxed text-toned">
+            You have <strong class="text-primary-600">{{ underReviewCount }} manuscript{{ underReviewCount === 1 ? '' : 's' }}</strong> under review<template
+              v-if="revisionsCount"
+            > and <strong class="text-secondary-800">{{ revisionsCount }} waiting on your revisions</strong></template>. Here's where things stand.
+          </p>
+          <p v-else class="max-w-md text-[15px] leading-relaxed text-toned">
             Track your manuscript submissions and review activity.
+          </p>
+        </div>
+        <div class="rounded-[22px] bg-primary-900 px-8 py-7">
+          <p class="mb-1.5 text-xs font-bold uppercase tracking-wide text-secondary-300">
+            Since you joined
+          </p>
+          <p class="mb-1 font-serif text-[28px] font-semibold text-white">
+            {{ totalCount }} submission{{ totalCount === 1 ? '' : 's' }} · {{ publishedCount }} published
+          </p>
+          <p class="text-sm text-primary-300">
+            Thank you for contributing to African policy scholarship.
           </p>
         </div>
       </div>
@@ -130,31 +169,59 @@ function relativeTime(value: string) {
         :actions="[{ label: 'Accept review policy', color: 'warning', loading: acceptingPolicy, disabled: acceptingPolicy, onClick: acceptPolicy }]"
       />
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardStatCard
-          label="Total Submissions"
-          :value="submissions.submissions.length"
-          icon="i-lucide-file-text"
-          icon-class="bg-neutral-600"
-        />
-        <DashboardStatCard
-          label="Under Review"
-          :value="underReviewCount"
-          icon="i-lucide-clock"
-          icon-class="bg-info-600"
-        />
-        <DashboardStatCard
-          label="Approved"
-          :value="approvedCount"
-          icon="i-lucide-circle-check"
-          icon-class="bg-success-600"
-        />
-        <DashboardStatCard
-          label="Revisions Needed"
-          :value="revisionsCount"
-          icon="i-lucide-circle-alert"
-          icon-class="bg-warning-600"
-        />
+      <div v-if="totalCount" class="rounded-2xl border border-default bg-default p-7">
+        <h3 class="mb-6 text-sm font-bold text-highlighted">
+          Your Submission Journey
+        </h3>
+        <div class="flex items-start">
+          <div
+            v-for="(stage, index) in journeyStages"
+            :key="stage.label"
+            class="relative flex-1 text-center"
+          >
+            <div
+              v-if="index > 0"
+              class="absolute top-4.5 z-0 h-0.5"
+              style="left: -50%; right: 50%;"
+              :class="stage.count > 0 ? 'bg-primary-500' : 'bg-taupe-200'"
+            />
+            <div
+              class="relative z-1 mx-auto mb-2.5 flex size-9 items-center justify-center rounded-full font-serif text-sm font-semibold"
+              :class="stage.count > 0 ? 'bg-primary-500 text-white' : 'bg-taupe-100 text-dimmed'"
+            >
+              {{ stage.count }}
+            </div>
+            <p class="text-xs font-bold text-highlighted">
+              {{ stage.label }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="spotlightSubmission"
+        class="flex gap-5 rounded-2xl border border-secondary-200 bg-secondary-50 p-7"
+      >
+        <div class="w-1 shrink-0 rounded-full bg-secondary-400" />
+        <div class="min-w-0 flex-1">
+          <p class="mb-1.5 text-xs font-bold uppercase tracking-wide text-secondary-800">
+            Continue where you left off
+          </p>
+          <h3 class="mb-2.5 font-serif text-xl font-semibold text-highlighted">
+            {{ spotlightSubmission.title }}
+          </h3>
+          <p v-if="spotlightSubmission.editorDecisionComment" class="mb-4 max-w-2xl text-sm leading-relaxed text-secondary-900">
+            "{{ spotlightSubmission.editorDecisionComment }}"
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <UButton :to="`/author/submissions/${spotlightSubmission.id}`" color="primary">
+              Upload Revision
+            </UButton>
+            <UButton :to="`/author/submissions/${spotlightSubmission.id}`" color="warning" variant="outline">
+              View Reviewer Feedback
+            </UButton>
+          </div>
+        </div>
       </div>
 
       <AppEmptyState
@@ -168,68 +235,76 @@ function relativeTime(value: string) {
       />
 
       <div v-if="recentSubmissions.length">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-lg font-medium text-highlighted">
-            Recent Submissions
-          </h3>
+        <div class="mb-5 flex items-baseline justify-between">
+          <h2 class="font-serif text-2xl font-semibold text-highlighted">
+            Your Manuscripts
+          </h2>
           <NuxtLink
             to="/author/submissions"
-            class="text-sm text-primary hover:text-primary-700"
+            class="text-sm font-bold text-primary-600 hover:text-primary-700"
           >
-            View all submissions
+            View all submissions →
           </NuxtLink>
         </div>
 
-        <UCard :ui="{ body: 'p-0 sm:p-0' }">
-          <ul class="divide-y divide-default">
-            <li
-              v-for="submission in recentSubmissions"
-              :key="submission.id"
-            >
-              <div class="px-4 py-4 sm:px-6">
-                <div class="flex items-center justify-between gap-4">
-                  <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-medium text-primary">
-                      <NuxtLink :to="`/author/submissions/${submission.id}`">
-                        {{ submission.title }}
-                      </NuxtLink>
-                    </p>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-                      <JournalStatusBadge :status="submission.approvalStatus" />
-                      <span>{{ submission.categoryName || 'Uncategorized' }}</span>
-                      <span>{{ submission.reviewerCount }} reviewers</span>
-                      <UBadge v-if="submission.approvalStatus === 'changes_requested'" color="warning" variant="subtle">
-                        Action Required
-                      </UBadge>
-                    </div>
-                  </div>
-                  <span class="shrink-0 text-xs text-muted">
-                    Updated {{ relativeTime(submission.updatedAt) }}
-                  </span>
-                </div>
+        <div class="grid gap-4.5" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+          <NuxtLink
+            v-for="submission in recentSubmissions"
+            :key="submission.id"
+            :to="`/author/submissions/${submission.id}`"
+            class="overflow-hidden rounded-2xl border border-default bg-default"
+          >
+            <div class="h-1.5" :class="journalStatusBarClass(submission.approvalStatus)" />
+            <div class="p-5.5">
+              <div class="mb-3">
+                <JournalStatusBadge :status="submission.approvalStatus" />
               </div>
-            </li>
-          </ul>
-        </UCard>
+              <h4 class="mb-2.5 font-serif text-[16.5px] leading-snug font-semibold text-highlighted">
+                {{ submission.title }}
+              </h4>
+              <p class="mb-1 text-xs text-dimmed">
+                {{ submission.categoryName || 'Uncategorized' }} · {{ submission.reviewerCount }} reviewer{{ submission.reviewerCount === 1 ? '' : 's' }}
+              </p>
+              <p class="text-[11.5px] text-dimmed">
+                Updated {{ relativeTime(submission.updatedAt) }}
+              </p>
+            </div>
+          </NuxtLink>
+        </div>
       </div>
 
-      <div v-if="collectionJournals.length">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-lg font-medium text-highlighted">
-            My Journal Collections
-          </h3>
-          <NuxtLink
-            to="/journals"
-            class="text-sm text-primary hover:text-primary-700"
-          >
-            Browse all journals
+      <div>
+        <div class="mb-4 flex items-baseline justify-between">
+          <h2 class="font-serif text-xl font-semibold text-highlighted">
+            Research Profile
+          </h2>
+          <NuxtLink to="/author/settings" class="text-xs font-bold text-primary-600 hover:text-primary-700">
+            Edit →
           </NuxtLink>
         </div>
-        <JournalCard
-          v-for="journal in collectionJournals"
-          :key="journal.id"
-          :journal="journal"
-        />
+        <div class="rounded-[14px] border border-default bg-default p-5.5">
+          <p class="mb-3 text-xs font-bold uppercase tracking-wide text-dimmed">
+            Research Interests
+          </p>
+          <div v-if="currentUser?.user?.researchInterests?.length" class="mb-4.5 flex flex-wrap gap-2">
+            <span
+              v-for="interest in currentUser.user.researchInterests"
+              :key="interest"
+              class="rounded-full bg-primary-100 px-3 py-1.5 text-xs text-primary-700"
+            >
+              {{ interest }}
+            </span>
+          </div>
+          <p v-else class="mb-4.5 text-sm text-muted">
+            No interests set yet.
+          </p>
+          <p class="mb-1 text-xs font-bold uppercase tracking-wide text-dimmed">
+            Institution
+          </p>
+          <p class="text-sm text-highlighted">
+            {{ currentUser?.user?.institution || 'Not specified' }}
+          </p>
+        </div>
       </div>
 
       <UCard>
@@ -238,7 +313,7 @@ function relativeTime(value: string) {
             Quick Actions
           </h3>
         </template>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
           <UCard as="NuxtLink" to="/author/submit" class="flex items-center transition hover:shadow-md">
             <div class="flex items-center gap-4">
               <UIcon name="i-lucide-plus" class="size-8 shrink-0 text-primary" />
@@ -280,9 +355,6 @@ function relativeTime(value: string) {
           </UCard>
         </div>
       </UCard>
-    </div>
-    <div class="lg:col-span-3">
-      <DashboardCalendarPanel />
     </div>
   </div>
 </template>

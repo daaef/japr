@@ -12,30 +12,31 @@ useHead({
 
 <template>
   <main>
-    <section class="py-14 lg:py-24">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 class="text-4xl text-center font-bold text-highlighted mb-12">
+    <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <div class="mb-13 text-center">
+        <p class="mb-2.5 text-xs font-bold tracking-widest text-secondary-800 uppercase">
+          JAPR
+        </p>
+        <h1 class="font-serif text-4xl font-semibold text-highlighted">
           Meet our Editorial Board
-        </h2>
+        </h1>
+      </div>
 
-        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <EditorialBoardCard :member="editorInChief" />
-          <EditorialBoardCard :member="managingEditor" />
-          <EditorialBoardCard :member="deskEditor" />
-        </div>
+      <div class="mb-14 grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <EditorialBoardCard :member="editorInChief" />
+        <EditorialBoardCard :member="managingEditor" />
+        <EditorialBoardCard :member="deskEditor" />
+      </div>
 
-        <div class="mt-12">
-          <h3 class="text-center text-xl font-bold text-highlighted mb-6">
-            Associate Editors
-          </h3>
-          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <EditorialBoardCard
-              v-for="member in associateEditors"
-              :key="member.name"
-              :member="member"
-            />
-          </div>
-        </div>
+      <h2 class="mb-7 text-center text-xl font-bold text-highlighted">
+        Associate Editors
+      </h2>
+      <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <EditorialBoardCard
+          v-for="member in associateEditors"
+          :key="member.name"
+          :member="member"
+        />
       </div>
     </section>
   </main>

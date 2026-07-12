@@ -94,6 +94,7 @@ function onCountryChange(country: string, event: Event) {
                   :id="`cat-${category.id}`"
                   type="checkbox"
                   name="category[]"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
                   :value="category.id"
                   :checked="selectedCategories.includes(category.id)"
                   @change="onCategoryChange(category.id, $event)"
@@ -117,6 +118,7 @@ function onCountryChange(country: string, event: Event) {
                       :id="`subcat-${subCategory.id}`"
                       type="checkbox"
                       name="subcategory[]"
+                      class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
                       :value="subCategory.id"
                       :checked="selectedSubcategories.includes(subCategory.id)"
                       @change="onSubcategoryChange(subCategory.id, $event)"
@@ -140,6 +142,7 @@ function onCountryChange(country: string, event: Event) {
                           :id="`subsubcat-${subSubCategory.id}`"
                           type="checkbox"
                           name="subsubcategory[]"
+                          class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
                           :value="subSubCategory.id"
                           :checked="selectedSubSubcategories.includes(subSubCategory.id)"
                           @change="onSubSubcategoryChange(subSubCategory.id, $event)"
@@ -167,6 +170,7 @@ function onCountryChange(country: string, event: Event) {
                 <input
                   :id="`lang-${index + 1}`"
                   type="checkbox"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
                   :checked="selectedLanguages.includes(language)"
                   @change="onLanguageChange(language, $event)"
                 >

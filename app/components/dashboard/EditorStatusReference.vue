@@ -13,18 +13,16 @@ const statuses = [
 </script>
 
 <template>
-  <UCard class="mt-6">
-    <template #header>
-      <h5 class="font-semibold text-highlighted mb-0">
-        Manuscript Status Reference
-      </h5>
-    </template>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <div class="rounded-2xl border border-default bg-default p-5.5">
+    <h3 class="mb-3.5 text-[13px] font-bold text-highlighted">
+      Manuscript Status Reference
+    </h3>
+    <div class="flex flex-wrap gap-2">
       <JournalStatusBadge
         v-for="status in statuses"
         :key="status"
         :status="status"
       />
     </div>
-  </UCard>
+  </div>
 </template>

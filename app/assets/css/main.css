@@ -139,6 +139,7 @@
    (rounded-lg → 12px, rounded-md → 9px) instead of Nuxt UI's default 0.25rem. */
 :root {
   --ui-radius: 0.375rem;
+  --text-sm: 0.75rem;
 }
 
 body {

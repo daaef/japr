@@ -31,7 +31,7 @@ const { data, pending, error, refresh } = await useFetch<{
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
     <UCard>
       <AppPageHeader
         eyebrow="Version Detail"

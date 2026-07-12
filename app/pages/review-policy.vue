@@ -46,9 +46,10 @@ async function handleAccept() {
 </script>
 
 <template>
-  <section class="max-w-3xl mx-auto">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
     <UCard>
       <AppPageHeader
+        eyebrow="One more step"
         title="JAPR Review Policy"
         description="Please read and accept our review policy before submitting or reviewing manuscripts."
       />

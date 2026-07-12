@@ -26,7 +26,7 @@ function hasAnyRole(checks: string[]) {
   return checks.some(role => roles.value.includes(role))
 }
 
-function navClass(active: boolean, base = 'text-gray-900 font-medium') {
+function navClass(active: boolean, base = 'text-taupe-700 font-medium') {
   return active ? 'text-primary-500 font-bold' : base
 }
 
@@ -41,7 +41,7 @@ const mobileMenuOpen = ref(false)
 </script>
 
 <template>
-  <header class="flex flex-wrap sm:justify-start h-[80px] sm:flex-nowrap w-full fixed z-[2000] bg-white text-sm py-3">
+  <header class="flex flex-wrap sm:justify-start h-21 sm:flex-nowrap w-full z-2000 bg-white text-sm py-3 border-b border-default">
     <nav class="container w-full mx-auto px-4 flex flex-wrap basis-full items-center justify-between relative">
       <div class="flex gap-5 items-center">
         <NuxtLink
@@ -56,7 +56,7 @@ const mobileMenuOpen = ref(false)
         </NuxtLink>
         <div
           id="navbar-alignment"
-          class="overflow-hidden top-[80px] transition-all duration-300 basis-full grow lg:grow-0 lg:basis-auto lg:static lg:px-0 px-[20px] max-[1023px]:container max-[1023px]:translate-x-[-50%] max-[1023px]:left-[50%] py-[20px] fixed left-0 bg-white w-full lg:block"
+          class="overflow-hidden top-21 transition-all duration-300 basis-full grow lg:grow-0 lg:basis-auto lg:static lg:px-0 px-[20px] max-[1023px]:container max-[1023px]:translate-x-[-50%] max-[1023px]:left-[50%] py-[20px] fixed left-0 bg-white w-full lg:block"
           :class="mobileMenuOpen ? 'block' : 'hidden'"
           aria-labelledby="navbar-alignment-toggle"
         >
@@ -71,14 +71,14 @@ const mobileMenuOpen = ref(false)
             </NuxtLink>
 
             <NuxtLink
-              class="hover:text-gray-400 focus:outline-none focus:text-gray-400"
+              class="hover:text-primary-700 focus:outline-none focus:text-primary-700"
               :class="navClass(route.path.startsWith('/editorial'))"
               to="/editorial"
             >
               Editorial Board
             </NuxtLink>
             <NuxtLink
-              class="hover:text-gray-400 focus:outline-none focus:text-gray-400"
+              class="hover:text-primary-700 focus:outline-none focus:text-primary-700"
               :class="navClass(route.path === '/journals' || route.path.startsWith('/journals/'))"
               to="/journals"
             >
@@ -87,7 +87,7 @@ const mobileMenuOpen = ref(false)
 
             <NuxtLink
               v-if="showMailViewer"
-              class="font-bold lg:hidden text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
+              class="font-bold lg:hidden text-taupe-700 hover:text-primary-700 focus:outline-none focus:text-primary-700"
               :class="navClass(route.path.startsWith('/mail'))"
               to="/mail"
             >
@@ -96,14 +96,14 @@ const mobileMenuOpen = ref(false)
 
             <template v-if="authenticated">
               <NuxtLink
-                class="font-bold lg:hidden text-gray-100 hover:text-gray-400 focus:outline-none focus:text-gray-400"
+                class="font-bold lg:hidden text-taupe-700 hover:text-primary-700 focus:outline-none focus:text-primary-700"
                 to="/author/submit"
               >
                 Submit Manuscript
               </NuxtLink>
               <NuxtLink
                 v-if="hasRole('admin')"
-                class="font-bold lg:hidden text-gray-100 hover:text-gray-400 focus:outline-none focus:text-gray-400"
+                class="font-bold lg:hidden text-taupe-700 hover:text-primary-700 focus:outline-none focus:text-primary-700"
                 to="/admin"
               >
                 Dashboard
@@ -190,7 +190,7 @@ const mobileMenuOpen = ref(false)
         </NuxtLink>
         <template v-if="authenticated">
           <NuxtLink
-            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-secondary-800 text-white hover:bg-primary-900 focus:outline-none mr-4 focus:bg-secondary-950 disabled:opacity-50 disabled:pointer-events-none"
+            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none mr-4 focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
             to="/author/submit"
           >
             Submit Manuscript
@@ -199,7 +199,7 @@ const mobileMenuOpen = ref(false)
             <template #default="{ open }">
               <button
                 type="button"
-                class="flex items-center w-full text-gray-600 hover:text-gray-400 focus:outline-none focus:text-gray-400 font-medium"
+                class="flex items-center w-full text-taupe-600 hover:text-primary-700 focus:outline-none focus:text-primary-700 font-medium"
                 aria-label="Account menu"
               >
                 {{ displayName }}
@@ -213,14 +213,14 @@ const mobileMenuOpen = ref(false)
 
             <template #content="{ close }">
               <div
-                class="w-48 rounded-lg border border-gray-100 bg-white p-1 shadow-md"
+                class="w-48 rounded-lg border border-default bg-white p-1 shadow-md"
                 role="menu"
                 aria-orientation="vertical"
               >
                 <NuxtLink
                   v-if="hasRole('admin')"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :class="navClass(route.path.startsWith('/admin'), 'text-gray-800 font-medium')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
+                  :class="navClass(route.path.startsWith('/admin'), 'text-taupe-700 font-medium')"
                   to="/admin"
                   @click="close"
                 >
@@ -228,8 +228,8 @@ const mobileMenuOpen = ref(false)
                 </NuxtLink>
                 <NuxtLink
                   v-if="hasAnyRole(['editor_in_chief', 'managing_editor'])"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :class="navClass(route.path.startsWith('/editor'), 'text-gray-800 font-medium')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
+                  :class="navClass(route.path.startsWith('/editor'), 'text-taupe-700 font-medium')"
                   to="/editor"
                   @click="close"
                 >
@@ -237,8 +237,8 @@ const mobileMenuOpen = ref(false)
                 </NuxtLink>
                 <NuxtLink
                   v-if="hasRole('copy_desk_editor')"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :class="navClass(route.path.startsWith('/editor/copy-desk'), 'text-gray-800 font-medium')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
+                  :class="navClass(route.path.startsWith('/editor/copy-desk'), 'text-taupe-700 font-medium')"
                   to="/editor/copy-desk"
                   @click="close"
                 >
@@ -246,8 +246,8 @@ const mobileMenuOpen = ref(false)
                 </NuxtLink>
                 <NuxtLink
                   v-if="hasRole('author')"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :class="navClass(route.path.startsWith('/author') && route.path !== '/author/settings', 'text-gray-800 font-medium')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
+                  :class="navClass(route.path.startsWith('/author') && route.path !== '/author/settings', 'text-taupe-700 font-medium')"
                   :to="workspacePath"
                   @click="close"
                 >
@@ -255,7 +255,7 @@ const mobileMenuOpen = ref(false)
                 </NuxtLink>
                 <NuxtLink
                   v-if="hasRole('author')"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-taupe-700 hover:bg-elevated focus:outline-none focus:bg-elevated"
                   :class="navClass(route.path === '/author/settings', 'font-medium')"
                   to="/author/settings"
                   @click="close"
@@ -264,8 +264,8 @@ const mobileMenuOpen = ref(false)
                 </NuxtLink>
                 <NuxtLink
                   v-if="hasAnyRole(['associate_editor', 'desk_editor', 'external_reviewer'])"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                  :class="navClass(route.path.startsWith('/reviewer'), 'text-gray-800 font-medium')"
+                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
+                  :class="navClass(route.path.startsWith('/reviewer'), 'text-taupe-700 font-medium')"
                   to="/reviewer"
                   @click="close"
                 >
@@ -276,7 +276,7 @@ const mobileMenuOpen = ref(false)
           </UPopover>
           <button
             type="button"
-            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
+            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium text-taupe-700 hover:text-primary-700 focus:outline-none focus:text-primary-700"
             @click="signOut"
           >
             Logout
@@ -284,7 +284,7 @@ const mobileMenuOpen = ref(false)
         </template>
         <template v-else>
           <NuxtLink
-            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-secondary-800 text-white hover:bg-primary-900 focus:outline-none focus:bg-secondary-950 disabled:opacity-50 disabled:pointer-events-none"
+            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
             to="/auth/login"
           >
             Submit Manuscript
@@ -305,7 +305,7 @@ const mobileMenuOpen = ref(false)
         <button
           id="navbar-alignment-toggle"
           type="button"
-          class="lg:hidden absolute top-[30px] right-[20px] translate-y-[-50%] size-7 flex justify-center items-center gap-x-2 rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+          class="lg:hidden absolute top-[30px] right-[20px] translate-y-[-50%] size-7 flex justify-center items-center gap-x-2 rounded-lg border border-default bg-white text-taupe-700 shadow-sm hover:bg-elevated focus:outline-none focus:bg-elevated disabled:opacity-50 disabled:pointer-events-none"
           :aria-expanded="mobileMenuOpen"
           aria-controls="navbar-alignment"
           aria-label="Toggle navigation"

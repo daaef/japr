@@ -266,14 +266,14 @@ async function changePassword() {
 
     <form @submit.prevent="updateAuthorAccount">
       <div>
-        <h2 class="text-base font-semibold text-highlighted">
+        <p class="mb-2 text-xs font-bold uppercase tracking-wide text-secondary-800">
           {{ form.fullname.split(/\s+/)[0] || 'Author' }}'s Settings
-        </h2>
-        <p class="mt-1 text-sm text-muted">
-          Update your account information and preferences.
         </p>
-        <p class="mt-1 flex items-center gap-2 text-sm text-muted">
-          Role:
+        <h1 class="font-serif text-3xl font-semibold text-highlighted">
+          Account Settings
+        </h1>
+        <p class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+          Update your account information and preferences. Role:
           <UBadge
             color="info"
             variant="subtle"
@@ -281,7 +281,8 @@ async function changePassword() {
           />
         </p>
 
-        <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div class="mt-8 rounded-2xl border border-default bg-default p-8">
+        <div class="grid gap-x-6 gap-y-4" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
           <UFormField
             label="Full Name"
             name="fullname"
@@ -389,6 +390,7 @@ async function changePassword() {
             />
           </UFormField>
         </div>
+        </div>
       </div>
 
       <div class="mt-6 flex items-center justify-end gap-x-6">
@@ -409,13 +411,14 @@ async function changePassword() {
   >
     <UCard>
       <template #header>
-        <h4 class="text-lg font-semibold">
-          Account settings
+        <h4 class="text-[15px] font-bold text-highlighted">
+          Account Information
         </h4>
       </template>
 
       <form
-        class="grid grid-cols-1 gap-4 md:grid-cols-2"
+        class="grid gap-4"
+        style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
         @submit.prevent="saveSettings"
       >
         <UFormField
@@ -492,6 +495,14 @@ async function changePassword() {
         </template>
 
         <template v-if="showAcademicProfile">
+          <div class="md:col-span-2 mt-2 border-t border-default pt-5">
+            <h4 class="text-[15px] font-bold text-highlighted">
+              Academic Profile
+            </h4>
+            <p class="mt-1 text-xs text-dimmed">
+              Shown to authors and used for reviewer expertise matching.
+            </p>
+          </div>
           <UFormField
             label="Regional expertise"
             name="regionalExpertise"
@@ -626,13 +637,14 @@ async function changePassword() {
 
     <UCard>
       <template #header>
-        <h4 class="text-lg font-semibold">
-          Change password
+        <h4 class="text-[15px] font-bold text-highlighted">
+          Change Password
         </h4>
       </template>
 
       <form
-        class="grid grid-cols-1 gap-4 md:grid-cols-2"
+        class="grid gap-4"
+        style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
         @submit.prevent="changePassword"
       >
         <UFormField

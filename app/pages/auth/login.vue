@@ -121,13 +121,16 @@ const submit = handleSubmit(async (values) => {
       <div class="mx-auto w-full max-w-sm lg:w-96">
         <div>
           <img
-            class="h-20 w-auto"
+            class="h-16 w-auto"
             src="/images/japr-logo.png"
             alt="JAPR"
           >
-          <h2 class="mt-8 text-2xl font-bold leading-9 tracking-tight text-highlighted">
-            Welcome back!
+          <h2 class="mt-7 font-serif text-[28px] leading-tight font-semibold text-highlighted">
+            Welcome back
           </h2>
+          <p class="mt-2 text-sm text-muted">
+            Sign in to continue to your JAPR workspace.
+          </p>
         </div>
 
         <UAlert
@@ -235,12 +238,9 @@ const submit = handleSubmit(async (values) => {
         </form>
       </div>
     </div>
-    <div class="relative hidden w-full flex-1 lg:block">
-      <img
-        class="absolute inset-0 h-full w-full object-cover"
-        src="/images/loginImg.png"
-        alt=""
-      >
-    </div>
+    <AuthPhotoPanel
+      image="/images/loginImg.png"
+      quote="A gateway to African policy scholarship, open to readers everywhere."
+    />
   </header>
 </template>

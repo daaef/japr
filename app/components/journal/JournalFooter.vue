@@ -1,126 +1,87 @@
+<script setup lang="ts">
+const year = new Date().getFullYear()
+</script>
+
 <template>
   <!-- ========== FOOTER ========== -->
-  <footer class="mt-auto bg-primary-500 w-full">
-  <div class="container py-10 px-4 sm:px-6 lg:px-8 lg:pt-20 mx-auto">
+  <footer class="mt-24 bg-primary-950 w-full">
+  <div class="container py-16 px-4 sm:px-6 lg:px-8 mx-auto">
     <!-- Grid -->
-    <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr] gap-12">
       <div class="col-span-full lg:col-span-1">
         <NuxtLink
-          class="flex-none text-xl font-semibold text-white focus:outline-none focus:opacity-80"
+          class="inline-block bg-taupe-50 rounded-full p-1.5 mb-4"
           to="/"
           aria-label="Brand"
         >
           <img
+            class="h-13"
             src="/images/japr-logo.png"
             alt=""
           >
         </NuxtLink>
+        <p class="text-sm leading-relaxed text-primary-300 max-w-xs">
+          Gateway to African Knowledge — peer-reviewed research and policy scholarship, open to readers everywhere.
+        </p>
       </div>
       <!-- End Col -->
 
       <div>
-        <h4 class="font-semibold text-gray-100">
+        <h4 class="text-xs font-bold uppercase tracking-wide text-secondary-300">
           Get in touch
         </h4>
 
-        <div class="mt-3 grid space-y-3">
-          <p class="grid grid-cols-[24px_1fr] gap-2 text-white">
-            <UIcon
-              name="i-lucide-map-pin-check-inside"
-              class="size-6"
-            />
-            <span>Department of Political Science North Carolina Central University 1801 Fayetteville Street Durham, North Carolina 27707</span>
+        <div class="mt-4 space-y-3 text-sm text-primary-300">
+          <p class="leading-relaxed">
+            Department of Political Science<br>
+            North Carolina Central University<br>
+            1801 Fayetteville Street<br>
+            Durham, North Carolina 27707
           </p>
-          <p>
-            <a
-              class="inline-flex gap-x-2 text-white"
-              href="#"
-            >
-              <UIcon
-                name="i-lucide-instagram"
-                class="size-6"
-              />
-              <span>@JournalofAfricanPolicy</span>
-            </a>
-          </p>
-          <p>
-            <a
-              class="inline-flex gap-x-2 text-white"
-              href="#"
-            >
-              <UIcon
-                name="i-lucide-twitter"
-                class="size-6"
-              />
-              <span>@JournalofAPR</span>
-            </a>
-          </p>
-          <p>
-            <a
-              class="inline-flex gap-x-2 text-white"
-              href="#"
-            >
-              <UIcon
-                name="i-lucide-mail"
-                class="size-6"
-              />
-              <span>@JournalofAPR</span>
-            </a>
-          </p>
+          <p>@JournalofAPR</p>
         </div>
       </div>
       <!-- End Col -->
 
       <div>
-        <h4 class="font-semibold text-gray-100">
+        <h4 class="text-xs font-bold uppercase tracking-wide text-secondary-300">
           Resources
         </h4>
 
-        <div class="mt-3 grid space-y-3">
-          <p>
-            <NuxtLink
-              class="inline-flex gap-x-2 text-white hover:text-white focus:outline-none focus:text-white"
-              to="/contact"
-            >
-              Contact us
-            </NuxtLink>
-          </p>
-          <p>
-            <NuxtLink
-              class="inline-flex gap-x-2 text-white hover:text-white focus:outline-none focus:text-white"
-              to="/editorial"
-            >
-              Editorial
-            </NuxtLink>
-          </p>
-          <p>
-            <NuxtLink
-              class="inline-flex gap-x-2 text-white hover:text-white focus:outline-none focus:text-white"
-              to="/privacy"
-            >
-              Privacy and Policy
-            </NuxtLink>
-          </p>
-          <p>
-            <NuxtLink
-              class="inline-flex gap-x-2 text-white hover:text-white focus:outline-none focus:text-white"
-              to="/terms"
-            >
-              Terms and Conditions
-            </NuxtLink>
-          </p>
+        <div class="mt-4 grid space-y-3 text-sm">
+          <NuxtLink
+            class="text-primary-300 hover:text-white focus:outline-none focus:text-white"
+            to="/contact"
+          >
+            Contact us
+          </NuxtLink>
+          <NuxtLink
+            class="text-primary-300 hover:text-white focus:outline-none focus:text-white"
+            to="/editorial"
+          >
+            Editorial board
+          </NuxtLink>
+          <NuxtLink
+            class="text-primary-300 hover:text-white focus:outline-none focus:text-white"
+            to="/privacy"
+          >
+            Privacy policy
+          </NuxtLink>
+          <NuxtLink
+            class="text-primary-300 hover:text-white focus:outline-none focus:text-white"
+            to="/terms"
+          >
+            Terms &amp; conditions
+          </NuxtLink>
         </div>
       </div>
     </div>
     <!-- End Grid -->
 
-    <div class="mt-5 sm:mt-12 grid gap-y-2 sm:gap-y-0 sm:flex sm:justify-center sm:items-center">
-      <div class="flex justify-between items-center">
-        <p class="text-sm text-white">
-          © 2024 JAPR. All Rights Reserved
-        </p>
-      </div>
-      <!-- End Col -->
+    <div class="mt-10 pt-5 border-t border-white/10 text-center">
+      <p class="text-xs text-primary-300">
+        © {{ year }} Journal of African Policy Review. All rights reserved.
+      </p>
     </div>
   </div>
   </footer>

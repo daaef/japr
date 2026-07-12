@@ -397,27 +397,21 @@ const createSubmission = handleSubmit(async (values) => {
 
 <template>
   <div>
-    <div class="flex w-full flex-col gap-1 border-b border-default pb-5 sm:flex-row sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold text-highlighted">
-        Submissions
-      </h3>
-      <h4 class="text-sm text-muted">
-        {{ userFirstName }}'s Dashboard
-      </h4>
+    <div class="border-b border-default pb-5">
+      <AppPageHeader
+        :eyebrow="`${userFirstName}'s Dashboard`"
+        title="Submit a Manuscript"
+        description="Submit a manuscript for review by our editors."
+      />
     </div>
-    <hr class="mb-8 border-default">
 
-    <form @submit.prevent="createSubmission">
-      <div class="flex flex-col gap-8">
-        <div>
-          <h2 class="text-base font-semibold text-highlighted">
-            Submit a Manuscript
-          </h2>
-          <p class="mt-1 text-sm text-muted">
-            Submit a manuscript for reviews by our editors
-          </p>
-
-          <div class="mt-8 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+    <form class="mt-8" @submit.prevent="createSubmission">
+      <div class="flex flex-col gap-5">
+        <UCard>
+          <h3 class="mb-5 text-sm font-bold text-highlighted">
+            Manuscript Details
+          </h3>
+          <div class="grid gap-x-6 gap-y-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
             <UFormField label="Authors (separate with commas)" :error="errors.author">
               <UInput
                 v-model="author"
@@ -467,33 +461,43 @@ const createSubmission = handleSubmit(async (values) => {
                 class="w-full"
               />
             </UFormField>
+          </div>
+        </UCard>
 
-            <UFormField label="Manuscript (Word docs auto-converted to PDF)" class="sm:col-span-2">
-              <UFileUpload
-                v-model="selectedFile"
-                icon="i-lucide-upload"
-                label="Upload Manuscript"
-                description="PDF, DOC, or DOCX files up to 10MB"
-                accept=".pdf,.doc,.docx"
-              />
-              <div v-if="fileNameMessage" class="mt-3">
-                <UBadge :color="fileNameStatus" variant="subtle">
-                  {{ fileNameMessage }}
-                </UBadge>
-              </div>
-              <UButton
-                v-if="selectedFile"
-                color="primary"
-                variant="soft"
-                size="sm"
-                icon="i-lucide-eye"
-                class="mt-2"
-                @click="openPreview"
-              >
-                Preview Document
-              </UButton>
-            </UFormField>
+        <UCard>
+          <h3 class="mb-4 text-sm font-bold text-highlighted">
+            Manuscript File
+          </h3>
+          <UFileUpload
+            v-model="selectedFile"
+            icon="i-lucide-upload"
+            label="Upload Manuscript"
+            description="PDF, DOC, or DOCX files up to 10MB"
+            accept=".pdf,.doc,.docx"
+          />
+          <div v-if="fileNameMessage" class="mt-3">
+            <UBadge :color="fileNameStatus" variant="subtle">
+              {{ fileNameMessage }}
+            </UBadge>
+          </div>
+          <UButton
+            v-if="selectedFile"
+            color="primary"
+            variant="soft"
+            size="sm"
+            icon="i-lucide-eye"
+            class="mt-2"
+            @click="openPreview"
+          >
+            Preview Document
+          </UButton>
+        </UCard>
 
+        <UCard>
+          <h3 class="mb-5 text-sm font-bold text-highlighted">
+            Classification
+          </h3>
+          <div class="grid gap-x-6 gap-y-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
             <UFormField label="Country" :error="errors.country">
               <CountrySelect
                 v-model="country"
@@ -560,37 +564,39 @@ const createSubmission = handleSubmit(async (values) => {
               />
             </UFormField>
           </div>
-        </div>
+        </UCard>
 
-        <div class="flex flex-col gap-4 border-b border-default pb-8">
-          <UCheckbox v-model="agreePolicy" label="I agree that I haven't published this article anywhere else" />
+        <UCard>
+          <div class="flex flex-col gap-4">
+            <UCheckbox v-model="agreePolicy" label="I agree that I haven't published this article anywhere else" />
 
-          <UCheckbox :model-value="reviewPolicyAccepted || reviewPolicyAcceptedLocally" disabled>
-            <template #label>
-              I accept the
-              <UButton
-                v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)"
-                variant="link"
-                class="px-0 font-bold"
-                @click="showReviewPolicyModal = true"
-              >
-                JAPR Review Policy
-              </UButton>
-              <NuxtLink
-                v-else
-                to="/review-policy"
-                target="_blank"
-                class="font-bold text-primary underline"
-              >
-                JAPR Review Policy
-              </NuxtLink>
-              and agree to comply with all review standards and procedures
-              <template v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)">
-                <br><span class="italic text-dimmed">(Click policy link to accept before submitting)</span>
+            <UCheckbox :model-value="reviewPolicyAccepted || reviewPolicyAcceptedLocally" disabled>
+              <template #label>
+                I accept the
+                <UButton
+                  v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)"
+                  variant="link"
+                  class="px-0 font-bold"
+                  @click="showReviewPolicyModal = true"
+                >
+                  JAPR Review Policy
+                </UButton>
+                <NuxtLink
+                  v-else
+                  to="/review-policy"
+                  target="_blank"
+                  class="font-bold text-primary underline"
+                >
+                  JAPR Review Policy
+                </NuxtLink>
+                and agree to comply with all review standards and procedures
+                <template v-if="!(reviewPolicyAccepted || reviewPolicyAcceptedLocally)">
+                  <br><span class="italic text-dimmed">(Click policy link to accept before submitting)</span>
+                </template>
               </template>
-            </template>
-          </UCheckbox>
-        </div>
+            </UCheckbox>
+          </div>
+        </UCard>
       </div>
 
       <UAlert
@@ -603,7 +609,7 @@ const createSubmission = handleSubmit(async (values) => {
       />
 
       <div class="mt-6 flex items-center justify-end gap-3">
-        <UButton color="error" @click="router.back()">
+        <UButton color="error" variant="outline" @click="router.back()">
           Cancel
         </UButton>
         <UButton type="submit" color="success" :loading="loading" :disabled="loading || !canSubmit">

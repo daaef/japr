@@ -74,13 +74,6 @@ const mobileNavOpen = ref(false)
               My Manuscripts
             </NuxtLink>
             <NuxtLink
-              to="/author/collections"
-              class="text-sm transition-colors"
-              :class="navLinkClass('/author/collections')"
-            >
-              Collections
-            </NuxtLink>
-            <NuxtLink
               to="/author/settings"
               class="text-sm transition-colors"
               :class="navLinkClass('/author/settings')"
@@ -161,14 +154,6 @@ const mobileNavOpen = ref(false)
           @click="mobileNavOpen = false"
         >
           My Manuscripts
-        </NuxtLink>
-        <NuxtLink
-          to="/author/collections"
-          class="rounded-lg px-3 py-2 text-sm transition-colors"
-          :class="navLinkClass('/author/collections')"
-          @click="mobileNavOpen = false"
-        >
-          Collections
         </NuxtLink>
         <NuxtLink
           to="/author/settings"

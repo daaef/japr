@@ -9,16 +9,22 @@ definePageMeta({
   <div class="flex min-h-screen items-center justify-center px-4">
     <div class="max-w-md text-center">
       <img
-        class="mx-auto h-20"
+        class="mx-auto h-16"
         src="/images/japr-logo.png"
         alt="JAPR"
       >
-      <h1 class="mt-8 text-2xl font-bold text-highlighted">
+      <h1 class="mt-7 font-serif text-[26px] leading-tight font-semibold text-highlighted">
         Password updated
       </h1>
-      <p class="mt-4 text-sm text-muted">
-        Your password has been reset successfully. You can sign in with your new credentials.
-      </p>
+
+      <UAlert
+        color="success"
+        variant="subtle"
+        icon="i-lucide-circle-check"
+        class="mt-6 text-left"
+        description="Your password has been changed. You can now sign in with your new password."
+      />
+
       <UButton
         to="/auth/login"
         color="primary"

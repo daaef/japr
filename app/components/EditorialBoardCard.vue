@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EditorialBoardMember } from '#shared/content/editorial-board'
+import { getInitials } from '~/utils/initials'
 
 defineProps<{
   member: EditorialBoardMember
@@ -7,26 +8,26 @@ defineProps<{
 </script>
 
 <template>
-  <UCard>
-    <div class="border-b border-default pb-4">
-      <h3 class="text-lg font-semibold text-toned">
-        {{ member.name }}
-      </h3>
-      <p class="mt-1 text-sm text-primary">
-        {{ member.role }}
-      </p>
+  <div class="rounded-2xl border border-default p-7 text-center">
+    <div class="mx-auto mb-4 flex size-18 items-center justify-center rounded-full bg-primary-100 text-xl font-bold text-primary-600">
+      {{ getInitials(member.name) }}
     </div>
-
-    <div class="mt-4 space-y-2 text-sm text-muted">
-      <p v-if="member.email">
-        {{ member.email }}
+    <p class="font-bold text-highlighted">
+      {{ member.name }}
+    </p>
+    <p class="mt-1.5 mb-3 text-xs font-bold tracking-wide text-primary-700 uppercase">
+      {{ member.role }}
+    </p>
+    <div class="space-y-1 text-sm leading-relaxed text-muted">
+      <p v-if="member.institution">
+        {{ member.institution }}
       </p>
       <p v-if="member.region">
         {{ member.region }}
       </p>
-      <p v-if="member.institution">
-        {{ member.institution }}
+      <p v-if="member.email">
+        {{ member.email }}
       </p>
     </div>
-  </UCard>
+  </div>
 </template>

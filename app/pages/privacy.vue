@@ -5,11 +5,11 @@ definePageMeta({
 </script>
 
 <template>
-  <article class="max-w-4xl mx-auto">
+  <article class="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
     <UCard>
       <AppPageHeader
+        eyebrow="Effective January 28, 2025"
         title="Privacy Policy"
-        description="Effective Date: January 28, 2025"
       />
 
       <div class="mt-8 space-y-6 text-sm leading-7 text-muted">

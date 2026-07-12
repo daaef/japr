@@ -215,6 +215,13 @@ const showRevisionForm = computed(() =>
 
 <template>
   <div class="space-y-6">
+    <NuxtLink
+      to="/author/submissions"
+      class="inline-flex items-center gap-1.5 text-sm font-bold text-primary-600 hover:text-primary-700"
+    >
+      ← Back to My Submissions
+    </NuxtLink>
+
     <UCard v-if="pending">
       <p class="text-muted">Loading submission...</p>
     </UCard>
@@ -248,7 +255,7 @@ const showRevisionForm = computed(() =>
       </UCard>
 
       <UCard>
-        <h2 class="text-xl font-semibold text-toned">
+        <h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-highlighted">
           Manuscript preview
         </h2>
         <div class="mt-6 h-150 overflow-hidden rounded-2xl border border-default">
@@ -281,7 +288,7 @@ const showRevisionForm = computed(() =>
       </UCard>
 
       <UCard v-if="pendingChangeRequests.length">
-        <h2 class="text-xl font-semibold text-toned">
+        <h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-highlighted">
           Requested changes
         </h2>
         <p class="mt-2 text-sm text-muted">
@@ -322,7 +329,7 @@ const showRevisionForm = computed(() =>
       </UCard>
 
       <UCard v-if="feedbackData.reviewerFeedback.length">
-        <h2 class="text-xl font-semibold text-toned">
+        <h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-highlighted">
           Reviewer feedback
         </h2>
 
@@ -349,7 +356,7 @@ const showRevisionForm = computed(() =>
       </UCard>
 
       <UCard v-if="showRevisionForm">
-        <h2 class="text-xl font-semibold text-toned">
+        <h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-highlighted">
           Submit a revision
         </h2>
 
@@ -411,7 +418,7 @@ const showRevisionForm = computed(() =>
 
       <UCard>
         <div class="flex flex-wrap items-center justify-between gap-4">
-          <h2 class="text-xl font-semibold text-toned">
+          <h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-highlighted">
             Version history
           </h2>
           <UButton
@@ -467,7 +474,7 @@ const showRevisionForm = computed(() =>
       </UCard>
 
       <UCard>
-        <h2 class="text-xl font-semibold text-toned">
+        <h2 class="mb-4 text-sm font-bold uppercase tracking-wide text-highlighted">
           Review activity
         </h2>
 
