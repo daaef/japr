@@ -7,6 +7,8 @@ definePageMeta({
   requiredRoles: REVIEWER_ROLES
 })
 
+usePageHeading().value = 'Dashboard'
+
 const { data: currentUser } = useCurrentUser()
 
 const defaultReviewerSummary = (): ReviewerDashboardSummary => ({
@@ -26,7 +28,6 @@ const defaultReviewerSummary = (): ReviewerDashboardSummary => ({
 
 const {
   data: summaryData,
-  pending: summaryPending,
   error: summaryError,
   refresh: refreshSummary
 } = await useFetch<{ summary: ReviewerDashboardSummary }>('/api/reviewer/dashboard/summary', {
@@ -38,21 +39,53 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-    <div class="flex flex-col gap-4 lg:col-span-9">
-      <div class="relative z-1 mb-2 overflow-hidden rounded-2xl bg-primary p-6">
-        <img
-          src="/assets/images/bg/grettings-pattern.png"
-          alt=""
-          class="absolute inset-0 -z-1 h-full w-full opacity-10"
-        >
-        <div class="relative sm:max-w-md">
-          <h2 class="mb-0 text-2xl font-semibold text-white">
-            Hello, {{ displayName }}!
-          </h2>
-          <p class="mt-2 text-sm font-light text-white/90">
-            Manage your review assignments and keep deadlines on track.
-          </p>
+  <div>
+    <div class="flex flex-col gap-5">
+      <div class="relative z-1 overflow-hidden rounded-[20px] bg-primary-900 p-8">
+        <div class="absolute -top-20 -right-15 z-0 size-65 rounded-full" style="background: radial-gradient(circle, rgba(229,168,51,0.22), transparent 70%);" />
+        <div class="relative z-1 grid gap-7" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+          <div>
+            <h2 class="mb-2 font-serif text-2xl font-semibold text-white">
+              Hello, {{ displayName }}
+            </h2>
+            <p class="max-w-sm text-sm leading-relaxed text-primary-300">
+              Manage your review assignments and keep deadlines on track.
+            </p>
+          </div>
+          <div class="grid gap-6 justify-end" style="grid-template-columns: repeat(4, auto);">
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.pending }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Pending
+              </p>
+            </div>
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.reviewed }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Reviewed
+              </p>
+            </div>
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.approved }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Approved
+              </p>
+            </div>
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.inProgress }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                In Progress
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -62,48 +95,64 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
         @retry="refreshSummary"
       />
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <DashboardStatCard
-          label="Pending Manuscripts"
-          :value="summary.pending"
-          icon="i-lucide-book-open"
-          icon-class="bg-primary-600"
-          :loading="summaryPending"
-        />
-        <DashboardStatCard
-          label="Reviewed Manuscripts"
-          :value="summary.reviewed"
-          icon="i-lucide-circle-check"
-          icon-class="bg-info-600"
-          :loading="summaryPending"
-        />
-        <DashboardStatCard
-          label="Approved Manuscripts"
-          :value="summary.approved"
-          icon="i-lucide-award"
-          icon-class="bg-secondary-600"
-          :loading="summaryPending"
-        />
-        <DashboardStatCard
-          label="Manuscripts in Progress"
-          :value="summary.inProgress"
-          icon="i-lucide-graduation-cap"
-          icon-class="bg-secondary-600"
-          :loading="summaryPending"
-        />
-        <DashboardStatCard
-          label="Declined Invitations"
-          :value="summary.declinedInvitations"
-          icon="i-lucide-circle-x"
-          icon-class="bg-warning-600"
-          :meta="summary.declinedManuscripts ? `${summary.declinedManuscripts} declined manuscripts` : undefined"
-          :loading="summaryPending"
-        />
+      <div class="grid gap-3.5" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-error-100 text-error-600">
+            <UIcon name="i-lucide-circle-x" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.declinedInvitations }}
+            </p>
+            <p class="text-[11px] text-muted">
+              Declined Invites
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-info-100 text-info-600">
+            <UIcon name="i-lucide-clock" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.averageReviewTimeDays }}d
+            </p>
+            <p class="text-[11px] text-muted">
+              Avg. review time
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-success-100 text-success-600">
+            <UIcon name="i-lucide-circle-check" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.completionRate }}%
+            </p>
+            <p class="text-[11px] text-muted">
+              Completion rate
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-warning-100 text-warning-600">
+            <UIcon name="i-lucide-triangle-alert" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.urgentAssignments }}
+            </p>
+            <p class="text-[11px] text-muted">
+              Urgent this week
+            </p>
+          </div>
+        </div>
       </div>
 
       <ReviewerAssignmentCards :assignments="summary.assignments" />
 
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
         <ReviewerReviewPerformanceCard
           :average-review-time-days="summary.averageReviewTimeDays"
           :completion-rate="summary.completionRate"
@@ -129,9 +178,6 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
           </div>
         </UCard>
       </div>
-    </div>
-    <div class="lg:col-span-3">
-      <DashboardCalendarPanel />
     </div>
   </div>
 </template>

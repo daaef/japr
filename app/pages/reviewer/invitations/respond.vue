@@ -39,33 +39,48 @@ async function respond() {
 </script>
 
 <template>
-  <UCard>
-    <h3 class="mb-2 text-lg font-semibold text-highlighted">Review invitation</h3>
+  <div class="flex min-h-screen items-center justify-center bg-primary-50 p-8">
+    <UCard class="w-full max-w-115 text-center" :ui="{ body: 'p-9' }">
+      <img
+        class="mx-auto mb-5.5 h-14 w-auto"
+        src="/images/japr-logo.png"
+        alt="JAPR"
+      >
+      <p class="mb-2 text-xs font-bold uppercase tracking-widest text-warning-700">
+        Review Invitation
+      </p>
 
-    <p v-if="!token" class="mb-0 text-sm text-error">
-      This invitation link is missing its token.
-    </p>
-    <template v-else>
-      <p class="text-sm text-muted">
-        {{ action === 'accept' ? 'Accept' : 'Decline' }} this review invitation<template v-if="title"> for "{{ title }}"</template>?
+      <p v-if="!token" class="mb-0 text-sm text-error">
+        This invitation link is missing its token.
       </p>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <UButton
-          :color="action === 'accept' ? 'primary' : 'error'"
-          :variant="action === 'accept' ? 'solid' : 'outline'"
-          :loading="loading"
-          :disabled="loading"
-          @click="respond"
-        >
-          {{ loading ? 'Submitting...' : (action === 'accept' ? 'Accept invitation' : 'Decline invitation') }}
-        </UButton>
-        <UButton to="/reviewer/pending" color="neutral" variant="outline">
-          Cancel
-        </UButton>
-      </div>
-      <p v-if="errorMessage" class="mb-0 mt-3 text-sm text-error">
-        {{ errorMessage }}
-      </p>
-    </template>
-  </UCard>
+      <template v-else>
+        <h1 class="mb-3.5 font-serif text-xl font-semibold text-highlighted">
+          {{ action === 'accept' ? 'Accept this review invitation?' : 'Decline this review invitation?' }}
+        </h1>
+        <p class="mb-6 text-sm leading-relaxed text-toned">
+          You've been invited to review
+          <strong v-if="title" class="text-highlighted">"{{ title }}"</strong>
+          <template v-else>this manuscript</template>
+          for JAPR.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <UButton
+            :color="action === 'accept' ? 'primary' : 'error'"
+            :variant="action === 'accept' ? 'solid' : 'outline'"
+            :loading="loading"
+            :disabled="loading"
+            @click="respond"
+          >
+            {{ loading ? 'Submitting...' : (action === 'accept' ? 'Accept invitation' : 'Decline invitation') }}
+          </UButton>
+          <UButton to="/reviewer/pending" color="neutral" variant="outline">
+            Cancel
+          </UButton>
+        </div>
+        <p v-if="errorMessage" class="mb-0 mt-4 text-sm text-error">
+          {{ errorMessage }}
+        </p>
+      </template>
+    </UCard>
+  </div>
 </template>

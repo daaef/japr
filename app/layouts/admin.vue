@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
+import { usePageHeading } from '~/composables/usePageHeading'
 
+const pageHeading = usePageHeading()
 const { data: currentUser, refresh } = useCurrentUser()
 const { dashboardLinkClassDark, dashboardSubLinkClassDark, linkClassDark, useSidebarGroup } = useDashboardNavigation()
 
@@ -325,6 +327,14 @@ const usersGroup = useSidebarGroup(['/admin/users'])
             aria-label="Open sidebar"
             @click="openSidebar"
           />
+          <div v-if="pageHeading" class="hidden sm:block">
+            <p class="text-[11px] font-bold uppercase tracking-wide text-dimmed">
+              Admin Workspace
+            </p>
+            <h1 class="font-serif text-lg font-semibold text-highlighted">
+              {{ pageHeading }}
+            </h1>
+          </div>
         </div>
 
         <div class="flex items-center gap-4">
