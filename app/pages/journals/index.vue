@@ -135,48 +135,40 @@ function toggleFilters() {
 }
 
 const page = computed(() => data.value?.meta.page ?? 1)
+const categoryCount = computed(() => categoryData.value?.categories.length ?? 0)
 </script>
 
 <template>
-  <div>
-    <div class="border-b border-gray-200 pb-5 sm:flex w-full sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold leading-6 text-gray-900">
-        Journals
-      </h3>
-      <div>
-        <form
-          class="flex rounded-lg border min-w-full"
-          @submit.prevent="submitSearch"
-        >
-          <input
-            id="hs-trailing-multiple-add-on"
-            v-model="search"
-            type="text"
-            name="search"
-            class="py-3 lg:w-[400px] px-4 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
-            placeholder="Search  for a keyword or title"
-          >
-          <div class="inline-flex items-center min-w-[180px] rounded-e-md">
-            <select
-              v-model="searchType"
-              class="relative py-3 ps-4 pe-9 flex gap-x-2 text-nowrap w-full cursor-pointer bg-white border border-gray-200 border-s-0 text-start text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
-            >
-              <option value="title">
-                Title
-              </option>
-              <option value="keyword">
-                Keyword
-              </option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            class="px-4 inline-flex items-center min-w-fit rounded-e-md border border-s-0 bg-primary-500 text-white"
-          >
-            Search
-          </button>
-        </form>
-      </div>
+  <div class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="border-b border-default pb-8 sm:flex w-full sm:items-end sm:justify-between sm:gap-6">
+      <AppPageHeader
+        eyebrow="Journal Archive"
+        title="Browse Journals"
+        :description="`${data?.meta.total ?? 0} peer-reviewed articles across ${categoryCount} policy categories`"
+      />
+      <form
+        class="mt-6 flex min-w-full items-center gap-1 rounded-xl border border-default bg-white p-1 pl-3 sm:mt-0 sm:min-w-95"
+        @submit.prevent="submitSearch"
+      >
+        <UIcon name="i-lucide-search" class="size-4 shrink-0 text-dimmed" />
+        <UInput
+          id="hs-trailing-multiple-add-on"
+          v-model="search"
+          type="text"
+          variant="none"
+          class="flex-1"
+          placeholder="Search title or keyword"
+        />
+        <USelect
+          v-model="searchType"
+          :items="[{ label: 'Title', value: 'title' }, { label: 'Keyword', value: 'keyword' }]"
+          variant="none"
+          class="shrink-0"
+        />
+        <UButton type="submit" color="primary" class="shrink-0">
+          Search
+        </UButton>
+      </form>
     </div>
 
     <div class="grid lg:grid-cols-[300px_1fr] relative gap-[30px] overflow-x-hidden mt-6">
@@ -186,15 +178,14 @@ const page = computed(() => data.value?.meta.page ?? 1)
         :class="filterOpen ? 'translate-x-0' : 'translate-x-[-100%]'"
       >
         <div class="flex gap-x-2 px-2.5 mb-4 relative items-center">
-          <img
-            class="h-[25px] cursor-pointer lg:static absolute right-0 lg:translate-x-0 translate-x-[100%] top-0"
-            src="/images/filter.png"
-            alt="Filter"
+          <UIcon
+            name="i-lucide-filter"
+            class="size-4 cursor-pointer text-primary-600 lg:static absolute right-0 lg:translate-x-0 translate-x-full top-1"
             @click="toggleFilters"
-          >
+          />
           <span
             id="filter-toggle"
-            class="text-primary-500 font-bold cursor-pointer"
+            class="text-primary-600 font-bold cursor-pointer"
             @click="toggleFilters"
           >
             Filter Results
@@ -213,23 +204,24 @@ const page = computed(() => data.value?.meta.page ?? 1)
         />
       </div>
 
-      <div class="lg:border pl-8 border-transparent border-l-secondary-900/50 min-w-0">
-        <div class="flex justify-end mb-6">
-          <UPagination
-            :page="page"
-            :items-per-page="data?.meta.pageSize ?? 10"
-            :total="data?.meta.total ?? 0"
-            show-edges
-            @update:page="goToPage"
-          />
+      <div class="lg:border pl-8 border-transparent border-l-default min-w-0">
+        <div
+          v-if="data.meta.total > 0"
+          class="mb-4 text-sm text-muted"
+        >
+          Showing {{ ((data.meta.page - 1) * data.meta.pageSize) + 1 }}
+          to {{ Math.min(data.meta.page * data.meta.pageSize, data.meta.total) }}
+          of {{ data.meta.total }} results
         </div>
 
-        <div
+        <UCard
           v-if="pending"
-          class="text-sm text-gray-500 py-6"
+          class="text-center"
         >
-          Loading journals...
-        </div>
+          <p class="text-sm text-muted">
+            Loading journals…
+          </p>
+        </UCard>
 
         <div
           v-else
@@ -242,21 +234,20 @@ const page = computed(() => data.value?.meta.page ?? 1)
           />
           <p
             v-if="data.journals.length === 0"
-            class="text-sm text-gray-500"
+            class="text-sm text-muted"
           >
             No published journals at the moment
           </p>
         </div>
 
-        <div
-          v-if="data.meta.total > 0"
-          class="flex justify-between items-center mt-6"
-        >
-          <div class="text-sm text-gray-700">
-            Showing {{ ((data.meta.page - 1) * data.meta.pageSize) + 1 }}
-            to {{ Math.min(data.meta.page * data.meta.pageSize, data.meta.total) }}
-            of {{ data.meta.total }} results
-          </div>
+        <div class="flex justify-center mt-8">
+          <UPagination
+            :page="page"
+            :items-per-page="data?.meta.pageSize ?? 10"
+            :total="data?.meta.total ?? 0"
+            show-edges
+            @update:page="goToPage"
+          />
         </div>
       </div>
     </div>

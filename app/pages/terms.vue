@@ -5,18 +5,16 @@ definePageMeta({
 </script>
 
 <template>
-  <article class="max-w-4xl mx-auto py-6">
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-      <h1 class="text-2xl font-bold text-gray-900">
-        Terms and Conditions
-      </h1>
-      <p class="text-sm text-gray-600 mt-2">
-        Effective Date: January 28, 2025
-      </p>
+  <article class="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+    <UCard>
+      <AppPageHeader
+        eyebrow="Effective January 28, 2025"
+        title="Terms and Conditions"
+      />
 
-      <div class="mt-8 space-y-6 text-sm leading-7 text-gray-600">
+      <div class="mt-8 space-y-6 text-sm leading-7 text-muted">
         <section>
-          <h2 class="text-xl font-semibold text-gray-900">
+          <h2 class="text-xl font-semibold text-highlighted">
             1. Use of the Website
           </h2>
           <p class="mt-2">
@@ -25,7 +23,7 @@ definePageMeta({
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-gray-900">
+          <h2 class="text-xl font-semibold text-highlighted">
             2. Intellectual Property
           </h2>
           <p class="mt-2">
@@ -34,7 +32,7 @@ definePageMeta({
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-gray-900">
+          <h2 class="text-xl font-semibold text-highlighted">
             3. Account Responsibilities
           </h2>
           <p class="mt-2">
@@ -42,6 +40,6 @@ definePageMeta({
           </p>
         </section>
       </div>
-    </div>
+    </UCard>
   </article>
 </template>

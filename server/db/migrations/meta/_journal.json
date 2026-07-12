@@ -106,6 +106,13 @@
       "when": 1783285999410,
       "tag": "0014_soft_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1783861777371,
+      "tag": "0015_drop_my_journal_collections",
+      "breakpoints": true
     }
   ]
 }

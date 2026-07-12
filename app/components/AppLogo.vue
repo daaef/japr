@@ -12,13 +12,13 @@ withDefaults(defineProps<{
       class="grid size-11 place-items-center rounded-full border shadow-sm"
       :class="variant === 'inverted'
         ? 'border-white/25 bg-white/10 text-white'
-        : 'border-orange-700/20 bg-orange-50 text-orange-800'"
+        : 'border-primary-700/20 bg-primary-50 text-primary-800'"
     >
       <div
         class="grid size-8 place-items-center rounded-full border text-[0.7rem] font-bold tracking-[0.18em]"
         :class="variant === 'inverted'
           ? 'border-white/30 bg-white/10'
-          : 'border-orange-700/25 bg-white'"
+          : 'border-primary-700/25 bg-white'"
       >
         JA
       </div>
@@ -32,7 +32,7 @@ withDefaults(defineProps<{
       </p>
       <p
         class="text-xs uppercase tracking-[0.22em]"
-        :class="variant === 'inverted' ? 'text-orange-100/80' : 'text-muted'"
+        :class="variant === 'inverted' ? 'text-white/70' : 'text-muted'"
       >
         Journal Of African Policy Review
       </p>

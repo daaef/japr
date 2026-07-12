@@ -7,6 +7,8 @@ definePageMeta({
   requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
 })
 
+usePageHeading().value = 'Dashboard'
+
 const { data: currentUser } = useCurrentUser()
 
 const defaultEditorSummary = (): EditorDashboardSummary => ({
@@ -44,7 +46,6 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
 
 const {
   data: summaryData,
-  pending: summaryPending,
   error: summaryError,
   refresh: refreshSummary
 } = await useFetch<{ summary: EditorDashboardSummary }>('/api/editor/dashboard/summary', {
@@ -55,22 +56,50 @@ const summary = computed(() => summaryData.value.summary)
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-lg-9">
-      <div class="grettings-box position-relative rounded-16 bg-main-600 overflow-hidden gap-16 flex-wrap z-1 mb-24">
-        <img
-          src="/assets/images/bg/grettings-pattern.png"
-          alt=""
-          class="position-absolute inset-block-start-0 inset-inline-start-0 z-n1 w-100 h-100 opacity-6"
-        >
-        <div class="row gy-4">
-          <div class="col-sm-7">
-            <div class="grettings-box__content py-xl-4">
-              <h2 class="text-white mb-0">
-                Hello, {{ displayName }}!
-              </h2>
-              <p class="text-15 fw-light mt-4 text-white">
-                Review manuscripts, assign reviewers, and keep editorial decisions moving.
+  <div>
+    <div class="flex flex-col gap-5">
+      <div class="relative z-1 overflow-hidden rounded-[20px] bg-primary-900 p-8">
+        <div class="absolute -top-20 -right-15 z-0 size-65 rounded-full" style="background: radial-gradient(circle, rgba(229,168,51,0.22), transparent 70%);" />
+        <div class="relative z-1 grid gap-7" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+          <div>
+            <h2 class="mb-2 font-serif text-2xl font-semibold text-white">
+              Hello, {{ displayName }}
+            </h2>
+            <p class="max-w-sm text-sm leading-relaxed text-primary-300">
+              Review manuscripts, assign reviewers, and keep editorial decisions moving.
+            </p>
+          </div>
+          <div class="grid gap-6 justify-end" style="grid-template-columns: repeat(4, auto);">
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.pendingQueue }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Desk Review
+              </p>
+            </div>
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.underPeerReview }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Under Review
+              </p>
+            </div>
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.reviewed }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Reviewed
+              </p>
+            </div>
+            <div>
+              <p class="font-serif text-3xl font-semibold text-secondary-300">
+                {{ summary.approved }}
+              </p>
+              <p class="mt-1 text-[11px] font-semibold text-primary-300">
+                Approved
               </p>
             </div>
           </div>
@@ -80,166 +109,130 @@ const summary = computed(() => summaryData.value.summary)
       <DashboardSummaryError
         v-if="summaryError"
         message="Editorial dashboard counts could not be loaded."
-        class="mb-24"
         @retry="refreshSummary"
       />
 
-      <div class="row gy-4">
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Desk Review"
-            :value="summary.pendingQueue"
-            icon="ph-book-open"
-            icon-class="bg-main-600"
-            :meta="summary.legacyPending ? `${summary.legacyPending} legacy pending` : undefined"
-            :loading="summaryPending"
-          />
+      <div class="grid gap-3.5" style="grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));">
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-primary-100 text-primary-600">
+            <UIcon name="i-lucide-graduation-cap" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.inProgress }}
+            </p>
+            <p class="text-[11px] text-muted">
+              In Progress
+            </p>
+          </div>
         </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="In Progress"
-            :value="summary.inProgress"
-            icon="ph-graduation-cap"
-            icon-class="bg-purple-600"
-            :loading="summaryPending"
-          />
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-info-100 text-info-600">
+            <UIcon name="i-lucide-bell" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.readyForNotice }}
+            </p>
+            <p class="text-[11px] text-muted">
+              Ready for Notice
+            </p>
+          </div>
         </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Under Peer Review"
-            :value="summary.underPeerReview"
-            icon="ph-users-three"
-            icon-class="bg-info-600"
-            :loading="summaryPending"
-          />
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-secondary-100 text-secondary-800">
+            <UIcon name="i-lucide-pencil" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.changesRequested }}
+            </p>
+            <p class="text-[11px] text-muted">
+              Revision Req.
+            </p>
+          </div>
         </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Ready for Notice"
-            :value="summary.readyForNotice"
-            icon="ph-bell"
-            icon-class="bg-info"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Reviewed"
-            :value="summary.reviewed"
-            icon="ph-check-circle"
-            icon-class="bg-success"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Approved Manuscripts"
-            :value="summary.approved"
-            icon="ph-certificate"
-            icon-class="bg-main-two-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Revision Requested"
-            :value="summary.changesRequested"
-            icon="ph-pencil-simple"
-            icon-class="bg-warning-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Declined"
-            :value="summary.declined"
-            icon="ph-x-circle"
-            icon-class="bg-danger-600"
-            :loading="summaryPending"
-          />
+        <div class="flex items-center gap-3 rounded-[14px] border border-default bg-default px-4.5 py-4">
+          <div class="flex size-8.5 shrink-0 items-center justify-center rounded-[9px] bg-error-100 text-error-600">
+            <UIcon name="i-lucide-circle-x" class="size-4" />
+          </div>
+          <div>
+            <p class="font-serif text-[19px] font-semibold text-highlighted">
+              {{ summary.declined }}
+            </p>
+            <p class="text-[11px] text-muted">
+              Declined
+            </p>
+          </div>
         </div>
       </div>
 
       <div
         v-if="isSeniorEditor && summary.readyForNotice > 0"
-        class="card mt-24"
+        class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-secondary-200 bg-secondary-50 px-6 py-5.5"
       >
-        <div class="card-header">
-          <h5 class="mb-0">
+        <div>
+          <h4 class="mb-1 text-[15px] font-bold text-highlighted">
             Managing Editor Actions Required
-          </h5>
-        </div>
-        <div class="card-body">
-          <p class="text-gray-700">
+          </h4>
+          <p class="text-sm text-secondary-900">
             {{ summary.readyForNotice }} manuscript(s) have completed peer review and are ready for approval, revision, or decline notice.
           </p>
-          <NuxtLink
-            to="/editor/ready-for-notice"
-            class="btn btn-primary btn-sm"
-          >
-            Review & Send Notices
-          </NuxtLink>
         </div>
+        <UButton to="/editor/ready-for-notice" color="primary" class="shrink-0">
+          Review & Send Notices
+        </UButton>
       </div>
 
-      <EditorStatusReference v-if="isSeniorEditor" />
+      <JournalQueueList
+        title="Desk Review Queue"
+        api-url="/api/editor/journals/pending"
+        detail-path-prefix="/editor/journals"
+        empty-message="No manuscripts in desk review."
+        :set-page-heading="false"
+      />
 
-      <div
-        v-if="isSeniorEditor"
-        class="card mt-24"
-      >
-        <div class="card-header">
-          <h5 class="mb-0">
+      <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+        <NuxtLink to="/editor/submissions" class="flex flex-col items-start gap-3.5 rounded-[14px] border border-default bg-default p-5 transition hover:shadow-md">
+          <div class="flex size-9.5 items-center justify-center rounded-[10px] bg-primary-100 text-primary-600">
+            <UIcon name="i-lucide-inbox" class="size-4.5" />
+          </div>
+          <span class="text-sm font-bold leading-snug text-highlighted">Submission Queue</span>
+        </NuxtLink>
+        <NuxtLink to="/editor/reviews" class="flex flex-col items-start gap-3.5 rounded-[14px] border border-default bg-default p-5 transition hover:shadow-md">
+          <div class="flex size-9.5 items-center justify-center rounded-[10px] bg-primary-100 text-primary-600">
+            <UIcon name="i-lucide-check-check" class="size-4.5" />
+          </div>
+          <span class="text-sm font-bold leading-snug text-highlighted">Review Outcomes</span>
+        </NuxtLink>
+        <NuxtLink to="/editor/copy-desk" class="flex flex-col items-start gap-3.5 rounded-[14px] border border-default bg-default p-5 transition hover:shadow-md">
+          <div class="flex size-9.5 items-center justify-center rounded-[10px] bg-primary-100 text-primary-600">
+            <UIcon name="i-lucide-layout-grid" class="size-4.5" />
+          </div>
+          <span class="text-sm font-bold leading-snug text-highlighted">Copy Desk</span>
+        </NuxtLink>
+      </div>
+
+      <div v-if="isSeniorEditor" class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="rounded-2xl border border-default bg-default p-5.5">
+          <h3 class="mb-3.5 text-[13px] font-bold text-highlighted">
             Regional Expertise Tools
-          </h5>
-        </div>
-        <div class="card-body">
-          <p class="text-gray-700">
+          </h3>
+          <p class="mb-4 text-[12.5px] leading-relaxed text-muted">
             Use manuscript country and reviewer expertise signals when assigning regional reviewers.
           </p>
-          <div class="flex-align gap-8 flex-wrap">
-            <NuxtLink
-              to="/editor/submissions"
-              class="btn btn-outline-primary btn-sm"
-            >
-              View Desk Review Queue
-            </NuxtLink>
-            <NuxtLink
-              to="/editor/under-peer-review"
-              class="btn btn-outline-success btn-sm"
-            >
+          <div class="flex flex-wrap gap-2.5">
+            <UButton to="/editor/submissions" color="primary" variant="outline" size="sm">
+              Desk Review Queue
+            </UButton>
+            <UButton to="/editor/under-peer-review" color="success" variant="outline" size="sm">
               Under Peer Review
-            </NuxtLink>
+            </UButton>
           </div>
         </div>
-      </div>
 
-      <div class="row gy-4 mt-1">
-        <div class="col-md-4">
-          <NuxtLink to="/editor/submissions" class="card p-24 d-block text-decoration-none">
-            <h6 class="text-gray-900">
-              Submission queue
-            </h6>
-          </NuxtLink>
-        </div>
-        <div class="col-md-4">
-          <NuxtLink to="/editor/reviews" class="card p-24 d-block text-decoration-none">
-            <h6 class="text-gray-900">
-              Review outcomes
-            </h6>
-          </NuxtLink>
-        </div>
-        <div class="col-md-4">
-          <NuxtLink to="/editor/copy-desk" class="card p-24 d-block text-decoration-none">
-            <h6 class="text-gray-900">
-              Copy desk
-            </h6>
-          </NuxtLink>
-        </div>
+        <EditorStatusReference />
       </div>
-    </div>
-    <div class="col-lg-3">
-      <DashboardCalendarPanel />
     </div>
   </div>
 </template>

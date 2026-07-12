@@ -15,10 +15,19 @@ export default defineNuxtConfig({
     { path: '~/components', pathPrefix: false }
   ],
 
+  // Force light mode for the Nuxt UI migration. Color mode was previously unconfigured, so
+  // @nuxtjs/color-mode (bundled by @nuxt/ui) defaulted to `preference: 'system'` — an OS-dark
+  // visitor got a broken half-dark UI (only 1 `dark:` variant exists app-wide; the legacy
+  // theme's ported CSS used hardcoded light hex that never flips). Whether the product supports
+  // dark mode is a redesign (Track 2) decision; until then, pin light.
+  colorMode: {
+    preference: 'light',
+    fallback: 'light'
+  },
+
   css: [
     '~/assets/css/main.css',
-    '~/assets/css/journal.css',
-    '~/assets/css/journal-layout-extras.css'
+    '~/assets/css/journal.css'
   ],
 
   runtimeConfig: {
@@ -63,7 +72,7 @@ export default defineNuxtConfig({
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap' }
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,72,400;0,72,500;0,72,600;0,72,700;1,72,600&display=swap' }
       ]
     }
   }

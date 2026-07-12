@@ -38,168 +38,99 @@ const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] 
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-lg-9">
-      <div class="grettings-box position-relative rounded-16 bg-main-600 overflow-hidden gap-16 flex-wrap z-1 mb-24">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <div class="flex flex-col gap-4 lg:col-span-9">
+      <div class="relative z-1 mb-2 overflow-hidden rounded-2xl bg-primary p-6">
         <img
           src="/assets/images/bg/grettings-pattern.png"
           alt=""
-          class="position-absolute inset-block-start-0 inset-inline-start-0 z-n1 w-100 h-100 opacity-6"
+          class="absolute inset-0 -z-1 h-full w-full opacity-10"
         >
-        <div class="row gy-4">
-          <div class="col-sm-7">
-            <div class="grettings-box__content py-xl-4">
-              <h2 class="text-white mb-0">
-                Hello, {{ displayName }}!
-              </h2>
-              <p class="text-15 fw-light mt-4 text-white">
-                Manage your review assignments and keep deadlines on track.
-              </p>
-            </div>
-          </div>
+        <div class="relative sm:max-w-md">
+          <h2 class="mb-0 text-2xl font-semibold text-white">
+            Hello, {{ displayName }}!
+          </h2>
+          <p class="mt-2 text-sm font-light text-white/90">
+            Manage your review assignments and keep deadlines on track.
+          </p>
         </div>
       </div>
 
       <DashboardSummaryError
         v-if="summaryError"
         message="Reviewer dashboard data could not be loaded."
-        class="mb-24"
         @retry="refreshSummary"
       />
 
-      <div class="row gy-4">
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Pending Manuscripts"
-            :value="summary.pending"
-            icon="ph-book-open"
-            icon-class="bg-main-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Reviewed Manuscripts"
-            :value="summary.reviewed"
-            icon="ph-check-circle"
-            icon-class="bg-info-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Approved Manuscripts"
-            :value="summary.approved"
-            icon="ph-certificate"
-            icon-class="bg-main-two-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Manuscripts in Progress"
-            :value="summary.inProgress"
-            icon="ph-graduation-cap"
-            icon-class="bg-purple-600"
-            :loading="summaryPending"
-          />
-        </div>
-        <div class="col-xxl-3 col-sm-6">
-          <DashboardStatCard
-            label="Declined Invitations"
-            :value="summary.declinedInvitations"
-            icon="ph-x-circle"
-            icon-class="bg-warning-600"
-            :meta="summary.declinedManuscripts ? `${summary.declinedManuscripts} declined manuscripts` : undefined"
-            :loading="summaryPending"
-          />
-        </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardStatCard
+          label="Pending Manuscripts"
+          :value="summary.pending"
+          icon="i-lucide-book-open"
+          icon-class="bg-primary-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Reviewed Manuscripts"
+          :value="summary.reviewed"
+          icon="i-lucide-circle-check"
+          icon-class="bg-info-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Approved Manuscripts"
+          :value="summary.approved"
+          icon="i-lucide-award"
+          icon-class="bg-secondary-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Manuscripts in Progress"
+          :value="summary.inProgress"
+          icon="i-lucide-graduation-cap"
+          icon-class="bg-secondary-600"
+          :loading="summaryPending"
+        />
+        <DashboardStatCard
+          label="Declined Invitations"
+          :value="summary.declinedInvitations"
+          icon="i-lucide-circle-x"
+          icon-class="bg-warning-600"
+          :meta="summary.declinedManuscripts ? `${summary.declinedManuscripts} declined manuscripts` : undefined"
+          :loading="summaryPending"
+        />
       </div>
 
       <ReviewerAssignmentCards :assignments="summary.assignments" />
 
-      <div class="card mt-24">
-        <div class="card-body">
-          <div class="mb-20">
-            <h4 class="mb-2">
-              Review Performance
-            </h4>
-            <p class="text-gray-500 mb-0">
-              Your review activity and deadline signals.
-            </p>
-          </div>
-          <div class="row gy-3">
-            <div class="col-md-3 col-sm-6">
-              <div class="bg-main-50 rounded-8 p-16 text-center">
-                <h6 class="mb-4">
-                  Avg. Review Time
-                </h6>
-                <p class="text-sm text-gray-600 mb-0">
-                  {{ summary.averageReviewTimeDays }} days
-                </p>
-              </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="bg-success-50 rounded-8 p-16 text-center">
-                <h6 class="mb-4">
-                  Completion Rate
-                </h6>
-                <p class="text-sm text-gray-600 mb-0">
-                  {{ summary.completionRate }}%
-                </p>
-              </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="bg-warning-50 rounded-8 p-16 text-center">
-                <h6 class="mb-4">
-                  This Month
-                </h6>
-                <p class="text-sm text-gray-600 mb-0">
-                  {{ summary.completedThisMonth }} reviews
-                </p>
-              </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-              <div class="bg-danger-50 rounded-8 p-16 text-center">
-                <h6 class="mb-4">
-                  Overdue
-                </h6>
-                <p class="text-sm text-gray-600 mb-0">
-                  {{ summary.overdueReviews }} reviews
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-20 pt-20 border-top border-gray-100">
-            <h6 class="mb-12">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <ReviewerReviewPerformanceCard
+          :average-review-time-days="summary.averageReviewTimeDays"
+          :completion-rate="summary.completionRate"
+          :completed-this-month="summary.completedThisMonth"
+          :overdue-reviews="summary.overdueReviews"
+        />
+        <UCard class="h-full">
+          <template #header>
+            <h3 class="text-base font-semibold text-highlighted">
               Quick Actions
-            </h6>
-            <div class="flex-align gap-8 flex-wrap">
-              <NuxtLink
-                to="/reviewer/pending"
-                class="btn btn-outline-warning btn-sm rounded-pill"
-              >
-                View Pending Reviews
-              </NuxtLink>
-              <NuxtLink
-                to="/notifications"
-                class="btn btn-outline-main btn-sm rounded-pill"
-              >
-                View Notifications
-              </NuxtLink>
-              <NuxtLink
-                to="/reviewer/settings"
-                class="btn btn-outline-gray btn-sm rounded-pill"
-              >
-                Settings
-              </NuxtLink>
-            </div>
+            </h3>
+          </template>
+          <div class="flex flex-col gap-2">
+            <UButton to="/reviewer/pending" color="warning" variant="outline" size="xs" block>
+              View Pending Reviews
+            </UButton>
+            <UButton to="/notifications" color="primary" variant="outline" size="xs" block>
+              View Notifications
+            </UButton>
+            <UButton to="/reviewer/settings" color="neutral" variant="outline" size="xs" block>
+              Settings
+            </UButton>
           </div>
-        </div>
+        </UCard>
       </div>
     </div>
-    <div class="col-lg-3">
+    <div class="lg:col-span-3">
       <DashboardCalendarPanel />
     </div>
   </div>

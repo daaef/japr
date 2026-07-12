@@ -15,27 +15,13 @@ type Submission = {
   categoryId: string | null
   categoryName: string | null
   reviewerCount: number
-}
-
-type CollectionJournal = {
-  id: string
-  slug: string
-  title: string
-  author: string
-  abstract: string | null
+  editorDecisionComment: string | null
   country: string | null
-  approvalStatus: string
-  createdAt: string
 }
 
 const { data: currentUser, refresh: refreshCurrentUser } = useCurrentUser()
 const { data: submissions } = await useFetch<{ submissions: Submission[] }>('/api/author/submissions', {
   default: () => ({ submissions: [] })
-})
-const { data: collections } = await useFetch<{
-  collections: Array<{ id: string, journal: CollectionJournal | null }>
-}>('/api/author/collections', {
-  default: () => ({ collections: [] })
 })
 
 const acceptingPolicy = ref(false)
@@ -51,22 +37,41 @@ const underReviewCount = computed(() =>
   ).length
 )
 
-const approvedCount = computed(() =>
-  submissions.value.submissions.filter(submission => submission.approvalStatus === 'approved').length
-)
-
 const revisionsCount = computed(() =>
   submissions.value.submissions.filter(submission => submission.approvalStatus === 'changes_requested').length
 )
 
-const recentSubmissions = computed(() => submissions.value.submissions.slice(0, 3))
-const isNewAuthor = computed(() => !submissions.value.submissions.length && !collectionJournals.value.length)
+const totalCount = computed(() => submissions.value.submissions.length)
 
-const collectionJournals = computed(() =>
-  collections.value.collections
-    .map(item => item.journal)
-    .filter((journal): journal is CollectionJournal => journal !== null)
+const publishedCount = computed(() =>
+  submissions.value.submissions.filter(submission =>
+    ['approved', 'approved_with_comment', 'published'].includes(submission.approvalStatus)
+  ).length
 )
+
+// A cumulative funnel over the real approval-status enum: each stage counts
+// submissions that have reached at least that milestone. "Revision" is the one
+// non-cumulative bucket (a side-branch out of the main flow, not a forward stage).
+const journeyStages = computed(() => {
+  const all = submissions.value.submissions
+  return [
+    { label: 'Submitted', count: all.length },
+    { label: 'Desk Review', count: all.filter(s => s.approvalStatus !== 'desk_review').length },
+    {
+      label: 'Peer Review',
+      count: all.filter(s => ['under_peer_review', 'reviewed', 'ready_for_managing_editor_notice', 'approved', 'approved_with_comment', 'published'].includes(s.approvalStatus)).length
+    },
+    { label: 'Revision', count: all.filter(s => s.approvalStatus === 'changes_requested').length },
+    { label: 'Published', count: publishedCount.value }
+  ]
+})
+
+const spotlightSubmission = computed(() =>
+  submissions.value.submissions.find(submission => submission.approvalStatus === 'changes_requested') ?? null
+)
+
+const recentSubmissions = computed(() => submissions.value.submissions.slice(0, 3))
+const isNewAuthor = computed(() => !submissions.value.submissions.length)
 
 async function acceptPolicy() {
   acceptingPolicy.value = true
@@ -81,6 +86,26 @@ async function acceptPolicy() {
   } finally {
     acceptingPolicy.value = false
   }
+}
+
+// Same status→family grouping as JournalStatusBadge.vue, expressed as a solid
+// top-bar color instead of a badge.
+const statusBarClasses: Record<string, string> = {
+  desk_review: 'bg-warning-500',
+  pending: 'bg-warning-500',
+  'in-progress': 'bg-info-500',
+  under_peer_review: 'bg-info-500',
+  ready_for_managing_editor_notice: 'bg-primary-500',
+  reviewed: 'bg-primary-500',
+  approved: 'bg-success-500',
+  approved_with_comment: 'bg-success-500',
+  published: 'bg-success-500',
+  declined: 'bg-error-500',
+  changes_requested: 'bg-warning-500'
+}
+
+function journalStatusBarClass(status: string) {
+  return statusBarClasses[status] ?? 'bg-neutral-400'
 }
 
 function relativeTime(value: string) {
@@ -103,371 +128,233 @@ function relativeTime(value: string) {
 </script>
 
 <template>
-  <div class="py-6">
-    <div class="border-b border-gray-200 pb-5 sm:flex w-full sm:items-center sm:justify-between">
-      <h3 class="text-lg font-bold text-gray-900">
-        Dashboard
-      </h3>
-      <span class="mt-2 sm:mt-0 text-sm text-gray-600">
-        Welcome, {{ displayName }}
-      </span>
-    </div>
-
-    <div
-      v-if="currentUser?.user && !currentUser.user.reviewPolicyAccepted"
-      class="mt-6 rounded-lg border border-orange-200 bg-orange-50 p-5"
-    >
-      <p class="text-sm text-orange-900">
-        Review policy acceptance is required before creating a manuscript.
-      </p>
-      <button
-        type="button"
-        class="btn btn-primary mt-4"
-        :disabled="acceptingPolicy"
-        @click="acceptPolicy"
-      >
-        Accept review policy
-      </button>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Total Submissions
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ submissions.submissions.length }}
-              </p>
-            </div>
-          </div>
+  <div>
+    <div class="flex flex-col gap-5">
+      <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
+        <div>
+          <p class="mb-2.5 text-xs font-bold uppercase tracking-wide text-secondary-800">
+            Welcome back
+          </p>
+          <h1 class="mb-3.5 font-serif text-3xl leading-tight font-semibold text-highlighted sm:text-4xl">
+            Hello, {{ displayName }}
+          </h1>
+          <p v-if="totalCount" class="max-w-md text-[15px] leading-relaxed text-toned">
+            You have <strong class="text-primary-600">{{ underReviewCount }} manuscript{{ underReviewCount === 1 ? '' : 's' }}</strong> under review<template
+              v-if="revisionsCount"
+            > and <strong class="text-secondary-800">{{ revisionsCount }} waiting on your revisions</strong></template>. Here's where things stand.
+          </p>
+          <p v-else class="max-w-md text-[15px] leading-relaxed text-toned">
+            Track your manuscript submissions and review activity.
+          </p>
+        </div>
+        <div class="rounded-[22px] bg-primary-900 px-8 py-7">
+          <p class="mb-1.5 text-xs font-bold uppercase tracking-wide text-secondary-300">
+            Since you joined
+          </p>
+          <p class="mb-1 font-serif text-[28px] font-semibold text-white">
+            {{ totalCount }} submission{{ totalCount === 1 ? '' : 's' }} · {{ publishedCount }} published
+          </p>
+          <p class="text-sm text-primary-300">
+            Thank you for contributing to African policy scholarship.
+          </p>
         </div>
       </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Under Review
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ underReviewCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Approved
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ approvedCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="shrink-0">
-              <svg
-                class="h-6 w-6 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <p class="text-sm font-medium text-gray-500 truncate">
-                Revisions Needed
-              </p>
-              <p class="text-lg font-medium text-gray-900">
-                {{ revisionsCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div
-      v-if="isNewAuthor"
-      class="mt-8 text-center py-12"
-    >
-      <svg
-        class="mx-auto h-12 w-12 text-gray-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">
-        Welcome to JAPR!
-      </h3>
-      <p class="mt-1 text-sm text-gray-500">
-        Get started by submitting your first manuscript for review.
-      </p>
-      <div class="mt-6">
-        <NuxtLink
-          to="/author/submit"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <svg
-            class="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Submit Your First Manuscript
-        </NuxtLink>
-      </div>
-    </div>
+      <UAlert
+        v-if="currentUser?.user && !currentUser.user.reviewPolicyAccepted"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-triangle-alert"
+        title="Review policy acceptance is required before creating a manuscript."
+        :actions="[{ label: 'Accept review policy', color: 'warning', loading: acceptingPolicy, disabled: acceptingPolicy, onClick: acceptPolicy }]"
+      />
 
-    <div
-      v-if="recentSubmissions.length"
-      class="mt-8"
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-medium text-gray-900">
-          Recent Submissions
+      <div v-if="totalCount" class="rounded-2xl border border-default bg-default p-7">
+        <h3 class="mb-6 text-sm font-bold text-highlighted">
+          Your Submission Journey
         </h3>
-        <NuxtLink
-          to="/author/submissions"
-          class="text-sm text-primary-600 hover:text-primary-700"
-        >
-          View all submissions
-        </NuxtLink>
+        <div class="flex items-start">
+          <div
+            v-for="(stage, index) in journeyStages"
+            :key="stage.label"
+            class="relative flex-1 text-center"
+          >
+            <div
+              v-if="index > 0"
+              class="absolute top-4.5 z-0 h-0.5"
+              style="left: -50%; right: 50%;"
+              :class="stage.count > 0 ? 'bg-primary-500' : 'bg-taupe-200'"
+            />
+            <div
+              class="relative z-1 mx-auto mb-2.5 flex size-9 items-center justify-center rounded-full font-serif text-sm font-semibold"
+              :class="stage.count > 0 ? 'bg-primary-500 text-white' : 'bg-taupe-100 text-dimmed'"
+            >
+              {{ stage.count }}
+            </div>
+            <p class="text-xs font-bold text-highlighted">
+              {{ stage.label }}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div class="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul class="divide-y divide-gray-200">
-          <li
+      <div
+        v-if="spotlightSubmission"
+        class="flex gap-5 rounded-2xl border border-secondary-200 bg-secondary-50 p-7"
+      >
+        <div class="w-1 shrink-0 rounded-full bg-secondary-400" />
+        <div class="min-w-0 flex-1">
+          <p class="mb-1.5 text-xs font-bold uppercase tracking-wide text-secondary-800">
+            Continue where you left off
+          </p>
+          <h3 class="mb-2.5 font-serif text-xl font-semibold text-highlighted">
+            {{ spotlightSubmission.title }}
+          </h3>
+          <p v-if="spotlightSubmission.editorDecisionComment" class="mb-4 max-w-2xl text-sm leading-relaxed text-secondary-900">
+            "{{ spotlightSubmission.editorDecisionComment }}"
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <UButton :to="`/author/submissions/${spotlightSubmission.id}`" color="primary">
+              Upload Revision
+            </UButton>
+            <UButton :to="`/author/submissions/${spotlightSubmission.id}`" color="warning" variant="outline">
+              View Reviewer Feedback
+            </UButton>
+          </div>
+        </div>
+      </div>
+
+      <AppEmptyState
+        v-if="isNewAuthor"
+        icon="i-lucide-file-text"
+        title="Welcome to JAPR!"
+        description="Get started by submitting your first manuscript for review."
+        action-label="Submit Your First Manuscript"
+        action-to="/author/submit"
+        action-icon="i-lucide-plus"
+      />
+
+      <div v-if="recentSubmissions.length">
+        <div class="mb-5 flex items-baseline justify-between">
+          <h2 class="font-serif text-2xl font-semibold text-highlighted">
+            Your Manuscripts
+          </h2>
+          <NuxtLink
+            to="/author/submissions"
+            class="text-sm font-bold text-primary-600 hover:text-primary-700"
+          >
+            View all submissions →
+          </NuxtLink>
+        </div>
+
+        <div class="grid gap-4.5" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+          <NuxtLink
             v-for="submission in recentSubmissions"
             :key="submission.id"
+            :to="`/author/submissions/${submission.id}`"
+            class="overflow-hidden rounded-2xl border border-default bg-default"
           >
-            <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between gap-4">
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-primary-600 truncate">
-                    <NuxtLink :to="`/author/submissions/${submission.id}`">
-                      {{ submission.title }}
-                    </NuxtLink>
-                  </p>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-                    <JournalStatusBadge :status="submission.approvalStatus" />
-                    <span>{{ submission.categoryName || 'Uncategorized' }}</span>
-                    <span>{{ submission.reviewerCount }} reviewers</span>
-                    <span
-                      v-if="submission.approvalStatus === 'changes_requested'"
-                      class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800"
-                    >
-                      Action Required
-                    </span>
-                  </div>
-                </div>
-                <span class="text-xs text-gray-500 shrink-0">
-                  Updated {{ relativeTime(submission.updatedAt) }}
-                </span>
+            <div class="h-1.5" :class="journalStatusBarClass(submission.approvalStatus)" />
+            <div class="p-5.5">
+              <div class="mb-3">
+                <JournalStatusBadge :status="submission.approvalStatus" />
+              </div>
+              <h4 class="mb-2.5 font-serif text-[16.5px] leading-snug font-semibold text-highlighted">
+                {{ submission.title }}
+              </h4>
+              <p class="mb-1 text-xs text-dimmed">
+                {{ submission.categoryName || 'Uncategorized' }} · {{ submission.reviewerCount }} reviewer{{ submission.reviewerCount === 1 ? '' : 's' }}
+              </p>
+              <p class="text-[11.5px] text-dimmed">
+                Updated {{ relativeTime(submission.updatedAt) }}
+              </p>
+            </div>
+          </NuxtLink>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-4 flex items-baseline justify-between">
+          <h2 class="font-serif text-xl font-semibold text-highlighted">
+            Research Profile
+          </h2>
+          <NuxtLink to="/author/settings" class="text-xs font-bold text-primary-600 hover:text-primary-700">
+            Edit →
+          </NuxtLink>
+        </div>
+        <div class="rounded-[14px] border border-default bg-default p-5.5">
+          <p class="mb-3 text-xs font-bold uppercase tracking-wide text-dimmed">
+            Research Interests
+          </p>
+          <div v-if="currentUser?.user?.researchInterests?.length" class="mb-4.5 flex flex-wrap gap-2">
+            <span
+              v-for="interest in currentUser.user.researchInterests"
+              :key="interest"
+              class="rounded-full bg-primary-100 px-3 py-1.5 text-xs text-primary-700"
+            >
+              {{ interest }}
+            </span>
+          </div>
+          <p v-else class="mb-4.5 text-sm text-muted">
+            No interests set yet.
+          </p>
+          <p class="mb-1 text-xs font-bold uppercase tracking-wide text-dimmed">
+            Institution
+          </p>
+          <p class="text-sm text-highlighted">
+            {{ currentUser?.user?.institution || 'Not specified' }}
+          </p>
+        </div>
+      </div>
+
+      <UCard>
+        <template #header>
+          <h3 class="text-base font-semibold text-highlighted">
+            Quick Actions
+          </h3>
+        </template>
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+          <UCard as="NuxtLink" to="/author/submit" class="flex items-center transition hover:shadow-md">
+            <div class="flex items-center gap-4">
+              <UIcon name="i-lucide-plus" class="size-8 shrink-0 text-primary" />
+              <div>
+                <p class="text-sm font-medium text-highlighted">
+                  Submit New Manuscript
+                </p>
+                <p class="text-sm text-muted">
+                  Upload your research for review
+                </p>
               </div>
             </div>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div
-      v-if="collectionJournals.length"
-      class="mt-8"
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-medium text-gray-900">
-          My Journal Collections
-        </h3>
-        <NuxtLink
-          to="/journals"
-          class="text-sm text-primary-600 hover:text-primary-700"
-        >
-          Browse all journals
-        </NuxtLink>
-      </div>
-      <JournalCard
-        v-for="journal in collectionJournals"
-        :key="journal.id"
-        :journal="journal"
-      />
-    </div>
-
-    <div class="bg-gray-50 rounded-lg p-6 mt-8">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">
-        Quick Actions
-      </h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <NuxtLink
-          to="/author/submit"
-          class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-        >
-          <div class="shrink-0">
-            <svg
-              class="h-8 w-8 text-primary-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-900">
-              Submit New Manuscript
-            </p>
-            <p class="text-sm text-gray-500">
-              Upload your research for review
-            </p>
-          </div>
-        </NuxtLink>
-        <NuxtLink
-          to="/author/submissions"
-          class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-        >
-          <div class="shrink-0">
-            <svg
-              class="h-8 w-8 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-900">
-              View All Submissions
-            </p>
-            <p class="text-sm text-gray-500">
-              Track your manuscript status
-            </p>
-          </div>
-        </NuxtLink>
-        <NuxtLink
-          to="/journals"
-          class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-        >
-          <div class="shrink-0">
-            <svg
-              class="h-8 w-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-900">
-              Browse Journals
-            </p>
-            <p class="text-sm text-gray-500">
-              Explore published research
-            </p>
-          </div>
-        </NuxtLink>
-      </div>
+          </UCard>
+          <UCard as="NuxtLink" to="/author/submissions" class="flex items-center transition hover:shadow-md">
+            <div class="flex items-center gap-4">
+              <UIcon name="i-lucide-file-text" class="size-8 shrink-0 text-info" />
+              <div>
+                <p class="text-sm font-medium text-highlighted">
+                  View All Submissions
+                </p>
+                <p class="text-sm text-muted">
+                  Track your manuscript status
+                </p>
+              </div>
+            </div>
+          </UCard>
+          <UCard as="NuxtLink" to="/journals" class="flex items-center transition hover:shadow-md">
+            <div class="flex items-center gap-4">
+              <UIcon name="i-lucide-book-open" class="size-8 shrink-0 text-success" />
+              <div>
+                <p class="text-sm font-medium text-highlighted">
+                  Browse Journals
+                </p>
+                <p class="text-sm text-muted">
+                  Explore published research
+                </p>
+              </div>
+            </div>
+          </UCard>
+        </div>
+      </UCard>
     </div>
   </div>
 </template>

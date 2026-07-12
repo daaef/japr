@@ -3,62 +3,143 @@
 
 @theme static {
   --font-sans: "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-serif: "Newsreader", "Georgia", "Times New Roman", serif;
 
-  /* Laravel journal tailwind.config.js — primary (orange) */
-  --color-primary-50: #fff8ed;
-  --color-primary-100: #fff0d4;
-  --color-primary-200: #ffdea8;
-  --color-primary-300: #ffc570;
-  --color-primary-400: #ffa137;
-  --color-primary-500: #ff830c;
-  --color-primary-600: #f06906;
-  --color-primary-700: #c74e07;
-  --color-primary-800: #9e3e0e;
-  --color-primary-900: #7f350f;
-  --color-primary-950: #451805;
+  /*
+   * Brand palette (redesign v2) — sampled from the JAPR logo (warm brick ring, marigold
+   * Africa map + tangerine sun highlight), replacing the earlier cool-maroon/ochre-gold
+   * scales. See design_handoff_japr_redesign/DESIGN_SYSTEM_ANALYSIS.md for the full
+   * rationale. Nuxt UI aliases in app/app.config.ts map primary→brick, secondary→marigold,
+   * neutral→taupe, success→status-green, info→status-blue, warning→status-amber,
+   * error→status-red.
+   *
+   * Brick / Oxblood (primary) — 500 is the interactive brand brick; 600 ≈ the logo ring.
+   */
+  --color-brick-50: #fbf3f0;
+  --color-brick-100: #f6e5de;
+  --color-brick-200: #ecccc0;
+  --color-brick-300: #d59e8b;
+  --color-brick-400: #b5674f;
+  --color-brick-500: #8f3626;
+  --color-brick-600: #762a1e;
+  --color-brick-700: #5f2015;
+  --color-brick-800: #4f1a11;
+  --color-brick-900: #431610;
+  --color-brick-950: #2c1109;
 
-  /* Laravel journal tailwind.config.js — secondary (coral) */
-  --color-secondary-50: #fef4f2;
-  --color-secondary-100: #fde7e3;
-  --color-secondary-200: #fdd2cb;
-  --color-secondary-300: #fab2a7;
-  --color-secondary-400: #f48675;
-  --color-secondary-500: #ea5f49;
-  --color-secondary-600: #d7422b;
-  --color-secondary-700: #b53420;
-  --color-secondary-800: #962e1e;
-  --color-secondary-900: #762a1e;
-  --color-secondary-950: #43140c;
+  /*
+   * Marigold / Amber (secondary) — 300 is the logo's amber (eyebrows/KPI numerals),
+   * 600 is the AA-safe amber used for CTA buttons with white text, 700 is the amber
+   * pill/status text color. The handoff labels its two darkest swatches "700"/"800" but
+   * #8a480d (text use) is actually *lighter* than #7a3f0c — reordered here by measured
+   * brightness so the scale stays monotonically darker per step, per Tailwind/Nuxt UI
+   * convention; 900/950 are interpolated (not given in the handoff) to complete the
+   * scale, continuing the 700→800 falloff ratio — flagging for a visual sanity-check.
+   */
+  --color-marigold-50: #fff2dc;
+  --color-marigold-100: #ffedcf;
+  --color-marigold-200: #ffd591;
+  --color-marigold-300: #ffaf3b;
+  --color-marigold-400: #f5981f;
+  --color-marigold-500: #e07d10;
+  --color-marigold-600: #a85a0c;
+  --color-marigold-700: #8a480d;
+  --color-marigold-800: #7a3f0c;
+  --color-marigold-900: #6c370b;
+  --color-marigold-950: #60300a;
 
-  /* Nuxt UI aliases */
-  --color-orange-50: #fff8ed;
-  --color-orange-100: #fff0d4;
-  --color-orange-200: #ffdea8;
-  --color-orange-300: #ffc570;
-  --color-orange-400: #ffa137;
-  --color-orange-500: #ff830c;
-  --color-orange-600: #f06906;
-  --color-orange-700: #c74e07;
-  --color-orange-800: #9e3e0e;
-  --color-orange-900: #7f350f;
-  --color-orange-950: #451805;
+  /* Tangerine — one-off hot accent (notification dots), not a full scale. */
+  --color-tangerine: #ff8912;
 
-  --color-rose-50: #fef4f2;
-  --color-rose-100: #fde7e3;
-  --color-rose-200: #fdd2cb;
-  --color-rose-300: #fab2a7;
-  --color-rose-400: #f48675;
-  --color-rose-500: #ea5f49;
-  --color-rose-600: #d7422b;
-  --color-rose-700: #b53420;
-  --color-rose-800: #962e1e;
-  --color-rose-900: #762a1e;
-  --color-rose-950: #43140c;
+  /*
+   * Warm Taupe (neutral) — replaces cool `stone`. Nuxt UI hardcodes its semantic aliases
+   * to fixed neutral shades (text-dimmed→400, text-muted→500, text-toned→600, text→700,
+   * text-highlighted→900, bg-muted→50, bg-elevated→100, bg-accented/border→200,
+   * border-accented→300 — see @nuxt/ui's static theme root), so the handoff's 10 named
+   * roles are placed to match those roles, not pure brightness order: this is what makes
+   * `border-default` actually resolve to the handoff's #ece4db as planned. One named
+   * value — "hairline dividers" #f6f1ea — doesn't correspond to any of those fixed roles;
+   * it's parked at 800 (unreferenced by any Nuxt UI default, confirmed no template uses
+   * `neutral-800` explicitly), which breaks strict monotonicity — flagging this as a
+   * known compromise rather than silently reordering it. 950 is interpolated one step
+   * past the handoff's darkest value (#241611, at 900) to complete the scale.
+   */
+  --color-taupe-50: #fdf8f1;
+  --color-taupe-100: #fbf7f1;
+  --color-taupe-200: #ece4db;
+  --color-taupe-300: #ddd4cb;
+  --color-taupe-400: #b0a298;
+  --color-taupe-500: #857066;
+  --color-taupe-600: #5c4a43;
+  --color-taupe-700: #4a3a33;
+  --color-taupe-800: #f6f1ea;
+  --color-taupe-900: #241611;
+  --color-taupe-950: #190e0a;
 
-  --ui-primary: var(--color-primary-500);
+  /*
+   * Status colors — anchored exactly at shade 500 (the shade Nuxt UI's color plugin
+   * uses for `--ui-{success,info,warning,error}` in light mode) using the handoff's
+   * "Text" hex per status; the surrounding shades are interpolated for scale
+   * completeness. Nuxt UI's `subtle`/`soft` badge variants derive their tint background
+   * from `bg-{color}/10`, which already lands within ~1% of the handoff's given tint
+   * hexes at the 500 anchor — no separate tint shade needed.
+   */
+  --color-status-blue-50: #f5f7f9;
+  --color-status-blue-100: #d1dce7;
+  --color-status-blue-200: #a8c1da;
+  --color-status-blue-300: #7ca6d0;
+  --color-status-blue-400: #4d8ac9;
+  --color-status-blue-500: #2f6fb0;
+  --color-status-blue-600: #285f96;
+  --color-status-blue-700: #234f7b;
+  --color-status-blue-800: #1e3f60;
+  --color-status-blue-900: #182f46;
+  --color-status-blue-950: #111e2c;
+
+  --color-status-green-50: #f5faf8;
+  --color-status-green-100: #c4e3d5;
+  --color-status-green-200: #8bd5b4;
+  --color-status-green-300: #4dcb94;
+  --color-status-green-400: #29a870;
+  --color-status-green-500: #17724a;
+  --color-status-green-600: #146542;
+  --color-status-green-700: #135739;
+  --color-status-green-800: #124931;
+  --color-status-green-900: #113c29;
+  --color-status-green-950: #0f2e21;
+
+  --color-status-amber-50: #faf7f5;
+  --color-status-amber-100: #e8d4c2;
+  --color-status-amber-200: #dfb086;
+  --color-status-amber-300: #db8c45;
+  --color-status-amber-400: #c2691a;
+  --color-status-amber-500: #8a480d;
+  --color-status-amber-600: #7a3f0b;
+  --color-status-amber-700: #67370c;
+  --color-status-amber-800: #552f0c;
+  --color-status-amber-900: #43260c;
+  --color-status-amber-950: #321d0b;
+
+  --color-status-red-50: #faf6f5;
+  --color-status-red-100: #e9d2cd;
+  --color-status-red-200: #deaa9e;
+  --color-status-red-300: #d7806c;
+  --color-status-red-400: #d45336;
+  --color-status-red-500: #b23a1f;
+  --color-status-red-600: #99321b;
+  --color-status-red-700: #7e2b18;
+  --color-status-red-800: #622416;
+  --color-status-red-900: #491c12;
+  --color-status-red-950: #2f140e;
 
   --container-center: true;
+}
+
+/* Card/input radii land in the handoff's 12–16px / 8–10px ranges at this base
+   (rounded-lg → 12px, rounded-md → 9px) instead of Nuxt UI's default 0.25rem. */
+:root {
+  --ui-radius: 0.375rem;
+  --text-sm: 0.75rem;
 }
 
 body {
@@ -69,8 +150,4 @@ body {
 .journal-site header a,
 .journal-site #hero a:not(.btn):not([class*="bg-"]) {
   text-decoration: none;
-}
-
-.journal-site a.bg-secondary-800:visited {
-  color: white !important;
 }

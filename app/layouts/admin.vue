@@ -3,7 +3,7 @@ import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 
 const { data: currentUser, refresh } = useCurrentUser()
-const { dashboardLinkClass } = useDashboardNavigation()
+const { dashboardLinkClassDark, dashboardSubLinkClassDark, linkClassDark, useSidebarGroup } = useDashboardNavigation()
 
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
@@ -11,18 +11,7 @@ const displayName = computed(() => {
 })
 
 useHead({
-  title: 'JAPR Website | Dashboard',
-  link: [
-    { rel: 'stylesheet', href: '/assets/css/bootstrap.min.css' },
-    { rel: 'stylesheet', href: '/assets/css/main.css' },
-    { rel: 'stylesheet', href: '/assets/css/journal-dashboard-overrides.css' }
-  ],
-  script: [
-    { src: '/assets/js/jquery-3.7.1.min.js', defer: true },
-    { src: '/assets/js/boostrap.bundle.min.js', defer: true },
-    { src: '/assets/js/phosphor-icon.js', defer: true },
-    { src: '/assets/js/main.js', defer: true }
-  ]
+  title: 'JAPR Website | Dashboard'
 })
 
 async function signOut() {
@@ -34,221 +23,311 @@ async function signOut() {
 // Mail viewer link when NUXT_PUBLIC_ENABLE_MAIL_VIEWER=true (server enforces the same flag).
 const config = useRuntimeConfig()
 const showDevMail = computed(() => config.public.enableMailViewer === true)
+
+const sidebarOpen = ref(false)
+function openSidebar() {
+  sidebarOpen.value = true
+}
+function closeSidebar() {
+  sidebarOpen.value = false
+}
+
+const categoriesGroup = useSidebarGroup(['/admin/categories'])
+const rolesGroup = useSidebarGroup(['/admin/roles', '/admin/permissions'])
+const usersGroup = useSidebarGroup(['/admin/users'])
 </script>
 
 <template>
-  <div class="dashboard-layout">
-    <div class="preloader">
-      <div class="loader" />
-    </div>
-    <div class="side-overlay" />
+  <div class="relative flex min-h-screen">
+    <div
+      v-if="sidebarOpen"
+      class="fixed inset-0 z-40 bg-gray-900/50 xl:hidden"
+      @click="closeSidebar"
+    />
 
-    <aside class="sidebar">
+    <aside
+      class="fixed inset-y-0 start-0 z-50 flex w-64 flex-col bg-brick-950 transition-transform duration-200 xl:translate-x-0"
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    >
       <button
         type="button"
-        class="sidebar-close-btn text-gray-500 hover-text-white hover-bg-main-600 text-md w-24 h-24 border border-gray-100 hover-border-main-600 d-xl-none d-flex flex-center rounded-circle position-absolute"
+        class="absolute end-2 top-2 z-20 flex size-8 items-center justify-center rounded-full border border-white/20 text-brick-300 hover:border-primary hover:bg-primary hover:text-white xl:hidden"
+        aria-label="Close sidebar"
+        @click="closeSidebar"
       >
-        <i class="ph ph-x" />
+        <UIcon name="i-lucide-x" />
       </button>
 
       <NuxtLink
         to="/admin"
-        class="sidebar__logo text-center p-20 position-sticky inset-block-start-0 bg-white w-100 z-1 pb-10"
+        class="sticky top-0 z-10 flex items-center gap-2.5 bg-brick-950 px-6 pb-5 pt-7"
       >
         <img
-          class="w-25s"
+          class="h-11 w-auto shrink-0 rounded-full bg-taupe-50 p-1.5"
           src="/images/japr-logo.png"
           alt="Logo"
         >
+        <div>
+          <p class="text-sm font-bold tracking-wide text-white">
+            JAPR
+          </p>
+          <p class="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-brick-400">
+            Admin Workspace
+          </p>
+        </div>
       </NuxtLink>
 
-      <div class="sidebar-menu-wrapper overflow-y-auto scroll-sm">
-        <div class="p-20 pt-10">
-          <ul class="sidebar-menu">
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/admin"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin', true)"
-              >
-                <span class="icon"><i class="ph ph-squares-four" /></span>
-                <span class="text">Dashboard</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item has-dropdown">
-              <a
-                href="javascript:void(0)"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-graduation-cap" /></span>
-                <span class="text">Manage Categories</span>
-              </a>
-              <ul class="sidebar-submenu">
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/admin/categories"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/admin/categories')"
-                  >
-                    Categories
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/admin/categories#subcategories"
-                    class="sidebar-submenu__link"
-                  >
-                    Sub Categories
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/admin/categories#sub-subcategories"
-                    class="sidebar-submenu__link"
-                  >
-                    Sub Subcategories
-                  </NuxtLink>
-                </li>
-              </ul>
-            </li>
+      <nav class="flex-1 overflow-y-auto px-4 pb-6">
+        <ul class="flex flex-col gap-3">
+          <li>
+            <NuxtLink
+              to="/admin"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin', true)"
+            >
+              <UIcon
+                name="i-lucide-layout-grid"
+                class="text-xl"
+              />
+              <span>Dashboard</span>
+            </NuxtLink>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/admin/journals"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin/journals')"
-              >
-                <span class="icon"><i class="ph ph-books" /></span>
-                <span class="text">Manage Journals</span>
-              </NuxtLink>
-            </li>
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
+              :class="linkClassDark(categoriesGroup.isGroupActive)"
+              :aria-expanded="categoriesGroup.open"
+              @click="categoriesGroup.toggle"
+            >
+              <UIcon
+                name="i-lucide-graduation-cap"
+                class="text-xl"
+              />
+              <span>Manage Categories</span>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="ms-auto shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': categoriesGroup.open }"
+              />
+            </button>
+            <ul
+              v-show="categoriesGroup.open"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
+            >
+              <li>
+                <NuxtLink
+                  to="/admin/categories"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/admin/categories')"
+                >
+                  Categories
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/admin/categories#subcategories"
+                  class="block text-sm text-brick-300 hover:text-white"
+                >
+                  Sub Categories
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/admin/categories#sub-subcategories"
+                  class="block text-sm text-brick-300 hover:text-white"
+                >
+                  Sub Subcategories
+                </NuxtLink>
+              </li>
+            </ul>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/admin/audit/dashboard"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin/audit')"
-              >
-                <span class="icon"><i class="ph ph-clipboard-text" /></span>
-                <span class="text">Audit Logs</span>
-              </NuxtLink>
-            </li>
+          <li>
+            <NuxtLink
+              to="/admin/journals"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/journals')"
+            >
+              <UIcon
+                name="i-lucide-library"
+                class="text-xl"
+              />
+              <span>Manage Journals</span>
+            </NuxtLink>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <span class="text-gray-300 text-sm px-20 pt-20 fw-semibold border-top border-gray-100 d-block text-uppercase">Settings</span>
-            </li>
+          <li>
+            <NuxtLink
+              to="/admin/audit/dashboard"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/audit')"
+            >
+              <UIcon
+                name="i-lucide-clipboard-list"
+                class="text-xl"
+              />
+              <span>Audit Logs</span>
+            </NuxtLink>
+          </li>
 
-            <li class="sidebar-menu__item has-dropdown">
-              <a
-                href="javascript:void(0)"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-shield-check" /></span>
-                <span class="text">Roles and Permissions</span>
-              </a>
-              <ul class="sidebar-submenu">
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/admin/roles"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/admin/roles')"
-                  >
-                    Manage Roles
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/admin/permissions"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/admin/permissions')"
-                  >
-                    Manage Permissions
-                  </NuxtLink>
-                </li>
-              </ul>
-            </li>
+          <li class="border-t border-white/10 pt-5">
+            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Settings</span>
+          </li>
 
-            <li class="sidebar-menu__item has-dropdown">
-              <a
-                href="javascript:void(0)"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-users-three" /></span>
-                <span class="text">Manage Users</span>
-              </a>
-              <ul class="sidebar-submenu">
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/admin/users"
-                    class="sidebar-submenu__link"
-                    :class="dashboardLinkClass('/admin/users')"
-                  >
-                    Users
-                  </NuxtLink>
-                </li>
-              </ul>
-            </li>
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
+              :class="linkClassDark(rolesGroup.isGroupActive)"
+              :aria-expanded="rolesGroup.open"
+              @click="rolesGroup.toggle"
+            >
+              <UIcon
+                name="i-lucide-shield-check"
+                class="text-xl"
+              />
+              <span>Roles and Permissions</span>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="ms-auto shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': rolesGroup.open }"
+              />
+            </button>
+            <ul
+              v-show="rolesGroup.open"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
+            >
+              <li>
+                <NuxtLink
+                  to="/admin/roles"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/admin/roles')"
+                >
+                  Manage Roles
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/admin/permissions"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/admin/permissions')"
+                >
+                  Manage Permissions
+                </NuxtLink>
+              </li>
+            </ul>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/admin/notifications"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin/notifications')"
-              >
-                <span class="icon"><i class="ph ph-bell" /></span>
-                <span class="text">Notifications</span>
-              </NuxtLink>
-            </li>
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
+              :class="linkClassDark(usersGroup.isGroupActive)"
+              :aria-expanded="usersGroup.open"
+              @click="usersGroup.toggle"
+            >
+              <UIcon
+                name="i-lucide-users"
+                class="text-xl"
+              />
+              <span>Manage Users</span>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="ms-auto shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': usersGroup.open }"
+              />
+            </button>
+            <ul
+              v-show="usersGroup.open"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
+            >
+              <li>
+                <NuxtLink
+                  to="/admin/users"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/admin/users')"
+                >
+                  Users
+                </NuxtLink>
+              </li>
+            </ul>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/admin/notifications/preferences"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin/notifications/preferences')"
-              >
-                <span class="icon"><i class="ph ph-sliders-horizontal" /></span>
-                <span class="text">Notification Preferences</span>
-              </NuxtLink>
-            </li>
+          <li>
+            <NuxtLink
+              to="/admin/notifications"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/notifications')"
+            >
+              <UIcon
+                name="i-lucide-bell"
+                class="text-xl"
+              />
+              <span>Notifications</span>
+            </NuxtLink>
+          </li>
 
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/admin/settings"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/admin/settings')"
-              >
-                <span class="icon"><i class="ph ph-gear" /></span>
-                <span class="text">Account Settings</span>
-              </NuxtLink>
-            </li>
+          <li>
+            <NuxtLink
+              to="/admin/notifications/preferences"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/notifications/preferences')"
+            >
+              <UIcon
+                name="i-lucide-sliders-horizontal"
+                class="text-xl"
+              />
+              <span>Notification Preferences</span>
+            </NuxtLink>
+          </li>
 
-            <li v-if="showDevMail" class="sidebar-menu__item">
-              <NuxtLink
-                to="/mail"
-                class="sidebar-menu__link"
-                :class="dashboardLinkClass('/mail')"
-              >
-                <span class="icon"><i class="ph ph-envelope-simple" /></span>
-                <span class="text">Mail Inbox</span>
-              </NuxtLink>
-            </li>
-          </ul>
-        </div>
-      </div>
+          <li>
+            <NuxtLink
+              to="/admin/settings"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/settings')"
+            >
+              <UIcon
+                name="i-lucide-settings"
+                class="text-xl"
+              />
+              <span>Account Settings</span>
+            </NuxtLink>
+          </li>
+
+          <li v-if="showDevMail">
+            <NuxtLink
+              to="/mail"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/mail')"
+            >
+              <UIcon
+                name="i-lucide-mail"
+                class="text-xl"
+              />
+              <span>Mail Inbox</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </nav>
     </aside>
 
-    <div class="dashboard-main-wrapper">
-      <div class="top-navbar flex-between gap-16">
-        <div class="flex-align gap-16">
-          <button
-            type="button"
-            class="toggle-btn d-xl-none d-flex text-26 text-gray-500"
-          >
-            <i class="ph ph-list" />
-          </button>
+    <div class="flex min-h-screen flex-1 flex-col bg-primary-50 xl:ms-64">
+      <div class="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-default bg-default px-4 py-4 sm:px-6">
+        <div class="flex items-center gap-4">
+          <UButton
+            icon="i-lucide-menu"
+            color="neutral"
+            variant="ghost"
+            class="xl:hidden"
+            aria-label="Open sidebar"
+            @click="openSidebar"
+          />
         </div>
 
-        <div class="flex-align gap-16">
+        <div class="flex items-center gap-4">
           <NotificationDropdown />
 
           <DashboardProfileDropdown
@@ -260,25 +339,23 @@ const showDevMail = computed(() => config.public.enableMailViewer === true)
         </div>
       </div>
 
-      <div class="dashboard-body">
+      <main class="flex-1 px-4 py-6 sm:px-6">
         <slot />
-      </div>
+      </main>
 
-      <div class="dashboard-footer">
-        <div class="flex-between flex-wrap gap-16">
-          <p class="text-gray-300 text-13 fw-normal">
-            &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
-          </p>
-          <div class="flex-align flex-wrap gap-16">
-            <a
-              href="#"
-              class="text-gray-300 text-13 fw-normal hover-text-main-600 hover-text-decoration-underline"
-            >Documentation</a>
-            <a
-              href="#"
-              class="text-gray-300 text-13 fw-normal hover-text-main-600 hover-text-decoration-underline"
-            >Support</a>
-          </div>
+      <div class="mt-auto flex flex-wrap items-center justify-between gap-4 rounded-t-2xl bg-default px-5 py-5 sm:px-6">
+        <p class="text-xs text-dimmed">
+          &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
+        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          <a
+            href="#"
+            class="text-xs text-dimmed hover:text-primary hover:underline"
+          >Documentation</a>
+          <a
+            href="#"
+            class="text-xs text-dimmed hover:text-primary hover:underline"
+          >Support</a>
         </div>
       </div>
     </div>

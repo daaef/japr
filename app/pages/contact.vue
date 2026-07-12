@@ -19,6 +19,8 @@ const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+const phoneCountries = ['US', 'CA', 'NG', 'ZA', 'GB']
+
 async function submit() {
   errorMessage.value = ''
   successMessage.value = ''
@@ -59,143 +61,110 @@ async function submit() {
 </script>
 
 <template>
-  <section class="max-w-2xl mx-auto py-6">
-    <div class="border-b border-gray-200 pb-5 mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">
-        Contact us
-      </h1>
-      <p class="text-sm text-gray-600 mt-1">
-        Reach the editorial team with questions about submissions, access, or partnerships.
-      </p>
+  <section class="mx-auto max-w-2xl space-y-6 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="border-b border-default pb-5">
+      <AppPageHeader
+        eyebrow="Get in touch"
+        title="Contact us"
+        description="Reach the editorial team with questions about submissions, access, or partnerships."
+      />
     </div>
 
-    <form
-      class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6"
+    <UCard
+      as="form"
+      :ui="{ body: 'space-y-6' }"
       @submit.prevent="submit"
     >
       <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label
-            for="first-name"
-            class="block text-sm font-medium text-gray-900 mb-2"
-          >First name</label>
-          <input
+        <UFormField label="First name">
+          <UInput
             id="first-name"
             v-model="form.firstName"
             type="text"
             required
-            class="form-control"
-          >
-        </div>
-        <div>
-          <label
-            for="last-name"
-            class="block text-sm font-medium text-gray-900 mb-2"
-          >Last name</label>
-          <input
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField label="Last name">
+          <UInput
             id="last-name"
             v-model="form.lastName"
             type="text"
             required
-            class="form-control"
-          >
-        </div>
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
-      <div>
-        <label
-          for="email"
-          class="block text-sm font-medium text-gray-900 mb-2"
-        >Email</label>
-        <input
+      <UFormField label="Email">
+        <UInput
           id="email"
           v-model="form.email"
           type="email"
           required
-          class="form-control"
-        >
-      </div>
+          class="w-full"
+        />
+      </UFormField>
 
-      <div>
-        <label
-          for="phone-number"
-          class="block text-sm font-medium text-gray-900 mb-2"
-        >Phone number</label>
+      <UFormField label="Phone number">
         <div class="flex gap-3">
-          <label
-            for="phone-country"
-            class="sr-only"
-          >Country code</label>
-          <select
+          <USelect
             id="phone-country"
             v-model="form.phoneCountry"
-            class="form-select w-28"
+            :items="phoneCountries"
             aria-label="Phone country code"
-          >
-            <option value="US">US</option>
-            <option value="CA">CA</option>
-            <option value="NG">NG</option>
-            <option value="ZA">ZA</option>
-            <option value="GB">GB</option>
-          </select>
-          <input
+            class="w-28"
+          />
+          <UInput
             id="phone-number"
             v-model="form.phoneNumber"
             type="tel"
-            class="form-control flex-1"
-          >
+            class="flex-1"
+          />
         </div>
-      </div>
+      </UFormField>
 
-      <div>
-        <label
-          for="message"
-          class="block text-sm font-medium text-gray-900 mb-2"
-        >Message</label>
-        <textarea
+      <UFormField label="Message">
+        <UTextarea
           id="message"
           v-model="form.message"
-          rows="5"
+          :rows="5"
           required
-          class="form-control"
+          class="w-full"
         />
-      </div>
+      </UFormField>
 
-      <label class="flex items-start gap-3 text-sm text-gray-600">
-        <input
-          v-model="form.privacyAccepted"
-          type="checkbox"
-          class="mt-1"
-        >
-        <span>
+      <UCheckbox v-model="form.privacyAccepted">
+        <template #label>
           I agree to the processing of my information as described in the
           <NuxtLink to="/privacy" class="text-primary-600 hover:underline">privacy policy</NuxtLink>.
-        </span>
-      </label>
+        </template>
+      </UCheckbox>
 
-      <div
+      <UAlert
         v-if="errorMessage"
-        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        role="alert"
-      >
-        {{ errorMessage }}
-      </div>
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :title="errorMessage"
+      />
 
-      <div
+      <UAlert
         v-if="successMessage"
-        class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-        role="status"
-      >
-        {{ successMessage }}
-      </div>
+        color="success"
+        variant="subtle"
+        icon="i-lucide-circle-check"
+        :title="successMessage"
+      />
 
-      <button
+      <UButton
         type="submit"
-        class="btn btn-primary"
+        color="primary"
+        :loading="loading"
         :disabled="loading"
       >
         {{ loading ? 'Sending...' : 'Send message' }}
-      </button>
-    </form>
+      </UButton>
+    </UCard>
   </section>
 </template>

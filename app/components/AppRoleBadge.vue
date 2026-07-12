@@ -5,7 +5,11 @@ defineProps<{
 </script>
 
 <template>
-  <span class="badge bg-gray-100 text-capitalize">
+  <UBadge
+    color="neutral"
+    variant="subtle"
+    class="capitalize"
+  >
     {{ role.replaceAll('_', ' ') }}
-  </span>
+  </UBadge>
 </template>

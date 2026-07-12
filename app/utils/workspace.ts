@@ -14,7 +14,7 @@ export function resolveRoleLayout(roles: string[]): RoleLayout {
   }
 
   if (roles.includes('author')) {
-    return 'public'
+    return 'author'
   }
 
   return 'public'

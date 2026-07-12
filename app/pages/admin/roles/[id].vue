@@ -26,6 +26,12 @@ const role = computed(() => rolesData.value?.roles.find(item => item.id === role
 const selectedPermissions = ref<string[]>([])
 const message = ref('')
 
+const permissionItems = computed(() => (permissionsData.value?.permissions ?? []).map(permission => ({
+  label: permission.name,
+  description: `${permission.resource} · ${permission.action}`,
+  value: permission.id
+})))
+
 watch(role, (value) => {
   selectedPermissions.value = value?.permissions.map(item => item.permissionId) ?? []
 }, { immediate: true })
@@ -46,63 +52,41 @@ async function savePermissions() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            {{ role?.name || 'Role permissions' }}
-          </h5>
-          <p class="text-13 text-gray-500 mb-0 mt-4">
-            {{ role?.description || 'Manage permission matrix for this role.' }}
-          </p>
-        </div>
-        <div
-          v-if="permissionsData?.permissions.length"
-          class="card-body"
-        >
-          <form @submit.prevent="savePermissions">
-            <div class="row gy-3">
-              <div
-                v-for="permission in permissionsData.permissions"
-                :key="permission.id"
-                class="col-md-6"
-              >
-                <label class="form-check d-flex align-items-start gap-12 p-16 border border-gray-100 rounded-12 h-100 mb-0">
-                  <input
-                    v-model="selectedPermissions"
-                    type="checkbox"
-                    class="form-check-input mt-4"
-                    :value="permission.id"
-                  >
-                  <span>
-                    <span class="fw-semibold text-15 text-gray-900 d-block">{{ permission.name }}</span>
-                    <span class="text-13 text-gray-500">{{ permission.resource }} · {{ permission.action }}</span>
-                  </span>
-                </label>
-              </div>
-            </div>
-            <button
-              type="submit"
-              class="btn btn-main rounded-pill py-9 mt-20"
-            >
-              Save permissions
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+  <div class="space-y-6">
+    <UCard>
+      <template #header>
+        <h5 class="text-base font-semibold text-highlighted mb-0">
+          {{ role?.name || 'Role permissions' }}
+        </h5>
+        <p class="text-xs text-muted mb-0 mt-1">
+          {{ role?.description || 'Manage permission matrix for this role.' }}
+        </p>
+      </template>
 
-    <div
-      v-if="message"
-      class="col-12"
-    >
-      <div
-        class="alert alert-success text-15 mb-0"
-        role="alert"
+      <form
+        v-if="permissionsData?.permissions.length"
+        @submit.prevent="savePermissions"
       >
-        {{ message }}
-      </div>
-    </div>
+        <UCheckboxGroup
+          v-model="selectedPermissions"
+          :items="permissionItems"
+        />
+        <UButton
+          type="submit"
+          color="primary"
+          class="mt-5"
+        >
+          Save permissions
+        </UButton>
+      </form>
+    </UCard>
+
+    <UAlert
+      v-if="message"
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      :title="message"
+    />
   </div>
 </template>

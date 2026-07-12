@@ -8,14 +8,12 @@ defineProps<{
 
 <template>
   <div :class="colClass || 'col-md-6'">
-    <div class="mb-20">
-      <label
-        :for="forId"
-        class="h6 mb-8 fw-semibold"
-      >
-        {{ label }}
-      </label>
+    <UFormField
+      :label="label"
+      :name="forId"
+      class="mb-20"
+    >
       <slot />
-    </div>
+    </UFormField>
   </div>
 </template>

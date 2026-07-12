@@ -138,6 +138,10 @@ const {
   enabled: computed(() => Boolean(detailData.value?.journal?.id))
 })
 
+watchEffect(() => {
+  usePageHeading().value = detailData.value?.journal?.title || 'Manuscript detail'
+})
+
 const selectedReviewerIds = ref<string[]>([])
 const approveComment = ref('')
 const revisionDetails = ref('')
@@ -162,6 +166,16 @@ function assignReviewers() {
     })
     await refreshAll()
   }, 'Reviewer assignments updated.', 'Unable to assign reviewers.')
+}
+
+function toggleReviewerSelection(reviewerId: string, checked: boolean | 'indeterminate') {
+  if (checked === true) {
+    if (!selectedReviewerIds.value.includes(reviewerId)) {
+      selectedReviewerIds.value.push(reviewerId)
+    }
+  } else {
+    selectedReviewerIds.value = selectedReviewerIds.value.filter(id => id !== reviewerId)
+  }
 }
 
 const showReadyForNotice = computed(() => detailData.value.journal.approvalStatus === 'ready_for_managing_editor_notice')
@@ -273,146 +287,141 @@ function declineManuscript() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100 flex-between flex-wrap gap-8">
+  <div class="flex flex-col gap-4">
+    <UCard>
+      <template #header>
+        <div class="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h4 class="mb-8">
+            <UBadge
+              v-if="detailData.category?.name"
+              color="primary"
+              variant="subtle"
+              class="mb-3"
+            >
+              {{ detailData.category.name }}
+            </UBadge>
+            <h3 class="mb-2 font-serif text-2xl font-semibold text-highlighted">
               {{ detailData.journal.title || 'Manuscript detail' }}
-            </h4>
-            <p class="text-13 text-gray-500 mb-0">
+            </h3>
+            <p class="mb-0 text-sm text-muted">
               {{ detailData.journal.abstract || detailData.journal.description }}
             </p>
           </div>
           <JournalStatusBadge :status="detailData.journal.approvalStatus" />
         </div>
-        <div
-          v-if="detailData.journal.editorDecisionComment"
-          class="card-body border-bottom border-gray-100"
-        >
-          <div class="alert alert-warning text-15 mb-0">
-            Latest editorial note: {{ detailData.journal.editorDecisionComment }}
-          </div>
+      </template>
+
+      <UAlert
+        v-if="detailData.journal.editorDecisionComment"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-triangle-alert"
+        class="mb-4"
+        :title="`Latest editorial note: ${detailData.journal.editorDecisionComment}`"
+      />
+
+      <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+        <div>
+          <p class="mb-1 text-sm text-muted">Author</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.journal.author || 'Not recorded' }}</p>
         </div>
-        <div class="card-body">
-          <div class="row gy-3">
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Author</p>
-              <p class="mb-0 fw-semibold">{{ detailData.journal.author || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Institution</p>
-              <p class="mb-0 fw-semibold">{{ detailData.journal.institution || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Country</p>
-              <p class="mb-0 fw-semibold">{{ detailData.journal.country || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Language</p>
-              <p class="mb-0 fw-semibold">{{ detailData.journal.journalLanguage || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Category</p>
-              <p class="mb-0 fw-semibold">{{ detailData.category?.name || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Subcategory</p>
-              <p class="mb-0 fw-semibold">{{ detailData.subCategory?.name || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Sub-subcategory</p>
-              <p class="mb-0 fw-semibold">{{ detailData.subSubCategory?.name || 'Not recorded' }}</p>
-            </div>
-            <div class="col-md-3">
-              <p class="text-13 text-gray-500 mb-1">Submitted</p>
-              <p class="mb-0 fw-semibold">{{ new Date(detailData.journal.createdAt).toLocaleString() }}</p>
-            </div>
-          </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Institution</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.journal.institution || 'Not recorded' }}</p>
+        </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Country</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.journal.country || 'Not recorded' }}</p>
+        </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Language</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.journal.journalLanguage || 'Not recorded' }}</p>
+        </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Category</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.category?.name || 'Not recorded' }}</p>
+        </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Subcategory</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.subCategory?.name || 'Not recorded' }}</p>
+        </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Sub-subcategory</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ detailData.subSubCategory?.name || 'Not recorded' }}</p>
+        </div>
+        <div>
+          <p class="mb-1 text-sm text-muted">Submitted</p>
+          <p class="mb-0 font-semibold text-highlighted">{{ new Date(detailData.journal.createdAt).toLocaleString() }}</p>
         </div>
       </div>
-    </div>
+    </UCard>
 
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100 flex-between flex-wrap gap-8">
-          <h5 class="mb-0">
+    <UCard :ui="{ body: 'p-0' }">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-base font-semibold text-highlighted">
             Document preview
-          </h5>
-          <span class="badge bg-warning-50 text-warning-600">
-            <i class="ph ph-shield me-1" />
+          </h4>
+          <UBadge color="warning" variant="subtle" icon="i-lucide-shield">
             Watermarked &amp; protected
-          </span>
+          </UBadge>
         </div>
-        <div class="card-body p-0">
-      <div class="border border-gray-100 overflow-hidden" style="height: 600px;">
-        <div v-if="previewPending" class="flex items-center justify-center h-full">
-          <div class="d-flex align-items-center justify-content-center h-100 text-gray-500">Loading preview...</div>
+      </template>
+      <div class="h-150 overflow-hidden border-y border-default">
+        <div v-if="previewPending" class="flex h-full items-center justify-center text-muted">
+          Loading preview...
         </div>
 
-        <div v-else-if="previewError" class="flex items-center justify-center h-full px-4 text-center text-gray-500">
+        <div v-else-if="previewError" class="flex h-full items-center justify-center px-4 text-center text-muted">
           {{ previewError }}
         </div>
 
-        <div v-else-if="previewPdfUrl" class="h-full">
-          <iframe
-            :src="previewPdfUrl"
-            class="w-full h-full border-0"
-            :title="previewTitle"
-          />
-        </div>
+        <iframe
+          v-else-if="previewPdfUrl"
+          :src="previewPdfUrl"
+          class="h-full w-full border-0"
+          :title="previewTitle"
+        />
 
-        <div v-else-if="previewHtml" class="h-full">
-          <iframe
-            :srcdoc="previewHtml"
-            class="h-full w-full border-0 bg-white"
-            sandbox=""
-            :title="previewTitle"
-          />
-        </div>
+        <iframe
+          v-else-if="previewHtml"
+          :srcdoc="previewHtml"
+          class="h-full w-full border-0 bg-white"
+          sandbox=""
+          :title="previewTitle"
+        />
 
-        <div v-else class="flex items-center justify-center h-full text-gray-500">
+        <div v-else class="flex h-full items-center justify-center text-muted">
           <div class="text-center">
-            <i class="ph ph-file-x text-48 mx-auto mb-2 text-gray-300 d-block" />
+            <UIcon name="i-lucide-file-x" class="mx-auto mb-2 size-12 text-dimmed" />
             <p>Preview not available</p>
-            <p class="text-sm mt-1">The manuscript file may not be uploaded yet.</p>
+            <p class="mt-1 text-sm">The manuscript file may not be uploaded yet.</p>
           </div>
         </div>
       </div>
-        </div>
-      </div>
-    </div>
+    </UCard>
 
-    <div
-      v-if="canEditManuscript"
-      class="col-xl-7"
-    >
-      <div class="card h-100">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
+    <div v-if="canEditManuscript" class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <UCard class="xl:col-span-7">
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">
             Reviewer suggestions
-          </h5>
-        </div>
-        <div class="card-body">
-        <div class="mt-4 grid gap-3">
-          <label
+          </h4>
+        </template>
+        <div class="grid gap-3">
+          <UCheckbox
             v-for="reviewer in suggestionsData.suggestions"
             :key="reviewer.id"
-            class="form-check flex-align gap-12 p-16 border border-gray-100 rounded-12 mb-12"
+            :model-value="selectedReviewerIds.includes(reviewer.id)"
+            class="mb-3 rounded-2xl border border-default p-4"
+            @update:model-value="checked => toggleReviewerSelection(reviewer.id, checked)"
           >
-            <input
-              v-model="selectedReviewerIds"
-              :value="reviewer.id"
-              type="checkbox"
-              class="form-check-input mt-1"
-            >
-            <div class="space-y-1">
+            <template #label>
               <p class="font-semibold text-toned">{{ reviewer.fullname }}</p>
               <p class="text-sm text-muted">{{ reviewer.specialization || reviewer.country || 'No profile summary' }}</p>
               <p class="text-xs text-muted">Match score {{ reviewer.matchScore }}</p>
-            </div>
-          </label>
+            </template>
+          </UCheckbox>
 
           <p
             v-if="!suggestionsData.suggestions.length"
@@ -422,250 +431,172 @@ function declineManuscript() {
           </p>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-main rounded-pill py-9 mt-12"
-          :disabled="actionLoading"
-          @click="assignReviewers"
-        >
+        <UButton color="primary" class="mt-3 rounded-full" :disabled="actionLoading" @click="assignReviewers">
           Assign selected reviewers
-        </button>
-        </div>
-      </div>
-    </div>
+        </UButton>
+      </UCard>
 
-    <div
-      v-if="canEditManuscript"
-      class="col-xl-5"
-    >
-      <div class="card h-100">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
+      <UCard class="xl:col-span-5">
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">
             Editorial actions
+          </h4>
+        </template>
+        <div
+          v-if="showDeskReviewActions"
+          class="mb-5 rounded-2xl border border-warning-100 bg-warning-50 p-4"
+        >
+          <h5 class="mb-2 text-sm font-semibold text-highlighted">
+            Desk review
           </h5>
-        </div>
-        <div class="card-body">
-          <div
-            v-if="showDeskReviewActions"
-            class="mb-20 rounded-12 border border-warning-100 bg-warning-50 p-16"
-          >
-            <h6 class="mb-8 fw-semibold">
-              Desk review
-            </h6>
-            <p class="text-13 text-gray-600 mb-12">
-              Send this manuscript into peer review or decline it before review assignment.
-            </p>
-            <div class="d-flex flex-wrap gap-8 mb-12">
-              <button
-                type="button"
-                class="btn btn-main rounded-pill py-9"
-                :disabled="actionLoading"
-                @click="sendToReview"
-              >
-                Send to review
-              </button>
-            </div>
-            <label class="h6 mb-8 fw-semibold">Desk decline reason</label>
-            <textarea
-              v-model="declineReason"
-              rows="3"
-              class="form-control fw-medium text-15 mb-12"
-            />
-            <button
-              type="button"
-              class="btn btn-danger rounded-pill py-9"
-              :disabled="actionLoading || declineReason.trim().length < 5"
-              @click="deskDecline"
-            >
-              Desk decline
-            </button>
-          </div>
-
-          <div
-            v-if="showPublicationAction"
-            class="mb-20 rounded-12 border border-success-100 bg-success-50 p-16"
-          >
-            <h6 class="mb-8 fw-semibold">
-              Publication handoff
-            </h6>
-            <p class="text-13 text-gray-600 mb-12">
-              Mark this approved manuscript ready for the copy desk publication queue.
-            </p>
-            <label class="h6 mb-8 fw-semibold">Publication note (optional)</label>
-            <textarea
-              v-model="approveComment"
-              rows="3"
-              class="form-control fw-medium text-15 mb-12"
-            />
-            <button
-              type="button"
-              class="btn btn-success rounded-pill py-9"
-              :disabled="actionLoading"
-              @click="approveForPublication"
-            >
-              Approve for publication
-            </button>
-          </div>
-
-          <div
-            v-if="pendingExtensionRequests.length"
-            class="mb-20 rounded-12 border border-info-100 bg-info-50 p-16"
-          >
-            <h6 class="mb-8 fw-semibold">
-              Deadline extension requests
-            </h6>
-            <div
-              v-for="reviewer in pendingExtensionRequests"
-              :key="reviewer.id"
-              class="mb-12 rounded-8 bg-white p-12"
-            >
-              <p class="mb-1 fw-semibold">{{ reviewer.fullname }}</p>
-              <p class="text-13 text-gray-600 mb-2">{{ reviewer.deadlineExtensionReason || 'No reason provided.' }}</p>
-              <button
-                type="button"
-                class="btn btn-outline-info btn-sm"
-                :disabled="actionLoading"
-                @click="approveExtension(reviewer.id)"
-              >
-                Approve 7-day extension
-              </button>
-            </div>
-          </div>
-
-          <div
-            v-if="showReadyForNotice"
-            class="mb-20 rounded-12 border border-primary-100 bg-primary-50 p-16"
-          >
-            <h6 class="mb-8 fw-semibold">
-              Managing editor notice
-            </h6>
-            <p class="text-13 text-gray-600 mb-12">
-              Peer review is complete. Send the final publication decision to the author.
-            </p>
-            <label class="h6 mb-8 fw-semibold">Approval comment (optional)</label>
-            <textarea
-              v-model="noticeComment"
-              rows="3"
-              class="form-control fw-medium text-15 mb-12"
-            />
-            <div class="flex flex-wrap gap-8">
-              <button
-                type="button"
-                class="btn btn-main rounded-pill py-9"
-                :disabled="actionLoading"
-                @click="sendApprovalNotice"
-              >
-                Send approval notice
-              </button>
-            </div>
-            <label class="h6 mb-8 fw-semibold mt-16">Decline reason</label>
-            <textarea
-              v-model="noticeDeclineReason"
-              rows="3"
-              class="form-control fw-medium text-15 mb-12"
-            />
-            <button
-              type="button"
-              class="btn btn-danger rounded-pill py-9"
-              :disabled="actionLoading || noticeDeclineReason.trim().length < 5"
-              @click="sendDeclineNotice"
-            >
-              Send decline notice
-            </button>
-          </div>
-
-          <template v-if="showReviewedActions">
-          <div class="mb-20">
-            <label class="h6 mb-8 fw-semibold">Approval comment</label>
-            <textarea
-              v-model="approveComment"
-              rows="3"
-              class="form-control fw-medium text-15"
-            />
-            <button
-              type="button"
-              class="btn btn-main rounded-pill py-9 mt-12"
-              :disabled="actionLoading"
-              @click="approve"
-            >
-              Approve manuscript
-            </button>
-          </div>
-
-          <div class="mb-20">
-            <label class="h6 mb-8 fw-semibold">Revision request</label>
-            <textarea
-              v-model="revisionDetails"
-              rows="4"
-              class="form-control fw-medium text-15"
-            />
-            <button
-              type="button"
-              class="btn btn-outline-main rounded-pill py-9 mt-12"
-              :disabled="actionLoading"
-              @click="requestRevisions"
-            >
-              Request revisions
-            </button>
-          </div>
-
-          <div class="mb-20">
-            <label class="h6 mb-8 fw-semibold">Decline reason</label>
-            <textarea
-              v-model="declineReason"
-              rows="4"
-              class="form-control fw-medium text-15"
-            />
-            <button
-              type="button"
-              class="btn btn-danger rounded-pill py-9 mt-12"
-              :disabled="actionLoading"
-              @click="declineManuscript"
-            >
-              Decline manuscript
-            </button>
-          </div>
-          </template>
-
-          <p
-            v-if="!showDeskReviewActions && !showPublicationAction && !pendingExtensionRequests.length && !showReadyForNotice && !showReviewedActions"
-            class="text-13 text-gray-500 mb-0"
-          >
-            Editorial decisions unlock after peer review is complete.
+          <p class="mb-3 text-sm text-muted">
+            Send this manuscript into peer review or decline it before review assignment.
           </p>
+          <div class="mb-3 flex flex-wrap gap-2">
+            <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendToReview">
+              Send to review
+            </UButton>
+          </div>
+          <UFormField label="Desk decline reason">
+            <UTextarea v-model="declineReason" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <UButton color="error" class="rounded-full" :disabled="actionLoading || declineReason.trim().length < 5" @click="deskDecline">
+            Desk decline
+          </UButton>
+        </div>
 
         <div
+          v-if="showPublicationAction"
+          class="mb-5 rounded-2xl border border-success-100 bg-success-50 p-4"
+        >
+          <h5 class="mb-2 text-sm font-semibold text-highlighted">
+            Publication handoff
+          </h5>
+          <p class="mb-3 text-sm text-muted">
+            Mark this approved manuscript ready for the copy desk publication queue.
+          </p>
+          <UFormField label="Publication note (optional)">
+            <UTextarea v-model="approveComment" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <UButton color="success" class="rounded-full" :disabled="actionLoading" @click="approveForPublication">
+            Approve for publication
+          </UButton>
+        </div>
+
+        <div
+          v-if="pendingExtensionRequests.length"
+          class="mb-5 rounded-2xl border border-info-100 bg-info-50 p-4"
+        >
+          <h5 class="mb-2 text-sm font-semibold text-highlighted">
+            Deadline extension requests
+          </h5>
+          <div
+            v-for="reviewer in pendingExtensionRequests"
+            :key="reviewer.id"
+            class="mb-3 rounded-lg bg-default p-3"
+          >
+            <p class="mb-1 font-semibold text-highlighted">{{ reviewer.fullname }}</p>
+            <p class="mb-2 text-sm text-muted">{{ reviewer.deadlineExtensionReason || 'No reason provided.' }}</p>
+            <UButton color="info" variant="outline" size="sm" :disabled="actionLoading" @click="approveExtension(reviewer.id)">
+              Approve 7-day extension
+            </UButton>
+          </div>
+        </div>
+
+        <div
+          v-if="showReadyForNotice"
+          class="mb-5 rounded-2xl border border-primary-100 bg-primary-50 p-4"
+        >
+          <h5 class="mb-2 text-sm font-semibold text-highlighted">
+            Managing editor notice
+          </h5>
+          <p class="mb-3 text-sm text-muted">
+            Peer review is complete. Send the final publication decision to the author.
+          </p>
+          <UFormField label="Approval comment (optional)">
+            <UTextarea v-model="noticeComment" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <div class="mb-4 flex flex-wrap gap-2">
+            <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendApprovalNotice">
+              Send approval notice
+            </UButton>
+          </div>
+          <UFormField label="Decline reason">
+            <UTextarea v-model="noticeDeclineReason" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <UButton color="error" class="rounded-full" :disabled="actionLoading || noticeDeclineReason.trim().length < 5" @click="sendDeclineNotice">
+            Send decline notice
+          </UButton>
+        </div>
+
+        <template v-if="showReviewedActions">
+          <div class="mb-5">
+            <UFormField label="Approval comment">
+              <UTextarea v-model="approveComment" :rows="3" class="w-full" />
+            </UFormField>
+            <UButton color="primary" class="mt-3 rounded-full" :disabled="actionLoading" @click="approve">
+              Approve manuscript
+            </UButton>
+          </div>
+
+          <div class="mb-5">
+            <UFormField label="Revision request">
+              <UTextarea v-model="revisionDetails" :rows="4" class="w-full" />
+            </UFormField>
+            <UButton color="primary" variant="outline" class="mt-3 rounded-full" :disabled="actionLoading" @click="requestRevisions">
+              Request revisions
+            </UButton>
+          </div>
+
+          <div class="mb-5">
+            <UFormField label="Decline reason">
+              <UTextarea v-model="declineReason" :rows="4" class="w-full" />
+            </UFormField>
+            <UButton color="error" class="mt-3 rounded-full" :disabled="actionLoading" @click="declineManuscript">
+              Decline manuscript
+            </UButton>
+          </div>
+        </template>
+
+        <p
+          v-if="!showDeskReviewActions && !showPublicationAction && !pendingExtensionRequests.length && !showReadyForNotice && !showReviewedActions"
+          class="mb-0 text-sm text-muted"
+        >
+          Editorial decisions unlock after peer review is complete.
+        </p>
+
+        <UAlert
           v-if="actionMessage"
-          class="alert alert-success text-15"
-          role="alert"
-        >
-          {{ actionMessage }}
-        </div>
+          color="success"
+          variant="subtle"
+          icon="i-lucide-circle-check"
+          class="mt-4"
+          :title="actionMessage"
+        />
 
-        <div
+        <UAlert
           v-if="actionError"
-          class="alert alert-danger text-15"
-          role="alert"
-        >
-          {{ actionError }}
-        </div>
-        </div>
-      </div>
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          class="mt-4"
+          :title="actionError"
+        />
+      </UCard>
     </div>
 
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <UCard>
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">
             Current reviewer records
-          </h5>
-        </div>
-        <div class="card-body">
-        <div class="mt-4 grid gap-3">
+          </h4>
+        </template>
+        <div class="grid gap-3">
           <div
             v-for="reviewer in detailData.reviewers"
             :key="reviewer.id"
-            class="p-16 border border-gray-100 rounded-12 mb-12"
+            class="mb-3 rounded-2xl border border-default p-4"
           >
             <div class="flex items-center justify-between gap-3">
               <p class="font-semibold text-toned">{{ reviewer.fullname }}</p>
@@ -695,115 +626,79 @@ function declineManuscript() {
             No reviewer records yet.
           </p>
         </div>
-        </div>
-      </div>
-    </div>
+      </UCard>
 
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
+      <UCard>
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">
             Peer review bundle
-          </h5>
-        </div>
-        <div class="card-body">
-        <div class="mt-4 grid gap-4">
+          </h4>
+        </template>
+        <div class="grid gap-4">
           <div
             v-for="review in reviewBundle.reviews"
             :key="review.id"
-            class="border border-gray-100 rounded-12 p-16 mb-12"
+            class="mb-3 rounded-2xl border border-default p-4"
           >
-            <div class="flex-between flex-wrap gap-8 mb-12">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="font-semibold">{{ review.fullname }}</p>
+                <p class="font-semibold text-highlighted">{{ review.fullname }}</p>
                 <p
                   v-if="review.recommendation"
-                  class="text-sm text-gray-600"
+                  class="text-sm text-muted"
                 >
-                  Recommendation: <span class="badge bg-primary-50 text-primary-600">{{ review.recommendation.replaceAll('_', ' ') }}</span>
+                  Recommendation:
+                  <UBadge color="primary" variant="subtle">{{ review.recommendation.replaceAll('_', ' ') }}</UBadge>
                 </p>
               </div>
               <JournalStatusBadge :status="review.status" />
             </div>
 
-            <!-- Criteria Ratings -->
-            <div v-if="review.criteriaRatings" class="space-y-3 mb-4">
-              <p class="text-sm font-medium text-gray-700">Criteria Ratings (0-5):</p>
-              <div class="grid grid-cols-2 gap-2 text-sm">
+            <div v-if="review.criteriaRatings" class="mb-4 space-y-3">
+              <p class="text-sm font-medium text-toned">Criteria Ratings (0-5):</p>
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div class="flex items-center gap-2">
-                  <span class="w-24 text-gray-600">Originality:</span>
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-orange-500 h-2 rounded-full"
-                      :style="{ width: `${(review.criteriaRatings.originality / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="w-6 text-right font-medium">{{ review.criteriaRatings.originality }}</span>
+                  <span class="w-28 shrink-0 text-sm text-muted">Originality:</span>
+                  <UProgress :model-value="review.criteriaRatings.originality" :max="5" color="primary" size="sm" class="flex-1" />
+                  <span class="w-6 shrink-0 text-right text-sm font-medium text-highlighted">{{ review.criteriaRatings.originality }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-24 text-gray-600">Methodology:</span>
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-orange-500 h-2 rounded-full"
-                      :style="{ width: `${(review.criteriaRatings.methodology / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="w-6 text-right font-medium">{{ review.criteriaRatings.methodology }}</span>
+                  <span class="w-28 shrink-0 text-sm text-muted">Methodology:</span>
+                  <UProgress :model-value="review.criteriaRatings.methodology" :max="5" color="primary" size="sm" class="flex-1" />
+                  <span class="w-6 shrink-0 text-right text-sm font-medium text-highlighted">{{ review.criteriaRatings.methodology }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-24 text-gray-600">Significance:</span>
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-orange-500 h-2 rounded-full"
-                      :style="{ width: `${(review.criteriaRatings.significance / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="w-6 text-right font-medium">{{ review.criteriaRatings.significance }}</span>
+                  <span class="w-28 shrink-0 text-sm text-muted">Significance:</span>
+                  <UProgress :model-value="review.criteriaRatings.significance" :max="5" color="primary" size="sm" class="flex-1" />
+                  <span class="w-6 shrink-0 text-right text-sm font-medium text-highlighted">{{ review.criteriaRatings.significance }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-24 text-gray-600">Clarity:</span>
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-orange-500 h-2 rounded-full"
-                      :style="{ width: `${(review.criteriaRatings.clarity / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="w-6 text-right font-medium">{{ review.criteriaRatings.clarity }}</span>
+                  <span class="w-28 shrink-0 text-sm text-muted">Clarity:</span>
+                  <UProgress :model-value="review.criteriaRatings.clarity" :max="5" color="primary" size="sm" class="flex-1" />
+                  <span class="w-6 shrink-0 text-right text-sm font-medium text-highlighted">{{ review.criteriaRatings.clarity }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-24 text-gray-600">Literature:</span>
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-orange-500 h-2 rounded-full"
-                      :style="{ width: `${(review.criteriaRatings.literatureReview / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="w-6 text-right font-medium">{{ review.criteriaRatings.literatureReview }}</span>
+                  <span class="w-28 shrink-0 text-sm text-muted">Literature:</span>
+                  <UProgress :model-value="review.criteriaRatings.literatureReview" :max="5" color="primary" size="sm" class="flex-1" />
+                  <span class="w-6 shrink-0 text-right text-sm font-medium text-highlighted">{{ review.criteriaRatings.literatureReview }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-24 text-gray-600">Data Analysis:</span>
-                  <div class="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      class="bg-orange-500 h-2 rounded-full"
-                      :style="{ width: `${(review.criteriaRatings.dataAnalysis / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="w-6 text-right font-medium">{{ review.criteriaRatings.dataAnalysis }}</span>
+                  <span class="w-28 shrink-0 text-sm text-muted">Data Analysis:</span>
+                  <UProgress :model-value="review.criteriaRatings.dataAnalysis" :max="5" color="primary" size="sm" class="flex-1" />
+                  <span class="w-6 shrink-0 text-right text-sm font-medium text-highlighted">{{ review.criteriaRatings.dataAnalysis }}</span>
                 </div>
               </div>
 
-              <!-- Overall Rating -->
-              <div class="flex items-center gap-2 pt-2 border-t">
-                <span class="font-medium">Overall Rating:</span>
-                <span class="font-bold text-lg">{{ review.rating }}</span>
-                <span class="text-gray-500">/5</span>
+              <div class="flex items-center gap-2 border-t border-default pt-2">
+                <span class="font-medium text-toned">Overall Rating:</span>
+                <span class="text-lg font-bold text-highlighted">{{ review.rating }}</span>
+                <span class="text-muted">/5</span>
               </div>
             </div>
 
-            <!-- Review Comment -->
             <p
               v-if="review.comment"
-              class="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-3 rounded-lg"
+              class="whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm text-toned"
             >
               {{ review.comment }}
             </p>
@@ -816,23 +711,20 @@ function declineManuscript() {
             No peer review submissions yet.
           </p>
         </div>
-        </div>
-      </div>
+      </UCard>
     </div>
 
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header border-bottom border-gray-100">
-          <h5 class="mb-0">
-            Version history
-          </h5>
-        </div>
-        <div class="card-body">
-      <div class="mt-4 grid gap-3">
+    <UCard>
+      <template #header>
+        <h4 class="text-base font-semibold text-highlighted">
+          Version history
+        </h4>
+      </template>
+      <div class="grid gap-3">
         <div
           v-for="version in detailData.versions"
           :key="version.id"
-          class="rounded-[1.5rem] border border-default bg-white/80 p-4"
+          class="rounded-2xl border border-default bg-elevated p-4"
         >
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -847,26 +739,28 @@ function declineManuscript() {
             </div>
             <JournalStatusBadge :status="version.status" />
           </div>
-          <div class="mt-3 d-flex flex-wrap gap-2">
-            <NuxtLink
+          <div class="mt-3 flex flex-wrap gap-2">
+            <UButton
               v-if="detailData.journal.slug"
               :to="`/journals/${detailData.journal.slug}/versions`"
-              class="btn btn-outline-primary btn-sm"
+              color="primary"
+              variant="outline"
+              size="sm"
             >
               View version history
-            </NuxtLink>
-            <NuxtLink
+            </UButton>
+            <UButton
               v-if="detailData.journal.slug && detailData.versions.length > 1"
               :to="`/journals/${detailData.journal.slug}/versions/compare`"
-              class="btn btn-outline-secondary btn-sm"
+              color="neutral"
+              variant="outline"
+              size="sm"
             >
               Compare versions
-            </NuxtLink>
+            </UButton>
           </div>
         </div>
       </div>
-        </div>
-      </div>
-    </div>
+    </UCard>
   </div>
 </template>

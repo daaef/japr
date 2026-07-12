@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { authClient } from '~~/lib/auth-client'
+import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 
-const route = useRoute()
 const searchQuery = ref('')
 const { data: currentUser, refresh } = useCurrentUser()
+const { isExactPath, isActivePath } = useDashboardNavigation()
 
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
   return name.split(/\s+/)[0] ?? ''
 })
 
-function isActive(path: string) {
-  if (path === '/author') {
-    return route.path === '/author' || route.path === '/author/'
-  }
-
-  return route.path === path || route.path.startsWith(`${path}/`)
+// Flat top-nav (JAPR Author Dashboard.dc.html) has no sub-menus, so these link
+// classes are simpler than useDashboardNavigation()'s rounded-pill/dark-sidebar
+// shapes — kept local rather than adding a third one-off variant to the composable.
+function navLinkClass(path: string, exact = false) {
+  const active = exact ? isExactPath(path) : isActivePath(path)
+  return active
+    ? 'text-brick-500 font-bold'
+    : 'text-taupe-600 font-semibold hover:text-brick-500'
 }
 
 async function submitSearch() {
@@ -36,185 +39,83 @@ async function signOut() {
 }
 
 useHead({
-  title: 'JAPR Website | Dashboard',
-  link: [
-    { rel: 'stylesheet', href: '/assets/css/bootstrap.min.css' },
-    { rel: 'stylesheet', href: '/assets/css/main.css' },
-    { rel: 'stylesheet', href: '/assets/css/journal-dashboard-overrides.css' }
-  ],
-  script: [
-    { src: '/assets/js/jquery-3.7.1.min.js', defer: true },
-    { src: '/assets/js/boostrap.bundle.min.js', defer: true },
-    { src: '/assets/js/phosphor-icon.js', defer: true },
-    { src: '/assets/js/main.js', defer: true }
-  ]
+  title: 'JAPR Website | Dashboard'
 })
+
+const mobileNavOpen = ref(false)
 </script>
 
 <template>
-  <div class="dashboard-layout">
-    <div class="preloader">
-      <div class="loader" />
-    </div>
-    <div class="side-overlay" />
+  <div class="flex min-h-screen flex-col bg-taupe-50">
+    <header class="sticky top-0 z-30 border-b border-taupe-200 bg-white">
+      <div class="mx-auto flex max-w-285 items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-8">
+          <NuxtLink to="/author">
+            <img
+              class="h-10 w-auto"
+              src="/images/japr-logo.png"
+              alt="JAPR"
+            >
+          </NuxtLink>
 
-    <aside class="sidebar">
-      <button
-        type="button"
-        class="sidebar-close-btn text-gray-500 hover-text-white hover-bg-main-600 text-md w-24 h-24 border border-gray-100 hover-border-main-600 d-xl-none d-flex flex-center rounded-circle position-absolute"
-      >
-        <i class="ph ph-x" />
-      </button>
-
-      <NuxtLink
-        to="/author"
-        class="sidebar__logo text-center p-20 position-sticky inset-block-start-0 bg-white w-100 z-1 pb-10"
-      >
-        <img
-          class="w-25s"
-          src="/images/japr-logo.png"
-          alt="Logo"
-        >
-      </NuxtLink>
-
-      <div class="sidebar-menu-wrapper overflow-y-auto scroll-sm">
-        <div class="p-20 pt-10">
-          <ul class="sidebar-menu">
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/author"
-                class="sidebar-menu__link"
-                :class="{ active: isActive('/author') }"
-              >
-                <span class="icon"><i class="ph ph-squares-four" /></span>
-                <span class="text">Dashboard</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item has-dropdown">
-              <a
-                href="javascript:void(0)"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-book-open" /></span>
-                <span class="text">Manage Manuscripts</span>
-              </a>
-              <ul class="sidebar-submenu">
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/author/submit"
-                    class="sidebar-submenu__link"
-                  >
-                    <span class="d-flex align-items-center">Submit Manuscript</span>
-                  </NuxtLink>
-                </li>
-                <li class="sidebar-submenu__item">
-                  <NuxtLink
-                    to="/author/submissions"
-                    class="sidebar-submenu__link"
-                  >
-                    <span class="d-flex align-items-center">My Submissions</span>
-                  </NuxtLink>
-                </li>
-              </ul>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/journals"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-graduation-cap" /></span>
-                <span class="text">Categories</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/author/collections"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-bookmark-simple" /></span>
-                <span class="text">My Collections</span>
-              </NuxtLink>
-            </li>
-
-            <li class="sidebar-menu__item">
-              <span class="text-gray-300 text-sm px-20 pt-20 fw-semibold border-top border-gray-100 d-block text-uppercase">Settings</span>
-            </li>
-
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/notifications"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-bell" /></span>
-                <span class="text">Notifications</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/notifications/preferences"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-sliders-horizontal" /></span>
-                <span class="text">Notification Preferences</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/author/interests"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-target" /></span>
-                <span class="text">Research Interests</span>
-              </NuxtLink>
-            </li>
-            <li class="sidebar-menu__item">
-              <NuxtLink
-                to="/author/settings"
-                class="sidebar-menu__link"
-              >
-                <span class="icon"><i class="ph ph-gear" /></span>
-                <span class="text">Account Settings</span>
-              </NuxtLink>
-            </li>
-          </ul>
+          <nav class="hidden items-center gap-6 lg:flex">
+            <NuxtLink
+              to="/author"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author', true)"
+            >
+              Dashboard
+            </NuxtLink>
+            <NuxtLink
+              to="/author/submissions"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author/submissions')"
+            >
+              My Manuscripts
+            </NuxtLink>
+            <NuxtLink
+              to="/author/settings"
+              class="text-sm transition-colors"
+              :class="navLinkClass('/author/settings')"
+            >
+              Settings
+            </NuxtLink>
+          </nav>
         </div>
-      </div>
-    </aside>
 
-    <div class="dashboard-main-wrapper">
-      <div class="top-navbar flex-between gap-16">
-        <div class="flex-align gap-16">
-          <button
-            type="button"
-            class="toggle-btn d-xl-none d-flex text-26 text-gray-500"
-          >
-            <i class="ph ph-list" />
-          </button>
-
+        <div class="flex items-center gap-3">
           <form
-            class="w-350 d-sm-block d-none"
+            class="hidden w-56 xl:block"
             @submit.prevent="submitSearch"
           >
-            <div class="position-relative">
-              <button
-                type="submit"
-                class="input-icon text-xl d-flex text-gray-100"
-                aria-label="Search journals"
-              >
-                <i class="ph ph-magnifying-glass" />
-              </button>
-              <input
-                v-model="searchQuery"
-                type="search"
-                class="form-control ps-40 h-40 border-transparent focus-border-main-600 bg-main-50 rounded-pill placeholder-15"
-                placeholder="Search journals..."
-              >
-            </div>
+            <UInput
+              v-model="searchQuery"
+              type="search"
+              placeholder="Search journals..."
+              size="sm"
+              class="w-full"
+            >
+              <template #leading>
+                <button
+                  type="submit"
+                  aria-label="Search journals"
+                  class="flex text-dimmed"
+                >
+                  <UIcon name="i-lucide-search" />
+                </button>
+              </template>
+            </UInput>
           </form>
-        </div>
 
-        <div class="flex-align gap-16">
           <NotificationDropdown />
+
+          <UButton
+            to="/author/submit"
+            color="primary"
+            class="hidden rounded-full sm:inline-flex"
+          >
+            Submit Manuscript
+          </UButton>
 
           <DashboardProfileDropdown
             :display-name="displayName"
@@ -222,20 +123,64 @@ useHead({
             settings-path="/author/settings"
             @sign-out="signOut"
           />
+
+          <UButton
+            icon="i-lucide-menu"
+            color="neutral"
+            variant="ghost"
+            class="lg:hidden"
+            aria-label="Open navigation"
+            @click="mobileNavOpen = !mobileNavOpen"
+          />
         </div>
       </div>
 
-      <div class="dashboard-body">
-        <slot />
-      </div>
+      <nav
+        v-if="mobileNavOpen"
+        class="flex flex-col gap-1 border-t border-taupe-200 px-4 py-3 lg:hidden"
+      >
+        <NuxtLink
+          to="/author"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author', true)"
+          @click="mobileNavOpen = false"
+        >
+          Dashboard
+        </NuxtLink>
+        <NuxtLink
+          to="/author/submissions"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author/submissions')"
+          @click="mobileNavOpen = false"
+        >
+          My Manuscripts
+        </NuxtLink>
+        <NuxtLink
+          to="/author/settings"
+          class="rounded-lg px-3 py-2 text-sm transition-colors"
+          :class="navLinkClass('/author/settings')"
+          @click="mobileNavOpen = false"
+        >
+          Settings
+        </NuxtLink>
+        <NuxtLink
+          to="/author/submit"
+          class="mt-2 rounded-lg bg-brick-500 px-3 py-2 text-center text-sm font-semibold text-white"
+          @click="mobileNavOpen = false"
+        >
+          Submit Manuscript
+        </NuxtLink>
+      </nav>
+    </header>
 
-      <div class="dashboard-footer">
-        <div class="flex-between justify-center flex-wrap gap-16">
-          <p class="text-gray-300 text-13 fw-normal">
-            &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
-          </p>
-        </div>
-      </div>
+    <main class="mx-auto w-full max-w-285 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <slot />
+    </main>
+
+    <div class="mt-auto flex justify-center bg-white px-5 py-5">
+      <p class="text-xs text-taupe-400">
+        &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
+      </p>
     </div>
   </div>
 </template>

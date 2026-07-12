@@ -66,118 +66,99 @@ async function save() {
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-lg-12">
-      <div class="card mt-24">
-        <div class="card-header flex-between flex-wrap gap-8">
-          <div>
-            <h4 class="mb-4">
-              Notification Preferences
-            </h4>
-            <p class="text-13 text-gray-600 mb-0">
-              Customize how you receive notifications
-            </p>
-          </div>
-          <NuxtLink
-            to="/notifications"
-            class="btn btn-outline-secondary btn-sm"
-          >
-            Back to notifications
-          </NuxtLink>
+  <UCard class="mt-6">
+    <template #header>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 class="mb-1 text-lg font-semibold">
+            Notification Preferences
+          </h4>
+          <p class="text-xs text-muted">
+            Customize how you receive notifications
+          </p>
         </div>
-
-        <div class="card-body">
-          <div
-            v-if="successMessage"
-            class="alert alert-success mb-16"
-          >
-            {{ successMessage }}
-          </div>
-          <div
-            v-if="errorMessage"
-            class="alert alert-danger mb-16"
-          >
-            {{ errorMessage }}
-          </div>
-
-          <form
-            class="grid gap-24"
-            @submit.prevent="save"
-          >
-            <section>
-              <h5 class="mb-12">
-                Email notifications
-              </h5>
-              <div class="grid gap-8">
-                <label class="flex-align gap-8">
-                  <input
-                    v-model="form.email.manuscript_status"
-                    type="checkbox"
-                  >
-                  <span>Manuscript status updates</span>
-                </label>
-                <label class="flex-align gap-8">
-                  <input
-                    v-model="form.email.review_assignment"
-                    type="checkbox"
-                  >
-                  <span>Review assignments</span>
-                </label>
-                <label
-                  class="flex-align gap-8"
-                  :class="{ 'opacity-50': !isEditor }"
-                >
-                  <input
-                    v-model="form.email.new_submissions"
-                    type="checkbox"
-                    :disabled="!isEditor"
-                  >
-                  <span>New submissions (editors)</span>
-                </label>
-              </div>
-            </section>
-
-            <section>
-              <h5 class="mb-12">
-                In-app notifications
-              </h5>
-              <div class="grid gap-8">
-                <label class="flex-align gap-8">
-                  <input
-                    v-model="form.in_app.realtime"
-                    type="checkbox"
-                  >
-                  <span>Realtime updates</span>
-                </label>
-                <label class="flex-align gap-8">
-                  <input
-                    v-model="form.in_app.sound"
-                    type="checkbox"
-                  >
-                  <span>Sound alerts</span>
-                </label>
-                <label class="flex-align gap-8">
-                  <input
-                    v-model="form.in_app.desktop"
-                    type="checkbox"
-                  >
-                  <span>Desktop notifications</span>
-                </label>
-              </div>
-            </section>
-
-            <div>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                :disabled="saving"
-              >
-                Save preferences
-              </button>
-            </div>
-          </form>
-        </div>
+        <UButton
+          to="/notifications"
+          color="neutral"
+          variant="outline"
+          size="sm"
+        >
+          Back to notifications
+        </UButton>
       </div>
-    </div>
-  </div>
+    </template>
+
+    <UAlert
+      v-if="successMessage"
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      class="mb-4"
+      :title="successMessage"
+    />
+    <UAlert
+      v-if="errorMessage"
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      class="mb-4"
+      :title="errorMessage"
+    />
+
+    <form
+      class="grid gap-6"
+      @submit.prevent="save"
+    >
+      <section>
+        <h5 class="mb-3 text-base font-semibold">
+          Email notifications
+        </h5>
+        <div class="grid gap-2">
+          <USwitch
+            v-model="form.email.manuscript_status"
+            label="Manuscript status updates"
+          />
+          <USwitch
+            v-model="form.email.review_assignment"
+            label="Review assignments"
+          />
+          <USwitch
+            v-model="form.email.new_submissions"
+            label="New submissions (editors)"
+            :disabled="!isEditor"
+          />
+        </div>
+      </section>
+
+      <section>
+        <h5 class="mb-3 text-base font-semibold">
+          In-app notifications
+        </h5>
+        <div class="grid gap-2">
+          <USwitch
+            v-model="form.in_app.realtime"
+            label="Realtime updates"
+          />
+          <USwitch
+            v-model="form.in_app.sound"
+            label="Sound alerts"
+          />
+          <USwitch
+            v-model="form.in_app.desktop"
+            label="Desktop notifications"
+          />
+        </div>
+      </section>
+
+      <div>
+        <UButton
+          type="submit"
+          color="primary"
+          :loading="saving"
+        >
+          Save preferences
+        </UButton>
+      </div>
+    </form>
+  </UCard>
 </template>

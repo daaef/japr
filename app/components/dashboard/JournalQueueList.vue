@@ -9,12 +9,20 @@ type JournalRow = {
   updatedAt?: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   apiUrl: string
   detailPathPrefix: string
   emptyMessage?: string
-}>()
+  setPageHeading?: boolean
+}>(), {
+  emptyMessage: 'No manuscripts in this queue.',
+  setPageHeading: true
+})
+
+if (props.setPageHeading) {
+  usePageHeading().value = props.title
+}
 
 const page = ref(1)
 
@@ -45,130 +53,110 @@ function formatDate(value?: string) {
     year: 'numeric'
   })
 }
+
+const columns = [
+  { accessorKey: 'title', header: 'Title' },
+  { accessorKey: 'author', header: 'Author', meta: { class: { th: 'w-[100px]' } } },
+  { accessorKey: 'country', header: 'Country' },
+  { accessorKey: 'approvalStatus', header: 'Status', meta: { class: { th: 'text-center', td: 'text-center' } } },
+  { id: 'actions', header: 'Actions', meta: { class: { th: 'text-center', td: 'text-center' } } }
+]
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-lg-12">
-      <div class="card mt-24 overflow-hidden">
-        <div class="card-header">
-          <div class="mb-0 flex-between flex-wrap gap-8">
-            <h4 class="mb-0">
-              {{ title }} ({{ data?.meta.total ?? 0 }})
-            </h4>
-          </div>
-        </div>
-        <div
-          v-if="error"
-          class="p-24"
-        >
-          <DashboardSummaryError
-            :message="`Unable to load ${title.toLowerCase()}.`"
-            @retry="refresh"
-          />
-        </div>
-        <div
-          v-else
-          class="card-body p-0 overflow-x-auto scroll-sm scroll-sm-horizontal"
-        >
-          <div
-            v-if="pending"
-            class="p-24 text-13 text-gray-500"
-          >
-            Loading manuscripts...
-          </div>
-          <table
-            v-else
-            class="table mb-0"
-          >
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th class="w-[100px]">
-                  Author
-                </th>
-                <th>Country</th>
-                <th class="text-center">
-                  Status
-                </th>
-                <th class="text-center">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="journal in data?.journals ?? []"
-                :key="journal.id"
-              >
-                <td>
-                  <div class="flex-align gap-8">
-                    <div class="w-40 h-40 rounded-circle bg-main-600 flex-center flex-shrink-0">
-                      <i class="ph ph-file-text text-white text-lg" />
-                    </div>
-                    <div>
-                      <h6 class="mb-0">
-                        {{ journal.title }}
-                      </h6>
-                      <div class="table-list">
-                        <span class="text-13 text-gray-600">{{ formatDate(journal.createdAt ?? journal.updatedAt) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span class="text-13 text-gray-600">{{ journal.author || '—' }}</span>
-                </td>
-                <td>
-                  <span class="text-13 text-gray-600">{{ journal.country || 'N/A' }}</span>
-                </td>
-                <td>
-                  <div class="flex-align justify-content-center gap-16">
-                    <JournalStatusBadge :status="journal.approvalStatus ?? 'pending'" />
-                  </div>
-                </td>
-                <td>
-                  <div class="flex-align flex justify-content-center gap-8">
-                    <UButton
-                      :to="detailPath(journal.id)"
-                      color="primary"
-                      variant="soft"
-                      size="sm"
-                    >
-                      View
-                    </UButton>
-                    <slot
-                      name="row-actions"
-                      :journal="journal"
-                      :refresh="refresh"
-                    />
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="!data?.journals.length">
-                <td
-                  colspan="5"
-                  class="text-center py-24 text-13 text-gray-500"
-                >
-                  {{ emptyMessage ?? 'No manuscripts in this queue.' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div
-          v-if="data?.meta.total"
-          class="card-footer"
-        >
-          <AppPagination
-            :page="data.meta.page"
-            :total-pages="data.meta.pageCount"
-            :total="data.meta.total"
-            :page-size="data.meta.pageSize"
-            @change="goToPage"
-          />
-        </div>
-      </div>
+  <UCard
+    class="mt-6 overflow-hidden"
+    :ui="{ body: 'p-0 sm:p-0' }"
+  >
+    <template #header>
+      <h4 class="text-base font-semibold text-highlighted mb-0">
+        {{ title }} ({{ data?.meta.total ?? 0 }})
+      </h4>
+    </template>
+    <div
+      v-if="error"
+      class="p-6"
+    >
+      <DashboardSummaryError
+        :message="`Unable to load ${title.toLowerCase()}.`"
+        @retry="refresh"
+      />
     </div>
-  </div>
+    <div
+      v-else
+      class="overflow-x-auto"
+    >
+      <div
+        v-if="pending"
+        class="p-6 text-xs text-muted"
+      >
+        Loading manuscripts...
+      </div>
+      <AppEmptyState
+        v-else-if="!data?.journals.length"
+        compact
+        :title="emptyMessage"
+      />
+      <UTable
+        v-else
+        :data="data?.journals ?? []"
+        :columns="columns"
+      >
+        <template #title-cell="{ row }">
+          <div class="flex items-center gap-2">
+            <div class="size-10 rounded-[10px] bg-primary-100 flex items-center justify-center shrink-0">
+              <UIcon
+                name="i-lucide-file-text"
+                class="text-primary-600 text-lg"
+              />
+            </div>
+            <div>
+              <h6 class="text-sm font-medium text-highlighted mb-0">
+                {{ row.original.title }}
+              </h6>
+              <span class="text-xs text-muted">{{ formatDate(row.original.createdAt ?? row.original.updatedAt) }}</span>
+            </div>
+          </div>
+        </template>
+        <template #author-cell="{ row }">
+          <span class="text-xs text-muted">{{ row.original.author || '—' }}</span>
+        </template>
+        <template #country-cell="{ row }">
+          <span class="text-xs text-muted">{{ row.original.country || 'N/A' }}</span>
+        </template>
+        <template #approvalStatus-cell="{ row }">
+          <JournalStatusBadge :status="row.original.approvalStatus ?? 'pending'" />
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="flex items-center justify-center gap-2">
+            <UButton
+              :to="detailPath(row.original.id)"
+              color="primary"
+              variant="soft"
+              size="sm"
+            >
+              View
+            </UButton>
+            <slot
+              name="row-actions"
+              :journal="row.original"
+              :refresh="refresh"
+            />
+          </div>
+        </template>
+      </UTable>
+    </div>
+    <template
+      v-if="data?.meta.total"
+      #footer
+    >
+      <AppPagination
+        :page="data.meta.page"
+        :total-pages="data.meta.pageCount"
+        :total="data.meta.total"
+        :page-size="data.meta.pageSize"
+        @change="goToPage"
+      />
+    </template>
+  </UCard>
 </template>

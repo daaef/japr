@@ -35,7 +35,7 @@ function toggle(id: string) {
     <details
       v-for="category in categories"
       :key="category.id"
-      class="rounded-2xl border border-default bg-white/80 p-3"
+      class="rounded-2xl border border-default bg-default p-3"
       open
     >
       <summary class="cursor-pointer font-medium text-toned">

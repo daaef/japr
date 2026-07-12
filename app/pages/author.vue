@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'public',
+  layout: 'author',
   middleware: ['author-onboarding']
 })
 </script>

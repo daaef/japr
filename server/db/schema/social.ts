@@ -31,15 +31,6 @@ export const journalDislikes = pgTable('journal_dislikes', {
   dislikeUnique: uniqueIndex('journal_dislikes_unique').on(table.userId, table.journalId)
 }))
 
-export const myJournalCollections = pgTable('my_journal_collections', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  journalId: uuid('journal_id').notNull().references(() => journals.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-}, table => ({
-  collectionUnique: uniqueIndex('my_journal_collections_unique').on(table.userId, table.journalId)
-}))
-
 export const userInterests = pgTable('user_interests', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),

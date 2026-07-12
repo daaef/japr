@@ -41,128 +41,101 @@ const stats = computed(() => data.value)
 </script>
 
 <template>
-  <div class="row gy-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-body flex-between flex-wrap gap-12">
-          <div>
-            <h3 class="mb-1">
-              Admin Audit Dashboard
-            </h3>
-            <p class="text-13 text-gray-600 mb-0">
-              Review administrator activity, high-risk actions, and audit trends for the last 30 days.
-            </p>
-          </div>
-          <div class="d-flex gap-2">
-            <NuxtLink to="/admin/audit" class="btn btn-outline-primary btn-sm">
-              View Logs
-            </NuxtLink>
-            <a href="/api/admin/audit/export" class="btn btn-outline-secondary btn-sm">
-              Export CSV
-            </a>
-          </div>
+  <div class="flex flex-col gap-4">
+    <UCard>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="mb-1 text-lg font-semibold text-highlighted">
+            Admin Audit Dashboard
+          </h3>
+          <p class="mb-0 text-sm text-muted">
+            Review administrator activity, high-risk actions, and audit trends for the last 30 days.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <UButton to="/admin/audit" color="primary" variant="outline" size="sm">
+            View Logs
+          </UButton>
+          <UButton href="/api/admin/audit/export" color="neutral" variant="outline" size="sm">
+            Export CSV
+          </UButton>
         </div>
       </div>
+    </UCard>
+
+    <DashboardSummaryError v-if="error" message="Audit dashboard data could not be loaded." @retry="refresh" />
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <DashboardStatCard label="Total Actions" :value="stats.totalActions" icon="i-lucide-list-checks" icon-class="bg-primary-600" :loading="pending" />
+      <DashboardStatCard label="Active Admins" :value="stats.activeAdminUsers" icon="i-lucide-users" icon-class="bg-success-600" :loading="pending" />
+      <DashboardStatCard label="High-Risk Actions" :value="stats.highRiskActions" icon="i-lucide-triangle-alert" icon-class="bg-error-600" :loading="pending" />
+      <DashboardStatCard label="Actions Today" :value="stats.actionsToday" icon="i-lucide-calendar-check" icon-class="bg-info-600" :loading="pending" />
     </div>
 
-    <div v-if="error" class="col-12">
-      <DashboardSummaryError
-        message="Audit dashboard data could not be loaded."
-        @retry="refresh"
-      />
-    </div>
-
-    <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="Total Actions" :value="stats.totalActions" icon="ph-list-checks" icon-class="bg-main-600" :loading="pending" />
-    </div>
-    <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="Active Admins" :value="stats.activeAdminUsers" icon="ph-users-three" icon-class="bg-success-600" :loading="pending" />
-    </div>
-    <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="High-Risk Actions" :value="stats.highRiskActions" icon="ph-warning" icon-class="bg-danger-600" :loading="pending" />
-    </div>
-    <div class="col-xxl-3 col-sm-6">
-      <DashboardStatCard label="Actions Today" :value="stats.actionsToday" icon="ph-calendar-check" icon-class="bg-info-600" :loading="pending" />
-    </div>
-
-    <div class="col-lg-8">
-      <SimpleTrendChart
-        title="Daily Audit Activity"
-        :points="stats.dailyActivity"
-      />
-    </div>
-    <div class="col-lg-4">
-      <div class="card h-100">
-        <div class="card-header">
-          <h5 class="mb-0">
-            Actions by Type
-          </h5>
-        </div>
-        <div class="card-body">
-          <div v-if="!stats.actionsByType.length" class="text-center text-muted py-24">
-            No audit actions yet.
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div class="lg:col-span-8">
+        <SimpleTrendChart
+          title="Daily Audit Activity"
+          :points="stats.dailyActivity"
+        />
+      </div>
+      <UCard class="lg:col-span-4">
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">Actions by Type</h4>
+        </template>
+        <p v-if="!stats.actionsByType.length" class="py-6 text-center text-muted">
+          No audit actions yet.
+        </p>
+        <div v-else class="flex flex-col gap-3">
+          <div v-for="row in stats.actionsByType" :key="row.action" class="flex items-center justify-between gap-3">
+            <span class="capitalize">{{ row.action.replaceAll('_', ' ') }}</span>
+            <UBadge color="primary" variant="subtle">{{ row.count }}</UBadge>
           </div>
-          <div v-else class="d-flex flex-column gap-12">
-            <div v-for="row in stats.actionsByType" :key="row.action" class="flex-between gap-12">
-              <span class="text-capitalize">{{ row.action.replaceAll('_', ' ') }}</span>
-              <span class="badge bg-main">{{ row.count }}</span>
+        </div>
+      </UCard>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <UCard>
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">Most Active Admins</h4>
+        </template>
+        <p v-if="!stats.activeUsers.length" class="py-6 text-center text-muted">
+          No active admin users in this window.
+        </p>
+        <div v-else class="flex flex-col gap-3">
+          <div v-for="user in stats.activeUsers" :key="user.userId" class="flex items-center justify-between gap-3">
+            <div>
+              <p class="mb-0 font-semibold text-highlighted">{{ user.name }}</p>
+              <p class="mb-0 text-sm text-muted">{{ user.email }}</p>
             </div>
+            <UBadge color="success" variant="subtle">{{ user.count }}</UBadge>
           </div>
         </div>
-      </div>
-    </div>
+      </UCard>
 
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header">
-          <h5 class="mb-0">
-            Most Active Admins
-          </h5>
-        </div>
-        <div class="card-body">
-          <div v-if="!stats.activeUsers.length" class="text-center text-muted py-24">
-            No active admin users in this window.
-          </div>
-          <div v-else class="d-flex flex-column gap-12">
-            <div v-for="user in stats.activeUsers" :key="user.userId" class="flex-between gap-12">
-              <div>
-                <p class="mb-0 fw-semibold">{{ user.name }}</p>
-                <p class="mb-0 text-13 text-gray-500">{{ user.email }}</p>
-              </div>
-              <span class="badge bg-success">{{ user.count }}</span>
+      <UCard>
+        <template #header>
+          <h4 class="text-base font-semibold text-highlighted">Recent High-Risk Actions</h4>
+        </template>
+        <p v-if="!stats.recentHighRisk.length" class="py-6 text-center text-muted">
+          No high-risk actions in this window.
+        </p>
+        <div v-else class="flex flex-col gap-3">
+          <NuxtLink
+            v-for="log in stats.recentHighRisk"
+            :key="log.id"
+            :to="`/admin/audit/${log.id}`"
+            class="block rounded-2xl border border-default p-3 hover:bg-primary-50"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold capitalize text-highlighted">{{ log.action.replaceAll('_', ' ') }}</span>
+              <span class="text-sm text-muted">{{ new Date(log.createdAt).toLocaleString() }}</span>
             </div>
-          </div>
+            <p class="mb-0 text-sm text-muted">{{ log.description }}</p>
+          </NuxtLink>
         </div>
-      </div>
-    </div>
-
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header">
-          <h5 class="mb-0">
-            Recent High-Risk Actions
-          </h5>
-        </div>
-        <div class="card-body">
-          <div v-if="!stats.recentHighRisk.length" class="text-center text-muted py-24">
-            No high-risk actions in this window.
-          </div>
-          <div v-else class="d-flex flex-column gap-12">
-            <NuxtLink
-              v-for="log in stats.recentHighRisk"
-              :key="log.id"
-              :to="`/admin/audit/${log.id}`"
-              class="d-block p-12 rounded-8 border border-gray-100 hover-bg-main-50"
-            >
-              <div class="flex-between gap-8">
-                <span class="fw-semibold text-capitalize">{{ log.action.replaceAll('_', ' ') }}</span>
-                <span class="text-13 text-gray-500">{{ new Date(log.createdAt).toLocaleString() }}</span>
-              </div>
-              <p class="mb-0 text-13 text-gray-600">{{ log.description }}</p>
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
+      </UCard>
     </div>
   </div>
 </template>
