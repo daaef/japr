@@ -7,6 +7,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Audit Log'
+
 type AuditLogRow = {
   id: string
   userName: string | null

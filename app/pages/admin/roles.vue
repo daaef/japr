@@ -7,6 +7,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Manage Roles'
+
 const form = reactive({
   name: '',
   description: ''

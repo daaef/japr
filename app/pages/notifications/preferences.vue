@@ -10,6 +10,9 @@ definePageMeta({
 
 const { applyRoleLayout } = useRoleLayout()
 await applyRoleLayout()
+
+usePageHeading().value = 'Notification Preferences'
+
 const { data: currentUser, refresh } = useCurrentUser()
 
 const isEditor = computed(() => hasEditorRole(currentUser.value.roles))
@@ -70,7 +73,7 @@ async function save() {
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h4 class="mb-1 text-lg font-semibold">
+          <h4 class="mb-1 text-lg font-semibold text-highlighted">
             Notification Preferences
           </h4>
           <p class="text-xs text-muted">
@@ -110,7 +113,7 @@ async function save() {
       @submit.prevent="save"
     >
       <section>
-        <h5 class="mb-3 text-base font-semibold">
+        <h5 class="mb-3 text-base font-semibold text-highlighted">
           Email notifications
         </h5>
         <div class="grid gap-2">
@@ -131,7 +134,7 @@ async function save() {
       </section>
 
       <section>
-        <h5 class="mb-3 text-base font-semibold">
+        <h5 class="mb-3 text-base font-semibold text-highlighted">
           In-app notifications
         </h5>
         <div class="grid gap-2">

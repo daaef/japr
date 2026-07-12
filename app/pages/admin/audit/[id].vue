@@ -6,6 +6,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Audit Entry Detail'
+
 const route = useRoute()
 
 type AuditLogDetail = {

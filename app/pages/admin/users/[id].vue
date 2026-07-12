@@ -23,6 +23,8 @@ const { data, refresh } = await useFetch<{
   }
 }>(() => `/api/users/${userId.value}`, { watch: [userId] })
 
+usePageHeading().value = data.value?.user?.fullname || 'User detail'
+
 const { data: rolesData } = await useFetch<{ roles: Array<{ id: string, name: string }> }>('/api/roles')
 
 const roleItems = computed(() => (rolesData.value?.roles ?? []).map(role => ({

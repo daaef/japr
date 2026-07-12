@@ -6,6 +6,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Audit Logs'
+
 type AuditStats = {
   totalActions: number
   activeAdminUsers: number

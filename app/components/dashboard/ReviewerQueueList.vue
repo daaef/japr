@@ -12,11 +12,19 @@ type ReviewRow = {
   recent?: boolean
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   apiUrl: string
   emptyMessage?: string
-}>()
+  setPageHeading?: boolean
+}>(), {
+  emptyMessage: 'No assignments in this queue.',
+  setPageHeading: true
+})
+
+if (props.setPageHeading) {
+  usePageHeading().value = props.title
+}
 
 const page = ref(1)
 
@@ -36,7 +44,7 @@ function goToPage(nextPage: number) {
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return '—'
+    return null
   }
 
   return new Date(value).toLocaleDateString('en-GB', {
@@ -46,108 +54,115 @@ function formatDate(value?: string | null) {
   })
 }
 
-const columns = [
-  { accessorKey: 'journalTitle', header: 'Title' },
-  { accessorKey: 'journalSubmittedAt', header: 'Submitted' },
-  { accessorKey: 'assignedAt', header: 'Assigned' },
-  { accessorKey: 'reviewDeadline', header: 'Deadline' },
-  { accessorKey: 'status', header: 'Status' },
-  { id: 'actions', header: 'Actions', meta: { class: { th: 'text-center', td: 'text-center' } } }
-]
+function metaParts(review: ReviewRow) {
+  const parts: string[] = []
+  const submitted = formatDate(review.journalSubmittedAt)
+  const assigned = formatDate(review.assignedAt)
+  const deadline = formatDate(review.reviewDeadline)
+
+  if (submitted) {
+    parts.push(`Submitted ${submitted}`)
+  }
+  if (assigned) {
+    parts.push(`Assigned ${assigned}`)
+  }
+  if (deadline) {
+    parts.push(`Deadline ${deadline}`)
+  }
+
+  return parts
+}
 </script>
 
 <template>
-  <UCard
-    class="mt-6 overflow-hidden"
-    :ui="{ body: 'p-0 sm:p-0' }"
-  >
+  <UCard class="mt-6">
     <template #header>
       <h4 class="text-base font-semibold text-highlighted mb-0">
         {{ title }} ({{ data?.meta.total ?? 0 }})
       </h4>
     </template>
-    <div
+    <DashboardSummaryError
       v-if="error"
-      class="p-6"
-    >
-      <DashboardSummaryError
-        :message="`Unable to load ${title.toLowerCase()}.`"
-        @retry="refresh"
-      />
-    </div>
-    <div
-      v-else
-      class="overflow-x-auto"
-    >
-      <div
+      :message="`Unable to load ${title.toLowerCase()}.`"
+      @retry="refresh"
+    />
+    <template v-else>
+      <p
         v-if="pending"
-        class="p-6 text-xs text-muted"
+        class="text-xs text-muted"
       >
         Loading assignments...
-      </div>
+      </p>
       <AppEmptyState
         v-else-if="!reviews.length"
         compact
-        :title="emptyMessage ?? 'No assignments in this queue.'"
+        :title="emptyMessage"
       />
-      <UTable
+      <div
         v-else
-        :data="reviews"
-        :columns="columns"
+        class="flex flex-col gap-3"
       >
-        <template #journalTitle-cell="{ row }">
-          <h6 class="text-sm font-medium text-highlighted mb-0">
-            {{ row.original.journalTitle }}
-          </h6>
-          <div class="flex gap-2 mt-2">
-            <UBadge
-              v-if="row.original.recent"
-              color="info"
-              variant="subtle"
-            >
-              Recent
-            </UBadge>
-            <UBadge
-              v-if="row.original.urgent"
-              color="error"
-              variant="subtle"
-            >
-              Urgent
-            </UBadge>
+        <div
+          v-for="review in reviews"
+          :key="review.id"
+          class="rounded-2xl border border-default p-5"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex min-w-0 gap-3.5">
+              <div class="flex size-10.5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                <UIcon name="i-lucide-graduation-cap" class="size-4.5" />
+              </div>
+              <div class="min-w-0">
+                <h6 class="mb-1.5 text-sm font-bold text-highlighted">
+                  {{ review.journalTitle }}
+                </h6>
+                <p
+                  v-if="metaParts(review).length"
+                  class="text-xs text-muted"
+                >
+                  {{ metaParts(review).join(' · ') }}
+                </p>
+                <p
+                  v-if="review.reviewSubmittedAt"
+                  class="text-xs text-success"
+                >
+                  Review submitted {{ formatDate(review.reviewSubmittedAt) }}
+                </p>
+              </div>
+            </div>
+            <div class="flex shrink-0 flex-col items-end gap-2">
+              <JournalStatusBadge :status="review.status" />
+              <div class="flex gap-2">
+                <UBadge
+                  v-if="review.recent"
+                  color="info"
+                  variant="subtle"
+                >
+                  Recent
+                </UBadge>
+                <UBadge
+                  v-if="review.urgent"
+                  color="error"
+                  variant="subtle"
+                >
+                  Urgent
+                </UBadge>
+              </div>
+            </div>
           </div>
-        </template>
-        <template #journalSubmittedAt-cell="{ row }">
-          <span class="text-xs text-muted">{{ formatDate(row.original.journalSubmittedAt) }}</span>
-        </template>
-        <template #assignedAt-cell="{ row }">
-          <span class="text-xs text-muted">{{ formatDate(row.original.assignedAt) }}</span>
-        </template>
-        <template #reviewDeadline-cell="{ row }">
-          <span class="text-xs text-muted">{{ formatDate(row.original.reviewDeadline) }}</span>
-          <span
-            v-if="row.original.reviewSubmittedAt"
-            class="block text-xs text-success"
-          >
-            Submitted {{ formatDate(row.original.reviewSubmittedAt) }}
-          </span>
-        </template>
-        <template #status-cell="{ row }">
-          <JournalStatusBadge :status="row.original.status" />
-        </template>
-        <template #actions-cell="{ row }">
-          <div class="flex items-center justify-center gap-2">
+          <div class="mt-3.5">
             <UButton
-              :to="`/reviewer/journals/${row.original.journalId}/review`"
+              :to="`/reviewer/journals/${review.journalId}/review`"
               color="primary"
-              variant="soft"
               size="sm"
+              class="rounded-full"
             >
               Review
             </UButton>
           </div>
-        </template>
-      </UTable>
-    </div>
+        </div>
+      </div>
+    </template>
     <template
       v-if="data?.meta.total"
       #footer

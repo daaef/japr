@@ -61,6 +61,8 @@ const { data, pending, refresh } = await useFetch<{
   })
 })
 
+usePageHeading().value = data.value.journal.title || 'Review assignment'
+
 const {
   previewTitle,
   previewHtml,
@@ -314,7 +316,7 @@ async function submitReview() {
         <div class="grid gap-6 lg:grid-cols-12">
           <div class="lg:col-span-7">
             <h3 class="mb-3 text-sm font-semibold text-highlighted">Document preview</h3>
-            <div class="h-150 overflow-hidden rounded-lg border border-default">
+            <div class="h-150 overflow-hidden rounded-2xl border border-default">
               <div v-if="previewPending" class="flex h-full items-center justify-center text-muted">Loading...</div>
               <div v-else-if="previewError" class="flex h-full items-center justify-center px-4 text-center text-muted">{{ previewError }}</div>
               <iframe v-else-if="previewPdfUrl" :src="previewPdfUrl" class="h-full w-full border-0" :title="previewTitle" />
@@ -414,7 +416,7 @@ async function submitReview() {
           v-for="peerReview in data.peerReviews"
           v-else
           :key="peerReview.id"
-          class="mb-3 rounded-xl border border-default p-4"
+          class="mb-3 rounded-2xl border border-default p-4"
         >
           <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
             <span class="font-semibold text-highlighted">Peer review</span>

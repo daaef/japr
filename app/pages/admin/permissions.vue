@@ -6,6 +6,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Manage Permissions'
+
 type PermissionRow = {
   id: string
   name: string
