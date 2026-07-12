@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { REVIEWER_ROLES } from '#shared/constants/roles'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
@@ -23,9 +24,19 @@ const { data, pending, refresh } = await useFetch<{
     id: string
     status: string
     isAccepted: boolean
+    review: string | null
     comment: string | null
+    confidentialComments: string | null
     recommendation: string | null
     rating: number | null
+    criteriaRatings: {
+      originality: number
+      methodology: number
+      significance: number
+      clarity: number
+      literatureReview: number
+      dataAnalysis: number
+    } | null
     reviewDeadline: string | null
     deadlineExtensionRequested: boolean
     deadlineExtensionReason: string | null
@@ -50,9 +61,12 @@ const { data, pending, refresh } = await useFetch<{
       id: '',
       status: 'pending',
       isAccepted: false,
+      review: null,
       comment: null,
+      confidentialComments: null,
       recommendation: null,
       rating: null,
+      criteriaRatings: null,
       reviewDeadline: null,
       deadlineExtensionRequested: false,
       deadlineExtensionReason: null
@@ -96,6 +110,16 @@ const invitationToken = computed(() => typeof route.query.token === 'string' ? r
 const canRespondToInvitation = computed(() =>
   data.value.reviewer.status === 'pending' && data.value.reviewer.isAccepted !== true
 )
+const hasSubmittedReview = computed(() => data.value.reviewer.status === REVIEWER_STATUS.REVIEWED)
+
+const criteriaLabels: Record<keyof NonNullable<typeof data.value.reviewer.criteriaRatings>, string> = {
+  originality: 'Originality',
+  methodology: 'Methodology',
+  significance: 'Significance',
+  clarity: 'Clarity',
+  literatureReview: 'Literature review',
+  dataAnalysis: 'Data analysis'
+}
 
 async function acceptInvite() {
   actionLoading.value = true
@@ -311,7 +335,9 @@ async function submitReview() {
 
       <UCard>
         <template #header>
-          <h2 class="text-lg font-semibold text-highlighted">Submit review</h2>
+          <h2 class="text-lg font-semibold text-highlighted">
+            {{ hasSubmittedReview ? 'Your submitted review' : 'Submit review' }}
+          </h2>
         </template>
         <div class="grid gap-6 lg:grid-cols-12">
           <div class="lg:col-span-7">
@@ -325,7 +351,44 @@ async function submitReview() {
             </div>
           </div>
           <div class="lg:col-span-5">
-            <form class="flex flex-col gap-4" @submit.prevent="submitReview">
+            <div v-if="hasSubmittedReview" class="flex flex-col gap-4">
+              <UAlert
+                color="success"
+                variant="subtle"
+                icon="i-lucide-circle-check"
+                title="Review already submitted"
+                description="You've already submitted your review for this manuscript — resubmitting isn't available. An editor can reopen it if a revision is needed."
+              />
+              <div>
+                <p class="mb-1 text-xs font-semibold text-muted">Full review</p>
+                <p class="text-sm text-toned">{{ data.reviewer.review || '—' }}</p>
+              </div>
+              <div v-if="data.reviewer.criteriaRatings" class="grid grid-cols-2 gap-3">
+                <div v-for="(label, key) in criteriaLabels" :key="key">
+                  <p class="mb-0.5 text-xs text-muted">{{ label }}</p>
+                  <p class="text-sm font-semibold text-highlighted">{{ data.reviewer.criteriaRatings[key] }}/5</p>
+                </div>
+              </div>
+              <div>
+                <p class="mb-0.5 text-xs text-muted">Overall rating</p>
+                <p class="text-sm font-semibold text-highlighted">{{ data.reviewer.rating ?? '—' }}/5</p>
+              </div>
+              <div>
+                <p class="mb-0.5 text-xs text-muted">Recommendation</p>
+                <UBadge color="primary" variant="subtle">
+                  {{ (data.reviewer.recommendation || 'unknown').replaceAll('_', ' ') }}
+                </UBadge>
+              </div>
+              <div>
+                <p class="mb-1 text-xs font-semibold text-muted">Comments to author</p>
+                <p class="text-sm text-toned">{{ data.reviewer.comment || '—' }}</p>
+              </div>
+              <div v-if="data.reviewer.confidentialComments">
+                <p class="mb-1 text-xs font-semibold text-muted">Confidential comments to editor</p>
+                <p class="text-sm text-toned">{{ data.reviewer.confidentialComments }}</p>
+              </div>
+            </div>
+            <form v-else class="flex flex-col gap-4" @submit.prevent="submitReview">
               <UFormField label="Full review" hint="Minimum 20 characters. Required for review submission.">
                 <UTextarea v-model="form.review" :rows="5" minlength="20" maxlength="5000" required class="w-full" />
               </UFormField>
