@@ -26,6 +26,8 @@ const role = computed(() => rolesData.value?.roles.find(item => item.id === role
 const selectedPermissions = ref<string[]>([])
 const message = ref('')
 
+usePageHeading().value = role.value ? `${role.value.name} Permissions` : 'Role Permissions'
+
 const permissionItems = computed(() => (permissionsData.value?.permissions ?? []).map(permission => ({
   label: permission.name,
   description: `${permission.resource} · ${permission.action}`,

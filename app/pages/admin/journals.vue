@@ -6,6 +6,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Manage Journals'
+
 const page = ref(1)
 
 const { data } = await useFetch<{

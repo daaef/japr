@@ -5,6 +5,8 @@ definePageMeta({
   middleware: ['auth', 'role'],
   requiredRoles: ADMIN_ROLES
 })
+
+usePageHeading().value = 'Account Settings'
 </script>
 
 <template>

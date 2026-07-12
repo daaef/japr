@@ -6,6 +6,8 @@ definePageMeta({
   requiredRoles: ADMIN_ROLES
 })
 
+usePageHeading().value = 'Categories'
+
 type SubSubNode = { id: string, name: string }
 type SubNode = { id: string, name: string, subSubCategories: SubSubNode[] }
 type CategoryNode = {
