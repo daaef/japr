@@ -35,6 +35,12 @@ const REQUIRED_ENUM_VALUES: Array<{ enumName: string, value: string, migration: 
   { enumName: 'approval_status', value: 'published', migration: '0003_desk_publication_statuses' }
 ]
 
+const REQUIRED_INDEXES: Array<{ table: string, indexName: string, migration: string }> = [
+  // 0014_soft_zarek — assign-reviewers.post.ts's onConflictDoUpdate targets this unique index;
+  // without it on the live DB, every attempt to assign a second reviewer to a journal 500s.
+  { table: 'reviewers', indexName: 'reviewers_journal_user_idx', migration: '0014_soft_zarek' }
+]
+
 export interface SchemaCheckResult {
   ok: boolean
   missing: string[]
@@ -62,6 +68,16 @@ export async function assertSchema(pool: Pool): Promise<SchemaCheckResult> {
     )
     if (rows.length === 0) {
       missing.push(`enum value ${req.enumName}='${req.value}' (from migration ${req.migration})`)
+    }
+  }
+
+  for (const req of REQUIRED_INDEXES) {
+    const { rows } = await pool.query(
+      `SELECT 1 FROM pg_indexes WHERE tablename = $1 AND indexname = $2`,
+      [req.table, req.indexName]
+    )
+    if (rows.length === 0) {
+      missing.push(`index ${req.indexName} on ${req.table} (from migration ${req.migration})`)
     }
   }
 
