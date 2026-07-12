@@ -190,12 +190,12 @@ const mobileMenuOpen = ref(false)
         </NuxtLink>
         <template v-if="authenticated">
           <NuxtLink
-            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none mr-4 focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
+            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 whitespace-nowrap text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
             to="/author/submit"
           >
             Submit Manuscript
           </NuxtLink>
-          <UPopover class="pr-[40px]">
+          <UPopover>
             <template #default="{ open }">
               <button
                 type="button"
@@ -284,7 +284,7 @@ const mobileMenuOpen = ref(false)
         </template>
         <template v-else>
           <NuxtLink
-            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
+            class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 whitespace-nowrap text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
             to="/auth/login"
           >
             Submit Manuscript
