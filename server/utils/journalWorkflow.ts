@@ -11,10 +11,29 @@ export type WorkflowStatus =
   | typeof MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE
   | typeof MANUSCRIPT_STATUS.REVIEWED
 
-export const MIN_PEER_REVIEWS_FOR_NOTICE = 2
+// Consensus quorum: a manuscript needs this many *completed* reviews before it can
+// leave peer review for the managing editor's decision. Set to 3 (an odd number, so
+// reviewer votes rarely tie). Declines do not count — they must be backfilled with a
+// replacement reviewer. Replaces the former count-of-2 threshold.
+export const REVIEW_QUORUM = 3
 
 interface ReviewerWorkflowInput {
   status: string
+}
+
+interface ReviewerConsensusInput extends ReviewerWorkflowInput {
+  recommendation?: string | null
+}
+
+export type ReviewConsensusSuggestion = 'accept' | 'reject' | 'revision' | 'inconclusive'
+
+export interface ReviewConsensus {
+  /** Number of reviewers whose review is actually completed (declines excluded). */
+  completed: number
+  /** True once completed reviews meet the quorum — i.e. a decision can be made. */
+  ready: boolean
+  /** Advisory decision for the managing editor; null until the quorum is met. */
+  suggestion: ReviewConsensusSuggestion | null
 }
 
 export function reviewerResponseIsTerminal(reviewer: ReviewerWorkflowInput) {
@@ -25,11 +44,55 @@ export function getCompletedReviewCount(reviewers: ReviewerWorkflowInput[]) {
   return reviewers.filter(item => item.status === REVIEWER_STATUS.REVIEWED).length
 }
 
+/** True once enough reviews are completed to make a decision (declines don't count). */
+export function hasReviewQuorum(reviewers: ReviewerWorkflowInput[], quorum = REVIEW_QUORUM) {
+  return getCompletedReviewCount(reviewers) >= quorum
+}
+
+/**
+ * Reads the completed reviewers' recommendations and produces an *advisory* decision
+ * for the managing editor. It never changes state itself — the editor confirms every
+ * terminal outcome. `suggestion` is null until the quorum of completed reviews is met.
+ *
+ * Mapping (over completed reviews only): unanimous accept -> 'accept'; unanimous
+ * reject -> 'reject'; any minor/major revision present -> 'revision'; a bare
+ * accept/reject split with no revision -> 'inconclusive' (editor adjudicates).
+ */
+export function getReviewConsensus(
+  reviewers: ReviewerConsensusInput[],
+  quorum = REVIEW_QUORUM
+): ReviewConsensus {
+  const completedReviewers = reviewers.filter(item => item.status === REVIEWER_STATUS.REVIEWED)
+  const completed = completedReviewers.length
+  const ready = completed >= quorum
+
+  if (!ready) {
+    return { completed, ready: false, suggestion: null }
+  }
+
+  const recommendations = completedReviewers.map(item => (item.recommendation ?? '').toLowerCase())
+  const everyIs = (value: string) => recommendations.every(rec => rec === value)
+  const anyRevision = recommendations.some(rec => rec.includes('revision'))
+
+  let suggestion: ReviewConsensusSuggestion
+  if (everyIs('accept')) {
+    suggestion = 'accept'
+  } else if (everyIs('reject')) {
+    suggestion = 'reject'
+  } else if (anyRevision) {
+    suggestion = 'revision'
+  } else {
+    suggestion = 'inconclusive'
+  }
+
+  return { completed, ready, suggestion }
+}
+
 export function getReviewWorkflowStatus(reviewers: ReviewerWorkflowInput[]): WorkflowStatus {
   const completedReviews = getCompletedReviewCount(reviewers)
   const allResponded = reviewers.length > 0 && reviewers.every(reviewerResponseIsTerminal)
 
-  if (completedReviews >= MIN_PEER_REVIEWS_FOR_NOTICE) {
+  if (completedReviews >= REVIEW_QUORUM) {
     return MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE
   }
 

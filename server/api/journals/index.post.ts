@@ -10,6 +10,7 @@ import { sendSubmissionReceivedEmail, sendManuscriptSubmissionEmail } from '#ser
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import { EDITOR_ROLES } from '#shared/constants/roles'
 import { eq, inArray } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
@@ -128,7 +129,7 @@ export default defineEventHandler(async (event) => {
   // Notify editors about new submission
   try {
     // Get all editor role IDs
-    const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
+    const editorRoleNames = [...EDITOR_ROLES]
     const editorRoles = await db.select({ id: roles.id })
       .from(roles)
       .where(inArray(roles.name, editorRoleNames))

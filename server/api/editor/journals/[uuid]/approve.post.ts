@@ -3,7 +3,7 @@ import { readBody } from 'h3'
 import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals, users } from '#server/db/schema'
-import { assertManuscriptStatus, MIN_PEER_REVIEWS_FOR_NOTICE } from '#server/utils/journalWorkflow'
+import { assertManuscriptStatus, REVIEW_QUORUM } from '#server/utils/journalWorkflow'
 import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
@@ -46,10 +46,10 @@ export default defineEventHandler(async (event) => {
     )
   })
 
-  if (completedReviews.length < MIN_PEER_REVIEWS_FOR_NOTICE) {
+  if (completedReviews.length < REVIEW_QUORUM) {
     throw createError({
       statusCode: 409,
-      statusMessage: `At least ${MIN_PEER_REVIEWS_FOR_NOTICE} reviews must be completed before approval.`
+      statusMessage: `At least ${REVIEW_QUORUM} reviews must be completed before approval.`
     })
   }
 

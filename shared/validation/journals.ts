@@ -27,8 +27,14 @@ export const journalCreateSchema = z.object({
   journalUrl: z.string().trim().max(2000).optional().nullable(),
   journalFormat: z.string().trim().max(24).optional().nullable(),
   license: z.string().trim().max(120).optional().nullable(),
-  agree: z.boolean().default(true),
-  accept: z.boolean().default(true)
+  // Consent is required, not defaulted. Previously both defaulted to `true`, so a caller
+  // that simply omitted them was silently treated as having consented — and the create
+  // endpoint never re-checks `agree` at all. `agree` must be an explicit `true` (the "not
+  // published elsewhere" affirmation); `accept` (review-policy) stays a required boolean so
+  // the endpoint's existing "already accepted vs accepting now" branch keeps working.
+  // `.partial()` consumers (PATCH) and form schemas that `.omit()` these are unaffected.
+  agree: z.literal(true, { message: 'You must confirm this article has not been published elsewhere.' }),
+  accept: z.boolean()
 })
 
 export const journalQuerySchema = z.object({

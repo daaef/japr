@@ -3,10 +3,8 @@ import { readBody } from 'h3'
 import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
-import { sendChangeRequestedEmail } from '#server/utils/email'
+import { notifyEditorsOfReviewerSuggestions } from '#server/utils/editorNotifications'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
-import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
-import { createNotification } from '#server/utils/notifications'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -69,37 +67,19 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // A single reviewer no longer moves the manuscript on their own. The change entries
+  // are recorded as advisory input and surfaced to the managing editor; the manuscript
+  // stays in its review stage until the full quorum of reviews is in (see
+  // docs/tasks/20260713_review-consensus). Only editor endpoints write changes_requested.
   await db.update(journals).set({
-    approvalStatus: MANUSCRIPT_STATUS.CHANGES_REQUESTED,
     changeRequests: existing,
     updatedAt: new Date()
   }).where(eq(journals.id, journal.id))
 
-  await createNotification({
-    userId: journal.userId,
-    type: 'change-requested',
-    data: {
-      title: 'Changes requested',
-      journalId: journal.id,
-      message: `A reviewer requested changes to ${journal.title}.`,
-      changes: body.changes
-    }
-  })
-
-  const author = await db.query.users.findFirst({
-    where: (table, { eq }) => eq(table.id, journal.userId)
-  })
-
-  if (author) {
-    await sendIfEmailAllowed(author.id, 'manuscript_status', () =>
-      sendChangeRequestedEmail(
-        author.email,
-        author.fullname ?? author.name,
-        journal.title,
-        body.changes.map(change => `${change.field}: ${change.suggestedChange}`).join('\n')
-      )
-    )
-  }
+  // The author is NOT notified here: their "changes requested" notice comes once, when
+  // the editor formally requests revisions (request-revisions.post.ts). Editors instead
+  // get an in-app heads-up that reviewer suggestions have landed.
+  await notifyEditorsOfReviewerSuggestions(journal.id, session.user.id)
 
   return { ok: true }
 })

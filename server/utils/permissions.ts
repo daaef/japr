@@ -3,6 +3,15 @@ import type { H3Event } from 'h3'
 import { db } from '#server/db/client'
 import { permissions, rolePermissions, roles, userRoles } from '#server/db/schema'
 import { getUserRoles, requireSession, type SessionRole } from './session'
+import {
+  ADMIN_ROLES,
+  AUTHOR_ROLES,
+  EDITOR_ROLES,
+  EDITOR_ROLES_WITH_COPY_DESK,
+  REVIEWER_ROLES,
+  editorRoleKeys,
+  reviewerRoleKeys
+} from '#shared/constants/roles'
 
 export interface PermissionContext {
   ownerId?: string | null
@@ -108,7 +117,7 @@ export function hasRole(roles: SessionRole[], allowedRoles: string[]) {
 }
 
 export function isEditorRole(roleName: string) {
-  return ['admin', 'editor_in_chief', 'managing_editor'].includes(roleName)
+  return (editorRoleKeys as readonly string[]).includes(roleName)
 }
 
 export function isEditorialProfileRole(roleName: string) {
@@ -116,25 +125,25 @@ export function isEditorialProfileRole(roleName: string) {
 }
 
 export function isReviewerRole(roleName: string) {
-  return ['associate_editor', 'external_reviewer', 'desk_editor'].includes(roleName)
+  return (reviewerRoleKeys as readonly string[]).includes(roleName)
 }
 
 export async function requireAdmin(event: H3Event) {
-  return requireAnyRole(event, ['admin'])
+  return requireAnyRole(event, [...ADMIN_ROLES])
 }
 
 export async function requireEditor(event: H3Event) {
-  return requireAnyRole(event, ['admin', 'editor_in_chief', 'managing_editor'])
+  return requireAnyRole(event, [...EDITOR_ROLES])
 }
 
 export async function requireEditorOrCopyDesk(event: H3Event) {
-  return requireAnyRole(event, ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor'])
+  return requireAnyRole(event, [...EDITOR_ROLES_WITH_COPY_DESK])
 }
 
 export async function requireReviewer(event: H3Event) {
-  return requireAnyRole(event, ['admin', 'associate_editor', 'external_reviewer', 'desk_editor'])
+  return requireAnyRole(event, [...REVIEWER_ROLES])
 }
 
 export async function requireAuthor(event: H3Event) {
-  return requireAnyRole(event, ['admin', 'author'])
+  return requireAnyRole(event, [...AUTHOR_ROLES])
 }

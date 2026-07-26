@@ -22,7 +22,15 @@ test('getCompletedReviewCount counts submitted reviews but not declines', () => 
   ]), 2)
 })
 
-test('getReviewWorkflowStatus reaches managing editor notice after two reviews even with one decline', () => {
+test('getReviewWorkflowStatus reaches managing editor notice only after three completed reviews (quorum)', () => {
+  assert.equal(getReviewWorkflowStatus([
+    { status: 'reviewed' },
+    { status: 'reviewed' },
+    { status: 'reviewed' }
+  ]), 'ready_for_managing_editor_notice')
+})
+
+test('getReviewWorkflowStatus settles two completed reviews + one decline at reviewed (quorum not met)', () => {
   const firstOrder = getReviewWorkflowStatus([
     { status: 'declined' },
     { status: 'reviewed' },
@@ -35,7 +43,7 @@ test('getReviewWorkflowStatus reaches managing editor notice after two reviews e
     { status: 'declined' }
   ])
 
-  assert.equal(firstOrder, 'ready_for_managing_editor_notice')
+  assert.equal(firstOrder, 'reviewed')
   assert.equal(secondOrder, firstOrder)
 })
 
@@ -47,13 +55,10 @@ test('getReviewWorkflowStatus keeps manuscripts under review until enough comple
   ]), 'under_peer_review')
 })
 
-test('syncJournalReviewStatus (F11): every from->to pair getReviewWorkflowStatus can produce from a REVIEW_STAGE_STATUSES starting point is a legal ALLOWED_MANUSCRIPT_TRANSITIONS edge', () => {
+test('syncJournalReviewStatus (F11): every from->to getReviewWorkflowStatus can produce from a REVIEW_STAGE_STATUSES start is a legal ALLOWED_MANUSCRIPT_TRANSITIONS edge', () => {
   const scenarios: Array<{ from: ManuscriptStatus, reviewers: Array<{ status: string }> }> = [
-    // A lone reviewer declines without ever completing a review.
     { from: MANUSCRIPT_STATUS.IN_PROGRESS, reviewers: [{ status: 'declined' }] },
-    // Under review with 1 completed review, and the remaining reviewer then declines.
     { from: MANUSCRIPT_STATUS.UNDER_PEER_REVIEW, reviewers: [{ status: 'reviewed' }, { status: 'declined' }] },
-    // F10: assign-reviewers from "reviewed" adds a fresh pending reviewer.
     { from: MANUSCRIPT_STATUS.REVIEWED, reviewers: [{ status: 'declined' }, { status: 'pending' }] },
     { from: MANUSCRIPT_STATUS.REVIEWED, reviewers: [{ status: 'reviewed' }, { status: 'declined' }, { status: 'pending' }] }
   ]

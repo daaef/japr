@@ -4,6 +4,10 @@ import { roles, userRoles, users } from '#server/db/schema'
 import { sendAllReviewsCompleteEmail, sendChangeResolvedEmail, sendEmail, sendReviewResponseEmail, sendRevisionUploadedEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
+import { EDITOR_ROLES } from '#shared/constants/roles'
+
+// Single source for the editor role names used across every notify-editors helper.
+const EDITOR_ROLE_NAMES = [...EDITOR_ROLES]
 
 function escapeHtml(value: string) {
   return value
@@ -28,8 +32,7 @@ export async function notifyEditorsOfReviewResponse(
     return
   }
 
-  const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
-  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, editorRoleNames))
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, EDITOR_ROLE_NAMES))
   const editorRoleIds = editorRoles.map(role => role.id)
 
   if (!editorRoleIds.length) {
@@ -74,8 +77,7 @@ export async function notifyEditorsAllReviewsComplete(journalId: string) {
     return
   }
 
-  const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
-  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, editorRoleNames))
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, EDITOR_ROLE_NAMES))
   const editorUsers = await db
     .select({ id: users.id, email: users.email, fullname: users.fullname })
     .from(userRoles)
@@ -109,8 +111,7 @@ export async function notifyEditorsReviewExtensionRequested(journalId: string, r
     return
   }
 
-  const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
-  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, editorRoleNames))
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, EDITOR_ROLE_NAMES))
   const editorUsers = await db
     .select({ id: users.id, email: users.email, fullname: users.fullname })
     .from(userRoles)
@@ -155,8 +156,7 @@ export async function notifyEditorsRevisionUploaded(journalId: string) {
     return
   }
 
-  const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
-  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, editorRoleNames))
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, EDITOR_ROLE_NAMES))
   const editorUsers = await db
     .select({ id: users.id, email: users.email, fullname: users.fullname })
     .from(userRoles)
@@ -192,8 +192,7 @@ export async function notifyEditorsChangesResolved(journalId: string) {
     return
   }
 
-  const editorRoleNames = ['admin', 'editor_in_chief', 'managing_editor']
-  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, editorRoleNames))
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, EDITOR_ROLE_NAMES))
   const editorUsers = await db
     .select({ id: users.id, email: users.email, fullname: users.fullname })
     .from(userRoles)
@@ -215,4 +214,42 @@ export async function notifyEditorsChangesResolved(journalId: string) {
       sendChangeResolvedEmail(editor.email, editor.fullname, journal.title)
     ).catch(() => undefined)
   ))
+}
+
+/**
+ * A reviewer filed field-level change suggestions. Under the consensus workflow this no
+ * longer changes the manuscript status or notifies the author (that happens once, when
+ * the editor formally requests revisions). Editors get an in-app heads-up so they know
+ * to look — deliberately in-app only, since several suggestions can arrive per manuscript
+ * and an email each would be noisy.
+ */
+export async function notifyEditorsOfReviewerSuggestions(journalId: string, reviewerUserId: string) {
+  const [journal, reviewerUser] = await Promise.all([
+    db.query.journals.findFirst({ where: (table, { eq }) => eq(table.id, journalId) }),
+    db.query.users.findFirst({ where: (table, { eq }) => eq(table.id, reviewerUserId) })
+  ])
+
+  if (!journal) {
+    return
+  }
+
+  const editorRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, EDITOR_ROLE_NAMES))
+  const editorUsers = await db
+    .select({ id: users.id })
+    .from(userRoles)
+    .innerJoin(users, eq(userRoles.userId, users.id))
+    .where(inArray(userRoles.roleId, editorRoles.map(role => role.id)))
+
+  await createNotifications(editorUsers.map(editor => ({
+    userId: editor.id,
+    type: 'reviewer-suggestions',
+    data: {
+      title: 'New reviewer suggestions',
+      message: `${reviewerUser?.fullname ?? 'A reviewer'} submitted change suggestions for ${journal.title}.`,
+      journalId: journal.id,
+      action_url: `/editor/journals/${journal.id}`,
+      icon: 'ph-note-pencil',
+      color: 'info'
+    }
+  })))
 }
