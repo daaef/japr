@@ -9,11 +9,27 @@ definePageMeta({
 const route = useRoute()
 const uuid = computed(() => route.params.uuid as string)
 
-const { data: currentUser } = useCurrentUser()
+// Gate each action by the exact permission its endpoint requires (server/api/editor/journals/
+// [uuid]/*.post.ts), not by role name — editor_in_chief and managing_editor hold disjoint
+// subsets of these (see shared/constants/permissions.ts systemRoles), so a single role-based
+// check let each see actions only the other could actually perform.
+const can = useCan()
+const canAssignReviewers = computed(() => can('reviewer', 'assign'))
+const canSendToReview = computed(() => can('journal', 'approve'))
+const canDeskDecline = computed(() => can('journal', 'reject'))
+const canApproveForPublication = computed(() => can('journal', 'publish'))
+const canSendApprovalNotice = computed(() => can('journal', 'send_approval_notice'))
+const canSendDeclineNotice = computed(() => can('journal', 'send_decline_notice'))
+const canRequestRevisions = computed(() => can('journal', 'request_revisions'))
+
 const canEditManuscript = computed(() =>
-  currentUser.value.roles.some(role =>
-    ['admin', 'editor_in_chief', 'managing_editor'].includes(role)
-  )
+  canAssignReviewers.value
+  || canSendToReview.value
+  || canDeskDecline.value
+  || canApproveForPublication.value
+  || canSendApprovalNotice.value
+  || canSendDeclineNotice.value
+  || canRequestRevisions.value
 )
 
 const [
@@ -195,6 +211,17 @@ const showPublicationAction = computed(() =>
 )
 const pendingExtensionRequests = computed(() =>
   detailData.value.reviewers.filter(reviewer => reviewer.deadlineExtensionRequested)
+)
+
+// Mirrors the v-if on every section below — status alone no longer decides visibility, so
+// the empty-state message needs the same permission checks or it can stay hidden behind a
+// blank card when the status matches but the viewer lacks every relevant permission.
+const hasVisibleEditorialAction = computed(() =>
+  (showDeskReviewActions.value && (canSendToReview.value || canDeskDecline.value))
+  || (showPublicationAction.value && canApproveForPublication.value)
+  || (pendingExtensionRequests.value.length > 0 && canAssignReviewers.value)
+  || (showReadyForNotice.value && (canSendApprovalNotice.value || canSendDeclineNotice.value))
+  || (showReviewedActions.value && (canSendToReview.value || canRequestRevisions.value || canDeskDecline.value))
 )
 
 // Advisory reviewer-consensus surfaced from the API (getReviewConsensus). The managing
@@ -430,7 +457,7 @@ function declineManuscript() {
     </UCard>
 
     <div v-if="canEditManuscript" class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-      <UCard class="xl:col-span-7">
+      <UCard v-if="canAssignReviewers" class="xl:col-span-7">
         <template #header>
           <h4 class="text-base font-semibold text-highlighted">
             Reviewer suggestions
@@ -506,7 +533,7 @@ function declineManuscript() {
         </div>
 
         <div
-          v-if="showDeskReviewActions"
+          v-if="showDeskReviewActions && (canSendToReview || canDeskDecline)"
           class="mb-5 rounded-2xl border border-warning-100 bg-warning-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -515,21 +542,23 @@ function declineManuscript() {
           <p class="mb-3 text-sm text-muted">
             Send this manuscript into peer review or decline it before review assignment.
           </p>
-          <div class="mb-3 flex flex-wrap gap-2">
+          <div v-if="canSendToReview" class="mb-3 flex flex-wrap gap-2">
             <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendToReview">
               Send to review
             </UButton>
           </div>
-          <UFormField label="Desk decline reason">
-            <UTextarea v-model="declineReason" :rows="3" class="mb-3 w-full" />
-          </UFormField>
-          <UButton color="error" class="rounded-full" :disabled="actionLoading || declineReason.trim().length < 5" @click="deskDecline">
-            Desk decline
-          </UButton>
+          <template v-if="canDeskDecline">
+            <UFormField label="Desk decline reason">
+              <UTextarea v-model="declineReason" :rows="3" class="mb-3 w-full" />
+            </UFormField>
+            <UButton color="error" class="rounded-full" :disabled="actionLoading || declineReason.trim().length < 5" @click="deskDecline">
+              Desk decline
+            </UButton>
+          </template>
         </div>
 
         <div
-          v-if="showPublicationAction"
+          v-if="showPublicationAction && canApproveForPublication"
           class="mb-5 rounded-2xl border border-success-100 bg-success-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -547,7 +576,7 @@ function declineManuscript() {
         </div>
 
         <div
-          v-if="pendingExtensionRequests.length"
+          v-if="pendingExtensionRequests.length && canAssignReviewers"
           class="mb-5 rounded-2xl border border-info-100 bg-info-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -567,7 +596,7 @@ function declineManuscript() {
         </div>
 
         <div
-          v-if="showReadyForNotice"
+          v-if="showReadyForNotice && (canSendApprovalNotice || canSendDeclineNotice)"
           class="mb-5 rounded-2xl border border-primary-100 bg-primary-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -576,24 +605,28 @@ function declineManuscript() {
           <p class="mb-3 text-sm text-muted">
             Peer review is complete. Send the final publication decision to the author.
           </p>
-          <UFormField label="Approval comment (optional)">
-            <UTextarea v-model="noticeComment" :rows="3" class="mb-3 w-full" />
-          </UFormField>
-          <div class="mb-4 flex flex-wrap gap-2">
-            <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendApprovalNotice">
-              Send approval notice
+          <template v-if="canSendApprovalNotice">
+            <UFormField label="Approval comment (optional)">
+              <UTextarea v-model="noticeComment" :rows="3" class="mb-3 w-full" />
+            </UFormField>
+            <div class="mb-4 flex flex-wrap gap-2">
+              <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendApprovalNotice">
+                Send approval notice
+              </UButton>
+            </div>
+          </template>
+          <template v-if="canSendDeclineNotice">
+            <UFormField label="Decline reason">
+              <UTextarea v-model="noticeDeclineReason" :rows="3" class="mb-3 w-full" />
+            </UFormField>
+            <UButton color="error" class="rounded-full" :disabled="actionLoading || noticeDeclineReason.trim().length < 5" @click="sendDeclineNotice">
+              Send decline notice
             </UButton>
-          </div>
-          <UFormField label="Decline reason">
-            <UTextarea v-model="noticeDeclineReason" :rows="3" class="mb-3 w-full" />
-          </UFormField>
-          <UButton color="error" class="rounded-full" :disabled="actionLoading || noticeDeclineReason.trim().length < 5" @click="sendDeclineNotice">
-            Send decline notice
-          </UButton>
+          </template>
         </div>
 
         <template v-if="showReviewedActions">
-          <div class="mb-5">
+          <div v-if="canSendToReview" class="mb-5">
             <UFormField label="Approval comment">
               <UTextarea v-model="approveComment" :rows="3" class="w-full" />
             </UFormField>
@@ -602,7 +635,7 @@ function declineManuscript() {
             </UButton>
           </div>
 
-          <div class="mb-5">
+          <div v-if="canRequestRevisions" class="mb-5">
             <UFormField label="Revision request">
               <UTextarea v-model="revisionDetails" :rows="4" class="w-full" />
             </UFormField>
@@ -611,7 +644,7 @@ function declineManuscript() {
             </UButton>
           </div>
 
-          <div class="mb-5">
+          <div v-if="canDeskDecline" class="mb-5">
             <UFormField label="Decline reason">
               <UTextarea v-model="declineReason" :rows="4" class="w-full" />
             </UFormField>
@@ -622,7 +655,7 @@ function declineManuscript() {
         </template>
 
         <p
-          v-if="!showDeskReviewActions && !showPublicationAction && !pendingExtensionRequests.length && !showReadyForNotice && !showReviewedActions"
+          v-if="!hasVisibleEditorialAction"
           class="mb-0 text-sm text-muted"
         >
           Editorial decisions unlock after peer review is complete.

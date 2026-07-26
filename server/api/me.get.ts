@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { userInterests } from '#server/db/schema'
 import { getCurrentUserContext } from '#server/utils/session'
+import { getUserPermissionActions } from '#server/utils/permissions'
 import { defaultNotificationPreferences } from '#shared/validation/notifications'
 
 export default defineEventHandler(async (event) => {
@@ -13,14 +14,18 @@ export default defineEventHandler(async (event) => {
       user: null,
       roles: [],
       roleRecords: [],
-      hasInterests: false
+      hasInterests: false,
+      permissions: []
     }
   }
 
-  const interestRows = await db.query.userInterests.findMany({
-    where: eq(userInterests.userId, context.user.id),
-    columns: { id: true }
-  })
+  const [interestRows, permissions] = await Promise.all([
+    db.query.userInterests.findMany({
+      where: eq(userInterests.userId, context.user.id),
+      columns: { id: true }
+    }),
+    getUserPermissionActions(context.user.id)
+  ])
 
   return {
     authenticated: true,
@@ -48,6 +53,7 @@ export default defineEventHandler(async (event) => {
     },
     roles: context.roles,
     roleRecords: context.roleRecords,
-    hasInterests: interestRows.length > 0
+    hasInterests: interestRows.length > 0,
+    permissions
   }
 })

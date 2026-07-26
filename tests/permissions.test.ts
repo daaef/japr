@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { systemRoles } from '../shared/constants/permissions'
+import { systemRoles, permissionDefinitions } from '../shared/constants/permissions'
 import { editorRoleKeys, reviewerRoleKeys } from '../shared/constants/roles'
+import { derivePermissionActions, type PermissionRow } from '../server/utils/permissionActions'
 
 // Derive from the shared single source (same data server/utils/permissions.ts now uses),
 // so this test guards against the role lists drifting apart again.
@@ -55,4 +56,60 @@ test('editor role definitions separate operational and final decision duties', (
   assert.equal(associateEditorPermissions.includes('request-revisions'), true)
   assert.equal(managingEditorPermissions.includes('request-revisions'), true)
   assert.equal(editorInChiefPermissions.includes('request-revisions'), true)
+})
+
+function rowsForRole(roleName: string): PermissionRow[] {
+  const role = systemRoles.find(candidate => candidate.name === roleName)
+  if (!role) {
+    return []
+  }
+
+  return role.permissions.map((permissionName) => {
+    const definition = permissionDefinitions.find(candidate => candidate.name === permissionName)!
+    return { roleName, resource: definition.resource, action: definition.action, scope: definition.scope }
+  })
+}
+
+test('derivePermissionActions excludes own/assigned-scoped permissions', () => {
+  const rows: PermissionRow[] = [
+    { roleName: 'author', resource: 'journal', action: 'create', scope: 'own' },
+    { roleName: 'author', resource: 'journal', action: 'read', scope: 'public' },
+    { roleName: 'associate_editor', resource: 'review', action: 'submit', scope: 'assigned' }
+  ]
+
+  assert.deepEqual(derivePermissionActions(rows), ['journal:read'])
+})
+
+test('derivePermissionActions gives admin every known permission regardless of rows', () => {
+  const rows: PermissionRow[] = [{ roleName: 'admin', resource: 'journal', action: 'approve', scope: 'any' }]
+  const actions = derivePermissionActions(rows)
+
+  assert.equal(actions.length, permissionDefinitions.length)
+  assert.equal(actions.includes('user:delete'), true)
+})
+
+// Regression test for the actual bug: app/pages/editor/journals/[uuid].vue used to gate every
+// action button by role membership alone, so managing_editor saw editor_in_chief-only buttons
+// (Send to review/Desk decline) and editor_in_chief saw managing_editor-only ones (Assign
+// reviewers, approval/decline notices) — both would 403 on click. useCan() now checks these.
+test('derivePermissionActions gives managing_editor and editor_in_chief disjoint action sets', () => {
+  const managingEditorActions = derivePermissionActions(rowsForRole('managing_editor'))
+  const editorInChiefActions = derivePermissionActions(rowsForRole('editor_in_chief'))
+
+  assert.equal(managingEditorActions.includes('journal:approve'), false)
+  assert.equal(managingEditorActions.includes('journal:reject'), false)
+  assert.equal(managingEditorActions.includes('journal:publish'), false)
+  assert.equal(managingEditorActions.includes('reviewer:assign'), true)
+  assert.equal(managingEditorActions.includes('journal:send_approval_notice'), true)
+  assert.equal(managingEditorActions.includes('journal:send_decline_notice'), true)
+
+  assert.equal(editorInChiefActions.includes('journal:approve'), true)
+  assert.equal(editorInChiefActions.includes('journal:reject'), true)
+  assert.equal(editorInChiefActions.includes('journal:publish'), true)
+  assert.equal(editorInChiefActions.includes('reviewer:assign'), false)
+  assert.equal(editorInChiefActions.includes('journal:send_approval_notice'), false)
+  assert.equal(editorInChiefActions.includes('journal:send_decline_notice'), false)
+
+  assert.equal(managingEditorActions.includes('journal:request_revisions'), true)
+  assert.equal(editorInChiefActions.includes('journal:request_revisions'), true)
 })

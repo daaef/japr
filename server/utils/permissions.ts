@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
 import { db } from '#server/db/client'
 import { permissions, rolePermissions, roles, userRoles } from '#server/db/schema'
 import { getUserRoles, requireSession, type SessionRole } from './session'
+import { derivePermissionActions, type PermissionRow } from './permissionActions'
 import {
   ADMIN_ROLES,
   AUTHOR_ROLES,
@@ -16,13 +17,6 @@ import {
 export interface PermissionContext {
   ownerId?: string | null
   reviewerUserId?: string | null
-}
-
-interface PermissionRow {
-  roleName: string
-  resource: string
-  action: string
-  scope: string | null
 }
 
 async function getUserPermissions(userId: string): Promise<PermissionRow[]> {
@@ -77,6 +71,14 @@ export async function checkUserPermission(userId: string, resource: string, acti
   }
 
   return false
+}
+
+// Returns the subset of the user's permissions that are safe to check without extra
+// per-record context — see derivePermissionActions (server/utils/permissionActions.ts) for
+// the actual scope-filtering logic and why it's kept in its own dependency-free file.
+export async function getUserPermissionActions(userId: string): Promise<string[]> {
+  const permissionRows = await getUserPermissions(userId)
+  return derivePermissionActions(permissionRows)
 }
 
 export async function requirePermission(
