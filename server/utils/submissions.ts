@@ -1,4 +1,5 @@
 import { db } from '#server/db/client'
+import { splitReviewerRounds } from '#server/utils/journalWorkflow'
 
 interface AuthorReviewerSource {
   comment: string | null
@@ -93,6 +94,9 @@ export async function getJournalDetails(id: string) {
     db.query.manuscriptVersions.findMany({
       where: (table, { eq }) => eq(table.journalId, journal.id)
     }),
+    // Every round's rows; split below into the current round (what counts) and prior
+    // rounds (audit history). Consumers that compute quorum/consensus must use
+    // `reviewers`, never `reviewerHistory` — see docs/tasks/20260726_review-rounds (F-A).
     db.query.reviewers.findMany({
       where: (table, { eq }) => eq(table.journalId, journal.id)
     }),
@@ -107,13 +111,19 @@ export async function getJournalDetails(id: string) {
       : null
   ])
 
+  // `reviewers` is deliberately the CURRENT round only, so any consumer that forgets
+  // rounds exist still gets the correct answer by default. Superseded rounds are
+  // available explicitly as `reviewerHistory` for audit/history views.
+  const rounds = splitReviewerRounds(reviewerRows, journal.currentReviewRound)
+
   return {
     journal,
     category,
     subCategory,
     subSubCategory,
     versions,
-    reviewers: reviewerRows
+    reviewers: rounds.current,
+    reviewerHistory: rounds.history
   }
 }
 

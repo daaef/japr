@@ -4,10 +4,16 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { notifyEditorsOfReviewerSuggestions } from '#server/utils/editorNotifications'
-import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
+import { assertManuscriptStatus, assertReviewerStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
+
+// F-F: an unbounded array on a jsonb column. 50 is generous for a single review round —
+// past it, something is wrong (a stuck client retrying, or abuse) rather than a
+// legitimately large set of suggestions.
+const MAX_CHANGE_REQUESTS = 50
 
 const changeSchema = z.object({
   field: z.enum(['title', 'abstract', 'description']),
@@ -33,12 +39,21 @@ export default defineEventHandler(async (event) => {
   // manuscript into changes_requested, including ones they aren't assigned to and
   // ones already published/declined. Both checks below close that.
   const reviewer = await db.query.reviewers.findFirst({
-    where: (table, { and, eq }) => and(eq(table.journalId, journal.id), eq(table.userId, session.user.id))
+    where: (table, { and, eq }) => and(
+      eq(table.journalId, journal.id),
+      eq(table.roundNumber, journal.currentReviewRound),
+      eq(table.userId, session.user.id)
+    )
   })
 
   if (!reviewer) {
     throw createError({ statusCode: 403, statusMessage: 'You are not assigned as a reviewer for this journal.' })
   }
+
+  // F-F: the only guard here was "an assignment row exists" — a reviewer who already
+  // declined, or already submitted their review, could keep appending suggestions
+  // indefinitely, at any review-stage status, past their actual reviewing window.
+  assertReviewerStatus(reviewer.status, [REVIEWER_STATUS.IN_PROGRESS], 'suggesting changes')
 
   assertManuscriptStatus(
     journal.approvalStatus,
@@ -53,6 +68,13 @@ export default defineEventHandler(async (event) => {
 
   const existing = Array.isArray(journal.changeRequests) ? [...journal.changeRequests] : []
   const timestamp = new Date().toISOString()
+
+  if (existing.length + body.changes.length > MAX_CHANGE_REQUESTS) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: `This manuscript already has ${existing.length} change suggestions; the limit is ${MAX_CHANGE_REQUESTS}.`
+    })
+  }
 
   for (const change of body.changes) {
     const currentValue = String(journal[change.field] ?? '')

@@ -12,11 +12,24 @@ export async function listReviewerAssignments(
   userId: string,
   pagination: { page?: number, pageSize?: number },
   extraCondition?: SQL,
-  options: { showUrgency?: boolean } = {}
+  options: { showUrgency?: boolean, currentRoundOnly?: boolean } = {}
 ) {
   const { page, pageSize, offset } = getPagination(pagination)
-  const userCondition = eq(reviewers.userId, userId)
-  const whereClause = extraCondition ? and(userCondition, extraCondition) : userCondition
+  const conditions: SQL[] = [eq(reviewers.userId, userId)]
+
+  if (extraCondition) {
+    conditions.push(extraCondition)
+  }
+
+  // Actionable queues (pending / in-progress) pass currentRoundOnly so a reviewer is never
+  // shown an assignment from a round the manuscript has already moved past — acting on one
+  // is rejected downstream, so surfacing it is a dead end. History queues (reviewed /
+  // declined / declined-invitations) deliberately span rounds: that work really happened.
+  if (options.currentRoundOnly) {
+    conditions.push(eq(reviewers.roundNumber, journals.currentReviewRound))
+  }
+
+  const whereClause = conditions.length > 1 ? and(...conditions)! : conditions[0]!
 
   const [rows, totalRows] = await Promise.all([
     db

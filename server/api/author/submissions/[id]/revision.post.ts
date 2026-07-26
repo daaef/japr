@@ -66,6 +66,13 @@ export default defineEventHandler(async (event) => {
         editorDecisionComment: body.changesSummary,
         journalUrl: body.journalUrl ?? journal.journalUrl,
         journalFormat: body.journalFormat ?? journal.journalFormat,
+        // A revision opens a new peer-review round (F-A). Without this, the previous
+        // draft's completed reviews stay eligible: syncJournalReviewStatus would count
+        // them and jump the revised manuscript straight back to
+        // ready_for_managing_editor_notice, and approve.post.ts's quorum gate would pass
+        // on reviews of a document nobody re-read. Reviewer rows from earlier rounds are
+        // intentionally left untouched as audit history.
+        currentReviewRound: journal.currentReviewRound + 1,
         updatedAt: new Date()
       })
       .where(eq(journals.id, journal.id))

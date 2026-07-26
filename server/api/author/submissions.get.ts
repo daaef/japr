@@ -1,4 +1,4 @@
-import { count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { requireAuthor } from '#server/utils/permissions'
@@ -17,7 +17,12 @@ export default defineEventHandler(async (event) => {
       categoryId
         ? db.query.categories.findFirst({ where: (table, { eq }) => eq(table.id, categoryId) })
         : null,
-      db.select({ value: count() }).from(reviewers).where(eq(reviewers.journalId, journal.id))
+      // Current round only — an author looking at a revised manuscript should see how many
+      // reviewers are on the new round, not a total inflated by the previous round's rows.
+      db.select({ value: count() }).from(reviewers).where(and(
+        eq(reviewers.journalId, journal.id),
+        eq(reviewers.roundNumber, journal.currentReviewRound)
+      ))
     ])
 
     return {

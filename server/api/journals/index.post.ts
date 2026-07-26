@@ -162,16 +162,20 @@ export default defineEventHandler(async (event) => {
         }
       })))
 
-      for (const editor of editorUsers) {
-        await sendIfEmailAllowed(editor.id, 'new_submissions', () =>
-          sendManuscriptSubmissionEmail(
-            editor.email,
-            editor.fullname,
-            journal.title,
-            'editor'
-          )
+      // F-K: sequential emailing made the submission request's latency scale linearly
+      // with the number of editors on the platform. assign-reviewers.post.ts already
+      // established the fan-out shape for "email a list of users" — mirror it. Same as
+      // before, a single failed send is caught by the surrounding try/catch below rather
+      // than per-email, but now every editor's send is at least attempted concurrently
+      // instead of the loop stopping at the first failure.
+      await Promise.all(editorUsers.map(editor => sendIfEmailAllowed(editor.id, 'new_submissions', () =>
+        sendManuscriptSubmissionEmail(
+          editor.email,
+          editor.fullname,
+          journal.title,
+          'editor'
         )
-      }
+      )))
     }
   } catch (error) {
     console.error('Failed to notify editors:', error)

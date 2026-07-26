@@ -51,8 +51,13 @@ export default defineEventHandler(async (event) => {
     })
     .where(eq(reviewers.id, reviewer.id))
 
+  // Only this reviewer's own round counts toward "everyone is done" — a previous round's
+  // rows are closed history and would otherwise permanently suppress the editor notification.
   const journalReviewers = await db.query.reviewers.findMany({
-    where: (table, { eq }) => eq(table.journalId, reviewer.journalId)
+    where: (table, { and, eq }) => and(
+      eq(table.journalId, reviewer.journalId),
+      eq(table.roundNumber, reviewer.roundNumber)
+    )
   })
 
   const allComplete = journalReviewers.every(item => item.id === reviewer.id ? true : item.status === REVIEWER_STATUS.REVIEWED)

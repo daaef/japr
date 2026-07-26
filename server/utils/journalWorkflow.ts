@@ -107,13 +107,49 @@ export function getReviewWorkflowStatus(reviewers: ReviewerWorkflowInput[]): Wor
   return MANUSCRIPT_STATUS.IN_PROGRESS
 }
 
+/**
+ * Splits already-loaded reviewer rows into the round that counts and the rounds that are
+ * history. Pure and I/O-free so the F-A regression (stale reviews satisfying a new round's
+ * quorum) is testable without a database — see tests/reviewRounds.test.ts.
+ */
+export function splitReviewerRounds<T extends { roundNumber: number }>(
+  rows: T[],
+  currentReviewRound: number
+): { current: T[], history: T[] } {
+  return {
+    current: rows.filter(row => row.roundNumber === currentReviewRound),
+    history: rows.filter(row => row.roundNumber !== currentReviewRound)
+  }
+}
+
+/**
+ * Loads the reviewer rows that *count* for a journal right now: the current round only.
+ * Prior-round rows are audit history — including them is exactly the F-A bug, where three
+ * completed round-1 reviews silently satisfied the quorum for a freshly revised draft.
+ *
+ * Every quorum, consensus, or workflow-status computation must source its rows here (or
+ * apply the same filter); history/audit views deliberately do not.
+ */
+export function getCurrentRoundReviewers(journalId: string, currentReviewRound: number) {
+  return db.query.reviewers.findMany({
+    where: (table, { and, eq: eqFn }) => and(
+      eqFn(table.journalId, journalId),
+      eqFn(table.roundNumber, currentReviewRound)
+    )
+  })
+}
+
 export async function syncJournalReviewStatus(journalId: string): Promise<ManuscriptStatus> {
   const journal = await db.query.journals.findFirst({
     where: (table, { eq: eqFn }) => eqFn(table.id, journalId)
   })
 
+  // Previously returned IN_PROGRESS here (F-I), which handed callers a plausible-looking
+  // workflow status for a journal that doesn't exist — decline-with-comment.post.ts
+  // returned that straight to the client as `approvalStatus`. Every caller resolves the
+  // journal before calling, so a miss here is a genuine fault, not a state.
   if (!journal) {
-    return MANUSCRIPT_STATUS.IN_PROGRESS
+    throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 
   // Never let a late reviewer action overwrite an editor/terminal decision.
@@ -123,9 +159,7 @@ export async function syncJournalReviewStatus(journalId: string): Promise<Manusc
     return journal.approvalStatus
   }
 
-  const journalReviewers = await db.query.reviewers.findMany({
-    where: (table, { eq: eqFn }) => eqFn(table.journalId, journalId)
-  })
+  const journalReviewers = await getCurrentRoundReviewers(journalId, journal.currentReviewRound)
 
   const approvalStatus = getReviewWorkflowStatus(journalReviewers)
 

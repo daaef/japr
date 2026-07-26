@@ -5,10 +5,12 @@ import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { sendJournalStatusChangeEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
+import { assertReviewerStatus } from '#server/utils/journalWorkflow'
 import { createNotification } from '#server/utils/notifications'
 import { requirePermission } from '#server/utils/permissions'
 import { buildApprovedExtension, getDefaultReviewDeadline } from '#server/utils/reviewerDeadlines'
 import { getJournalById } from '#server/utils/submissions'
+import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 const bodySchema = z.object({
   reviewerId: z.string().uuid(),
@@ -35,6 +37,18 @@ export default defineEventHandler(async (event) => {
 
   if (!reviewer) {
     throw createError({ statusCode: 404, statusMessage: 'Reviewer assignment not found.' })
+  }
+
+  // F-H: previously unguarded — an editor could "approve an extension" for a reviewer
+  // who already submitted or declined (extending a deadline that no longer means
+  // anything), or for one who never actually requested one.
+  assertReviewerStatus(reviewer.status, [REVIEWER_STATUS.IN_PROGRESS], 'extending this review')
+
+  if (!reviewer.deadlineExtensionRequested) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'This reviewer has not requested a deadline extension.'
+    })
   }
 
   const currentDeadline = reviewer.reviewDeadline

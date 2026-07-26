@@ -23,19 +23,35 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 
+  // Current round only: a reviewer acting on this manuscript acts on the draft under
+  // review now. Without the round filter findFirst could return a superseded round's row
+  // and mutate closed history.
   const reviewer = await db.query.reviewers.findFirst({
-    where: (table, { and, eq }) => and(eq(table.journalId, journal.id), eq(table.userId, session.user.id))
+    where: (table, { and, eq }) => and(
+      eq(table.journalId, journal.id),
+      eq(table.roundNumber, journal.currentReviewRound),
+      eq(table.userId, session.user.id)
+    )
   })
 
   if (!reviewer) {
     throw createError({ statusCode: 403, statusMessage: 'You are not assigned as a reviewer for this journal.' })
   }
 
+  // Idempotent (F-C): re-submitting a decline reason is a no-op, not an error or a
+  // fresh write. Previously DECLINED was accepted as a starting status here even though
+  // ALLOWED_REVIEWER_TRANSITIONS[declined] = [] — no reviewer endpoint actually called
+  // canTransitionReviewerStatus, so a reviewer could re-decline indefinitely, each time
+  // overwriting `comment`/`reviewSubmittedAt` and re-notifying editors.
+  if (reviewer.status === REVIEWER_STATUS.DECLINED) {
+    return { ok: true, approvalStatus: journal.approvalStatus }
+  }
+
   // A completed review can't be retroactively withdrawn as a decline — that would
   // corrupt the completed-review count approve.post.ts relies on.
   assertReviewerStatus(
     reviewer.status,
-    [REVIEWER_STATUS.PENDING, REVIEWER_STATUS.IN_PROGRESS, REVIEWER_STATUS.DECLINED],
+    [REVIEWER_STATUS.PENDING, REVIEWER_STATUS.IN_PROGRESS],
     'declining this review'
   )
 
