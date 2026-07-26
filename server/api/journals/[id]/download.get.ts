@@ -7,6 +7,7 @@ import { getStoredFile } from '#server/utils/files'
 import { findJournalByParam } from '#server/utils/journal-resolve'
 import { getCurrentUserContext } from '#server/utils/session'
 import { PUBLIC_MANUSCRIPT_STATUSES } from '#shared/constants/manuscriptStatus'
+import { hasEditorRole } from '#shared/constants/roles'
 
 function buildDownloadFilename(title: string, storageKey: string) {
   const extension = extname(storageKey) || ''
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
   const userId = context.user.id
   const isOwner = journal.userId === userId
-  const isEditor = context.roles.some(role => ['admin', 'editor_in_chief', 'managing_editor'].includes(role))
+  const isEditor = hasEditorRole(context.roles)
   const isApproved = PUBLIC_MANUSCRIPT_STATUSES.some(status => status === journal.approvalStatus)
   let isAssignedReviewer = false
 

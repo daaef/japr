@@ -1,13 +1,6 @@
-import { eq } from 'drizzle-orm'
 import { readBody } from 'h3'
 import { z } from 'zod'
-import { db } from '#server/db/client'
-import { journalComments, journals, users } from '#server/db/schema'
-import { sendDecisionEmail } from '#server/utils/email'
-import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
-import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
-import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
-import { createNotification } from '#server/utils/notifications'
+import { approveManuscript } from '#server/utils/editorDecision'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -30,61 +23,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 
-  assertManuscriptStatus(
-    journal.approvalStatus,
-    [MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE],
-    'sending an approval notice'
-  )
-
-  const finalStatus = body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED
-
-  await db
-    .update(journals)
-    .set({
-      approvalStatus: finalStatus,
-      editorDecisionComment: body.comment ?? null,
-      editorDecisionDate: new Date(),
-      approvedAt: new Date(),
-      managingEditorNoticeSentAt: new Date(),
-      updatedAt: new Date()
-    })
-    .where(eq(journals.id, journal.id))
-
-  await db.insert(journalComments).values({
-    userId: session.user.id,
-    journalId: journal.id,
-    comment: body.comment ?? 'Manuscript approved by Managing Editor'
+  // This endpoint only accepts READY_FOR_MANAGING_EDITOR_NOTICE — that status is only
+  // ever set by the engine once the current-round quorum is met (getReviewWorkflowStatus),
+  // so the >=3 check in approveManuscript is defense in depth here, not the primary gate.
+  // See editorDecision.ts (F-D) — this used to have no quorum check of its own at all.
+  await approveManuscript({
+    journal,
+    actorUserId: session.user.id,
+    comment: body.comment,
+    allowedStatuses: [MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE],
+    action: 'sending an approval notice',
+    defaultComment: 'Manuscript approved by Managing Editor.'
   })
-
-  const author = await db.query.users.findFirst({
-    where: eq(users.id, journal.userId),
-    columns: { email: true, fullname: true }
-  })
-
-  if (author) {
-    await sendIfEmailAllowed(journal.userId, 'manuscript_status', () =>
-      sendDecisionEmail(
-        author.email,
-        author.fullname,
-        journal.title,
-        finalStatus,
-        body.comment ?? 'Your manuscript has been approved for publication by the Managing Editor.'
-      )
-    ).catch(() => undefined)
-  }
-
-  await createNotification({
-    userId: journal.userId,
-    type: 'journal-approved',
-    data: {
-      title: 'Manuscript approved',
-      journalId: journal.id,
-      message: `${journal.title} has been approved for publication.`
-    }
-  })
-
-  // Reviewers who completed a review never learned the outcome (F13d).
-  await notifyReviewersOfFinalDecision(journal.id, finalStatus)
 
   return { ok: true }
 })

@@ -23,7 +23,11 @@ const REQUIRED_COLUMNS: Array<{ table: string, column: string, migration: string
   // 0011_spooky_masque — journalQuery.ts's search matches against this generated column
   { table: 'journals', column: 'search_vector', migration: '0011_spooky_masque' },
   // 0012_loud_viper — the deadline-reminder cron job reads/writes this to avoid duplicate reminders
-  { table: 'reviewers', column: 'reminded_at', migration: '0012_loud_viper' }
+  { table: 'reviewers', column: 'reminded_at', migration: '0012_loud_viper' },
+  // 0016_review_rounds — every reviewer query in the review workflow filters on these two;
+  // without them syncJournalReviewStatus and the approve quorum gate 500 on every call.
+  { table: 'journals', column: 'current_review_round', migration: '0016_review_rounds' },
+  { table: 'reviewers', column: 'round_number', migration: '0016_review_rounds' }
 ]
 
 const REQUIRED_ENUM_VALUES: Array<{ enumName: string, value: string, migration: string }> = [
@@ -36,9 +40,11 @@ const REQUIRED_ENUM_VALUES: Array<{ enumName: string, value: string, migration: 
 ]
 
 const REQUIRED_INDEXES: Array<{ table: string, indexName: string, migration: string }> = [
-  // 0014_soft_zarek — assign-reviewers.post.ts's onConflictDoUpdate targets this unique index;
-  // without it on the live DB, every attempt to assign a second reviewer to a journal 500s.
-  { table: 'reviewers', indexName: 'reviewers_journal_user_idx', migration: '0014_soft_zarek' }
+  // 0014_soft_zarek — the uniqueness guard assign-reviewers.post.ts relies on to turn a
+  // concurrent double-assignment into a DB-level conflict instead of a duplicate row.
+  // 0016_review_rounds re-created it under the same name over (journal_id, user_id,
+  // round_number); the name is asserted here, the column list by the round_number check above.
+  { table: 'reviewers', indexName: 'reviewers_journal_user_idx', migration: '0014_soft_zarek → widened by 0016_review_rounds' }
 ]
 
 export interface SchemaCheckResult {

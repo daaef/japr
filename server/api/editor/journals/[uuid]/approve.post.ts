@@ -1,24 +1,16 @@
-import { eq } from 'drizzle-orm'
 import { readBody } from 'h3'
 import { z } from 'zod'
-import { db } from '#server/db/client'
-import { journals, users } from '#server/db/schema'
-import { assertManuscriptStatus, MIN_PEER_REVIEWS_FOR_NOTICE } from '#server/utils/journalWorkflow'
-import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
-import { createNotification } from '#server/utils/notifications'
+import { approveManuscript } from '#server/utils/editorDecision'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
-import { sendDecisionEmail } from '#server/utils/email'
-import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
-import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
 const bodySchema = z.object({
   comment: z.string().trim().max(2000).optional().nullable()
 })
 
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'journal', 'approve')
+  const session = await requirePermission(event, 'journal', 'approve')
   const uuid = getRouterParam(event, 'uuid')
   const body = bodySchema.parse(await readBody(event))
 
@@ -31,70 +23,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Journal not found.' })
   }
 
-  assertManuscriptStatus(
-    journal.approvalStatus,
-    [MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE],
-    'approving for publication'
-  )
-
-  // Count only genuinely completed reviews. A declined reviewer also has
-  // reviewSubmittedAt set, so filtering on that would let declines satisfy the minimum.
-  const completedReviews = await db.query.reviewers.findMany({
-    where: (table, { and, eq }) => and(
-      eq(table.journalId, journal.id),
-      eq(table.status, REVIEWER_STATUS.REVIEWED)
-    )
+  // This endpoint additionally accepts REVIEWED as a starting status (a manuscript where
+  // every reviewer responded but the quorum wasn't met by completions alone) —
+  // send-approval-notice.post.ts does not. See editorDecision.ts (F-D) for the shared
+  // quorum check and side effects both endpoints now go through.
+  await approveManuscript({
+    journal,
+    actorUserId: session.user.id,
+    comment: body.comment,
+    allowedStatuses: [MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE],
+    action: 'approving for publication',
+    defaultComment: 'Manuscript approved.'
   })
-
-  if (completedReviews.length < MIN_PEER_REVIEWS_FOR_NOTICE) {
-    throw createError({
-      statusCode: 409,
-      statusMessage: `At least ${MIN_PEER_REVIEWS_FOR_NOTICE} reviews must be completed before approval.`
-    })
-  }
-
-  const finalStatus = body.comment ? MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT : MANUSCRIPT_STATUS.APPROVED
-
-  await db
-    .update(journals)
-    .set({
-      approvalStatus: finalStatus,
-      editorDecisionComment: body.comment ?? null,
-      editorDecisionDate: new Date(),
-      approvedAt: new Date(),
-      updatedAt: new Date()
-    })
-    .where(eq(journals.id, journal.id))
-
-  // Get author details for email
-  const author = await db.query.users.findFirst({
-    where: eq(users.id, journal.userId),
-    columns: { email: true, fullname: true }
-  })
-
-  if (author) {
-    // Send decision email to author
-    try {
-      await sendIfEmailAllowed(journal.userId, 'manuscript_status', () =>
-        sendDecisionEmail(author.email, author.fullname, journal.title, finalStatus, body.comment)
-      )
-    } catch (error) {
-      console.error('Failed to send approval email:', error)
-    }
-  }
-
-  await createNotification({
-    userId: journal.userId,
-    type: 'journal-approved',
-    data: {
-      title: 'Manuscript approved',
-      journalId: journal.id,
-      message: `${journal.title} has been approved.`
-    }
-  })
-
-  // Reviewers who completed a review never learned the outcome (F13d).
-  await notifyReviewersOfFinalDecision(journal.id, finalStatus)
 
   return { ok: true }
 })

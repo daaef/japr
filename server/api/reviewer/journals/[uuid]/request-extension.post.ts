@@ -26,7 +26,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const reviewer = await db.query.reviewers.findFirst({
-    where: (table, { and, eq }) => and(eq(table.journalId, journal.id), eq(table.userId, session.user.id))
+    where: (table, { and, eq }) => and(
+      eq(table.journalId, journal.id),
+      eq(table.roundNumber, journal.currentReviewRound),
+      eq(table.userId, session.user.id)
+    )
   })
 
   if (!reviewer) {

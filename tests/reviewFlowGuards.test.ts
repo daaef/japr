@@ -31,9 +31,16 @@ test('accept.post.ts guard: only pending reviewers may accept, declined stays te
   assert.throws(() => assertReviewerStatus(REVIEWER_STATUS.REVIEWED, allowed, 'accepting this review'))
 })
 
-test('decline-with-comment.post.ts guard: a reviewed reviewer cannot re-decline', () => {
-  const allowed = [REVIEWER_STATUS.PENDING, REVIEWER_STATUS.IN_PROGRESS, REVIEWER_STATUS.DECLINED]
+test('decline-with-comment.post.ts guard: only pending/in-progress reviewers may decline (F-C)', () => {
+  // Previously DECLINED was accepted here too, contradicting
+  // ALLOWED_REVIEWER_TRANSITIONS[declined] = [] — a reviewer could re-decline
+  // indefinitely, each time overwriting `comment`/`reviewSubmittedAt` and re-notifying
+  // editors. The endpoint now short-circuits an already-declined reviewer as an
+  // idempotent no-op *before* reaching this assertion, so DECLINED must throw here.
+  const allowed = [REVIEWER_STATUS.PENDING, REVIEWER_STATUS.IN_PROGRESS]
 
-  assert.doesNotThrow(() => assertReviewerStatus(REVIEWER_STATUS.DECLINED, allowed, 'declining this review'))
+  assert.doesNotThrow(() => assertReviewerStatus(REVIEWER_STATUS.PENDING, allowed, 'declining this review'))
+  assert.doesNotThrow(() => assertReviewerStatus(REVIEWER_STATUS.IN_PROGRESS, allowed, 'declining this review'))
+  assert.throws(() => assertReviewerStatus(REVIEWER_STATUS.DECLINED, allowed, 'declining this review'))
   assert.throws(() => assertReviewerStatus(REVIEWER_STATUS.REVIEWED, allowed, 'declining this review'))
 })

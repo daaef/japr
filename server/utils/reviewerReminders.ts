@@ -47,6 +47,13 @@ export async function sendReviewerDeadlineReminders(): Promise<{ remindedCount: 
       continue
     }
 
+    // Don't nag about a superseded round. If the author revised while this assignment was
+    // still in-progress, the manuscript moved on to a new round and this row is history —
+    // chasing it would tell a reviewer their review of the previous draft is "overdue".
+    if (current.roundNumber !== journal.currentReviewRound) {
+      continue
+    }
+
     const deadline = current.reviewDeadline
     const isOverdue = deadline.getTime() < Date.now()
 

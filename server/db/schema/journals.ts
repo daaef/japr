@@ -51,6 +51,11 @@ export const journals = pgTable('journals', {
 
   approvalStatus: approvalStatusEnum('approval_status').notNull().default('desk_review'),
   approvalLevel: integer('approval_level').notNull().default(0),
+  // Peer-review round. Incremented by an author revision, so a re-reviewed manuscript
+  // never inherits the previous draft's completed reviews: every quorum/consensus
+  // computation filters `reviewers` to this round. Prior-round reviewer rows are kept
+  // untouched as audit history. See docs/tasks/20260726_review-rounds.
+  currentReviewRound: integer('current_review_round').notNull().default(1),
   editorDecisionDate: timestamp('editor_decision_date', { withTimezone: true }),
   editorDecisionComment: text('editor_decision_comment'),
 

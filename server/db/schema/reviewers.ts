@@ -37,6 +37,12 @@ export const reviewers = pgTable('reviewers', {
   isAccepted: boolean('is_accepted').notNull().default(false),
   token: text('token'),
 
+  // The peer-review round this assignment belongs to, matching journals.current_review_round
+  // at assignment time. A revision opens a new round, so re-inviting the same reviewer
+  // creates a NEW row rather than mutating the old one — round-1 review content stays
+  // intact for audit while round-2 quorum starts from zero.
+  roundNumber: integer('round_number').notNull().default(1),
+
   assignedAt: timestamp('assigned_at', { withTimezone: true }),
   reviewDeadline: timestamp('review_deadline', { withTimezone: true }),
   deadlineExtensionRequested: boolean('deadline_extension_requested').notNull().default(false),
@@ -54,6 +60,10 @@ export const reviewers = pgTable('reviewers', {
   tokenIndex: index('reviewers_token_idx').on(table.token),
   // B8: find-then-insert in assign-reviewers.post.ts raced two concurrent assignment
   // requests into duplicate rows for the same journal+user. The unique index turns that
-  // race into a DB-level onConflict instead of a silent duplicate.
-  journalUserUniqueIndex: uniqueIndex('reviewers_journal_user_idx').on(table.journalId, table.userId)
+  // race into a DB-level conflict instead of a silent duplicate.
+  //
+  // Widened with round_number (F-A): duplicates within a round are still impossible, but
+  // a new review round legitimately gets a second row for the same reviewer. Keep the
+  // index name stable — server/db/check.ts asserts it exists on the live DB.
+  journalUserRoundUniqueIndex: uniqueIndex('reviewers_journal_user_idx').on(table.journalId, table.userId, table.roundNumber)
 }))

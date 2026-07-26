@@ -64,6 +64,12 @@ const [
       deadlineExtendedAt: string | null
       reviewSubmittedAt: string | null
     }>
+    consensus: {
+      completed: number
+      ready: boolean
+      suggestion: 'accept' | 'reject' | 'revision' | 'inconclusive' | null
+    }
+    hasQuorum: boolean
   }>(() => `/api/editor/journals/${uuid.value}`, {
     key: computed(() => `editor-journal-${uuid.value}`),
     default: () => ({
@@ -88,7 +94,9 @@ const [
       subCategory: null,
       subSubCategory: null,
       versions: [],
-      reviewers: []
+      reviewers: [],
+      consensus: { completed: 0, ready: false, suggestion: null },
+      hasQuorum: false
     })
   }),
   useFetch<{
@@ -187,6 +195,26 @@ const showPublicationAction = computed(() =>
 )
 const pendingExtensionRequests = computed(() =>
   detailData.value.reviewers.filter(reviewer => reviewer.deadlineExtensionRequested)
+)
+
+// Advisory reviewer-consensus surfaced from the API (getReviewConsensus). The managing
+// editor still confirms every terminal decision via the buttons below — this only labels
+// the case. Quorum is 3 completed reviews.
+const REVIEW_QUORUM = 3
+const CONSENSUS_DISPLAY: Record<'accept' | 'reject' | 'revision' | 'inconclusive', { label: string, color: 'success' | 'error' | 'warning' | 'info', hint: string }> = {
+  accept: { label: 'Accept', color: 'success', hint: 'All reviewers recommended acceptance.' },
+  reject: { label: 'Reject', color: 'error', hint: 'All reviewers recommended rejection.' },
+  revision: { label: 'Revision', color: 'warning', hint: 'At least one reviewer asked for changes.' },
+  inconclusive: { label: 'Inconclusive', color: 'info', hint: 'Reviewers were split — your call decides this one.' }
+}
+const consensusDisplay = computed(() => {
+  const suggestion = detailData.value.consensus.suggestion
+  return suggestion ? CONSENSUS_DISPLAY[suggestion] : null
+})
+const needsReplacementReviewer = computed(() =>
+  !detailData.value.hasQuorum
+  && detailData.value.reviewers.some(reviewer => reviewer.status === 'reviewed' || reviewer.status === 'declined')
+  && ['in-progress', 'under_peer_review', 'reviewed'].includes(detailData.value.journal.approvalStatus)
 )
 
 function sendToReview() {
@@ -442,6 +470,41 @@ function declineManuscript() {
             Editorial actions
           </h4>
         </template>
+
+        <div
+          v-if="consensusDisplay || needsReplacementReviewer"
+          class="mb-5 rounded-2xl border border-default bg-elevated p-4"
+        >
+          <h5 class="mb-2 text-sm font-semibold text-highlighted">
+            Reviewer consensus
+          </h5>
+          <template v-if="consensusDisplay">
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <UBadge :color="consensusDisplay.color" variant="subtle">
+                Suggested: {{ consensusDisplay.label }}
+              </UBadge>
+              <span class="text-sm text-muted">
+                {{ detailData.consensus.completed }} of {{ REVIEW_QUORUM }} reviews in
+              </span>
+            </div>
+            <p class="mb-0 text-sm text-muted">
+              {{ consensusDisplay.hint }} This is advisory — confirm the outcome below.
+            </p>
+          </template>
+          <p v-else class="mb-0 text-sm text-muted">
+            Waiting on reviews: {{ detailData.consensus.completed }} of {{ REVIEW_QUORUM }} completed.
+          </p>
+          <UAlert
+            v-if="needsReplacementReviewer"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-user-plus"
+            class="mt-3"
+            title="Quorum not met"
+            description="Fewer than 3 completed reviews (a reviewer declined). Assign a replacement to reach the 3-review quorum before deciding."
+          />
+        </div>
+
         <div
           v-if="showDeskReviewActions"
           class="mb-5 rounded-2xl border border-warning-100 bg-warning-50 p-4"

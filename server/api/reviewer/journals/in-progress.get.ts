@@ -13,6 +13,6 @@ export default defineEventHandler(async (event) => {
     session.user.id,
     query,
     eq(reviewers.status, REVIEWER_STATUS.IN_PROGRESS),
-    { showUrgency: true }
+    { showUrgency: true, currentRoundOnly: true }
   )
 })
