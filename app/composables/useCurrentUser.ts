@@ -33,6 +33,7 @@ export interface CurrentUserPayload {
   roles: string[]
   roleRecords: CurrentUserRoleRecord[]
   hasInterests: boolean
+  permissions: string[]
 }
 
 const defaultCurrentUser = (): CurrentUserPayload => ({
@@ -40,7 +41,8 @@ const defaultCurrentUser = (): CurrentUserPayload => ({
   user: null,
   roles: [],
   roleRecords: [],
-  hasInterests: false
+  hasInterests: false,
+  permissions: []
 })
 
 // /api/me never throws for "not logged in" — it always resolves 200 with
