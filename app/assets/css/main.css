@@ -140,6 +140,11 @@
 :root {
   --ui-radius: 0.375rem;
   --text-sm: 0.75rem;
+  /* Site is light-only (see colorMode pin in nuxt.config.ts). Without this, browsers/extensions
+     that force-darken pages lacking an explicit color-scheme (Chrome's "Auto dark mode for web
+     contents", Dark Reader, etc.) will re-theme our already-light-styled elements on top of our
+     own CSS, producing broken contrast that never shows up in incognito or in stock Chrome. */
+  color-scheme: light;
 }
 
 body {
