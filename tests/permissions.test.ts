@@ -3,6 +3,7 @@ import test from 'node:test'
 import { systemRoles, permissionDefinitions } from '../shared/constants/permissions'
 import { editorRoleKeys, reviewerRoleKeys } from '../shared/constants/roles'
 import { derivePermissionActions, type PermissionRow } from '../server/utils/permissionActions'
+import { resolveRoleLayout } from '../app/utils/workspace'
 
 // Derive from the shared single source (same data server/utils/permissions.ts now uses),
 // so this test guards against the role lists drifting apart again.
@@ -12,6 +13,18 @@ const isReviewerRole = (roleName: string) => (reviewerRoleKeys as readonly strin
 test('shared role keys are the single source for editor/reviewer groupings', () => {
   assert.deepEqual([...editorRoleKeys], ['admin', 'editor_in_chief', 'managing_editor'])
   assert.deepEqual([...reviewerRoleKeys], ['associate_editor', 'external_reviewer', 'desk_editor'])
+})
+
+test('shared authenticated pages resolve the correct workspace layout', () => {
+  assert.equal(resolveRoleLayout(['admin']), 'admin')
+  assert.equal(resolveRoleLayout(['editor_in_chief']), 'editor')
+  assert.equal(resolveRoleLayout(['managing_editor']), 'editor')
+  assert.equal(resolveRoleLayout(['copy_desk_editor']), 'editor')
+  assert.equal(resolveRoleLayout(['associate_editor']), 'reviewer')
+  assert.equal(resolveRoleLayout(['external_reviewer']), 'reviewer')
+  assert.equal(resolveRoleLayout(['desk_editor']), 'reviewer')
+  assert.equal(resolveRoleLayout(['author']), 'author')
+  assert.equal(resolveRoleLayout([]), 'public')
 })
 
 test('isEditorRole recognizes editorial roles', () => {

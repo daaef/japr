@@ -1,10 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth', 'role-layout']
 })
-
-const { applyRoleLayout } = useRoleLayout()
-await applyRoleLayout()
 
 usePageHeading().value = 'Notifications'
 

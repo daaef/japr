@@ -5,11 +5,8 @@ import { defaultNotificationPreferences } from '#shared/validation/notifications
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth', 'role-layout']
 })
-
-const { applyRoleLayout } = useRoleLayout()
-await applyRoleLayout()
 
 usePageHeading().value = 'Notification Preferences'
 

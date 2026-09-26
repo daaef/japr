@@ -24,3 +24,9 @@ logs
 # Captured local mail (dev)
 .data/mail/
 design_handoff_japr_redesign/
+.vercel
+.env*
+
+# Playwright E2E
+e2e-report/
+e2e-results/
