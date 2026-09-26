@@ -36,7 +36,7 @@ function closeSidebar() {
 
 const categoriesGroup = useSidebarGroup(['/admin/categories'])
 const rolesGroup = useSidebarGroup(['/admin/roles', '/admin/permissions'])
-const usersGroup = useSidebarGroup(['/admin/users'])
+const notificationsGroup = useSidebarGroup(['/admin/notifications'])
 </script>
 
 <template>
@@ -107,7 +107,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                 name="i-lucide-graduation-cap"
                 class="text-xl"
               />
-              <span>Manage Categories</span>
+              <span>Categories</span>
               <UIcon
                 name="i-lucide-chevron-right"
                 class="ms-auto shrink-0 transition-transform duration-200"
@@ -156,7 +156,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                 name="i-lucide-library"
                 class="text-xl"
               />
-              <span>Manage Journals</span>
+              <span>Journals</span>
             </NuxtLink>
           </li>
 
@@ -175,7 +175,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
           </li>
 
           <li class="border-t border-white/10 pt-5">
-            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Settings</span>
+            <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Administration</span>
           </li>
 
           <li>
@@ -190,7 +190,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                 name="i-lucide-shield-check"
                 class="text-xl"
               />
-              <span>Roles and Permissions</span>
+              <span>Roles</span>
               <UIcon
                 name="i-lucide-chevron-right"
                 class="ms-auto shrink-0 transition-transform duration-200"
@@ -207,7 +207,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                   class="block text-sm"
                   :class="dashboardSubLinkClassDark('/admin/roles')"
                 >
-                  Manage Roles
+                  Roles
                 </NuxtLink>
               </li>
               <li>
@@ -216,73 +216,68 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                   class="block text-sm"
                   :class="dashboardSubLinkClassDark('/admin/permissions')"
                 >
-                  Manage Permissions
+                  Permissions
                 </NuxtLink>
               </li>
             </ul>
+          </li>
+
+          <li>
+            <NuxtLink
+              to="/admin/users"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/users')"
+            >
+              <UIcon
+                name="i-lucide-users"
+                class="text-xl"
+              />
+              <span>Users</span>
+            </NuxtLink>
           </li>
 
           <li>
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClassDark(usersGroup.isGroupActive)"
-              :aria-expanded="usersGroup.open"
-              @click="usersGroup.toggle"
-            >
-              <UIcon
-                name="i-lucide-users"
-                class="text-xl"
-              />
-              <span>Manage Users</span>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="ms-auto shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-90': usersGroup.open }"
-              />
-            </button>
-            <ul
-              v-show="usersGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
-            >
-              <li>
-                <NuxtLink
-                  to="/admin/users"
-                  class="block text-sm"
-                  :class="dashboardSubLinkClassDark('/admin/users')"
-                >
-                  Users
-                </NuxtLink>
-              </li>
-            </ul>
-          </li>
-
-          <li>
-            <NuxtLink
-              to="/admin/notifications"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClassDark('/admin/notifications')"
+              :class="linkClassDark(notificationsGroup.isGroupActive)"
+              :aria-expanded="notificationsGroup.open"
+              @click="notificationsGroup.toggle"
             >
               <UIcon
                 name="i-lucide-bell"
                 class="text-xl"
               />
               <span>Notifications</span>
-            </NuxtLink>
-          </li>
-
-          <li>
-            <NuxtLink
-              to="/admin/notifications/preferences"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClassDark('/admin/notifications/preferences')"
-            >
               <UIcon
-                name="i-lucide-sliders-horizontal"
-                class="text-xl"
+                name="i-lucide-chevron-right"
+                class="ms-auto shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': notificationsGroup.open }"
               />
-              <span>Notification Preferences</span>
-            </NuxtLink>
+            </button>
+            <ul
+              v-show="notificationsGroup.open"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
+            >
+              <li>
+                <NuxtLink
+                  to="/admin/notifications"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/admin/notifications', true)"
+                >
+                  All Notifications
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/admin/notifications/preferences"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/admin/notifications/preferences')"
+                >
+                  Preferences
+                </NuxtLink>
+              </li>
+            </ul>
           </li>
 
           <li>
@@ -295,7 +290,7 @@ const usersGroup = useSidebarGroup(['/admin/users'])
                 name="i-lucide-settings"
                 class="text-xl"
               />
-              <span>Account Settings</span>
+              <span>Settings</span>
             </NuxtLink>
           </li>
 

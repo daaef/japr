@@ -33,14 +33,14 @@ export function useDashboardNavigation() {
     return linkClassDark(exact ? isExactPath(path) : isActivePath(path))
   }
 
-  function dashboardSubLinkClass(path: string) {
-    return isActivePath(path)
+  function dashboardSubLinkClass(path: string, exact = false) {
+    return (exact ? isExactPath(path) : isActivePath(path))
       ? 'text-primary font-semibold'
       : 'text-muted hover:text-primary'
   }
 
-  function dashboardSubLinkClassDark(path: string) {
-    return isActivePath(path)
+  function dashboardSubLinkClassDark(path: string, exact = false) {
+    return (exact ? isExactPath(path) : isActivePath(path))
       ? 'text-white font-semibold'
       : 'text-brick-300 hover:text-white'
   }
