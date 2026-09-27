@@ -45,14 +45,6 @@ const roleItems = computed(() => rolesData.value.roles.map(role => ({
   value: role.id
 })))
 
-const userColumns = [
-  { accessorKey: 'fullname', header: 'Name' },
-  { accessorKey: 'email', header: 'Email', meta: { class: { td: 'text-xs text-muted' } } },
-  { accessorKey: 'isActive', header: 'Status' },
-  { accessorKey: 'assignments', header: 'Roles' },
-  { id: 'actions', header: 'Actions', meta: { class: { th: 'text-center', td: 'text-center' } } }
-]
-
 const message = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
@@ -215,22 +207,28 @@ async function createUser() {
         </h5>
       </template>
 
-      <UTable :data="usersData.users" :columns="userColumns">
-        <template #fullname-cell="{ row }">
-          <NuxtLink
-            :to="`/admin/users/${row.original.id}`"
-            class="text-highlighted font-medium hover:text-primary"
-          >
-            {{ row.original.fullname }}
-          </NuxtLink>
-        </template>
-        <template #isActive-cell="{ row }">
-          <JournalStatusBadge :status="row.original.isActive ? 'active' : 'suspended'" />
-        </template>
-        <template #assignments-cell="{ row }">
-          <div class="flex flex-wrap gap-1">
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <UCard
+          v-for="user in usersData.users"
+          :key="user.id"
+        >
+          <div class="mb-3">
+            <JournalStatusBadge :status="user.isActive ? 'active' : 'suspended'" />
+          </div>
+          <h3 class="font-medium text-highlighted">
+            <NuxtLink
+              :to="`/admin/users/${user.id}`"
+              class="hover:text-primary"
+            >
+              {{ user.fullname }}
+            </NuxtLink>
+          </h3>
+          <p class="text-xs text-muted mt-1">
+            {{ user.email }}
+          </p>
+          <div class="mt-3 flex flex-wrap gap-1">
             <UBadge
-              v-for="assignment in row.original.assignments"
+              v-for="assignment in user.assignments"
               :key="assignment.roleId"
               color="neutral"
               variant="subtle"
@@ -238,18 +236,18 @@ async function createUser() {
               {{ assignment.roleName }}
             </UBadge>
           </div>
-        </template>
-        <template #actions-cell="{ row }">
-          <UButton
-            :to="`/admin/users/${row.original.id}`"
-            color="primary"
-            variant="outline"
-            size="xs"
-          >
-            Edit
-          </UButton>
-        </template>
-      </UTable>
+          <div class="mt-4 pt-3 border-t border-stone-100 flex gap-2">
+            <UButton
+              :to="`/admin/users/${user.id}`"
+              color="primary"
+              variant="outline"
+              size="xs"
+            >
+              Edit
+            </UButton>
+          </div>
+        </UCard>
+      </div>
     </UCard>
   </div>
 </template>

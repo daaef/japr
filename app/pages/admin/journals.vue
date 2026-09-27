@@ -16,6 +16,8 @@ const { data } = await useFetch<{
     slug: string
     title: string
     author: string
+    abstract: string | null
+    country: string | null
     approvalStatus: string
     createdAt: string
   }>
@@ -43,19 +45,12 @@ function goToPage(nextPage: number) {
       />
     </UCard>
 
-    <div class="grid gap-4">
-      <UCard
+    <div class="grid gap-4 md:grid-cols-2">
+      <JournalCard
         v-for="journal in data.journals"
         :key="journal.id"
-      >
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="text-3xl font-semibold text-toned">{{ journal.title }}</h2>
-            <p class="mt-2 text-sm text-muted">{{ journal.author }}</p>
-          </div>
-          <JournalStatusBadge :status="journal.approvalStatus" />
-        </div>
-      </UCard>
+        :journal="journal"
+      />
     </div>
 
     <AppPagination

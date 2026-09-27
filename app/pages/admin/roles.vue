@@ -130,22 +130,23 @@ async function createRole() {
         </h5>
       </template>
 
-      <div class="divide-y divide-default">
-        <div
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <UCard
           v-for="role in data.roles"
           :key="role.id"
-          class="py-6 first:pt-0 last:pb-0"
         >
-          <NuxtLink
-            :to="`/admin/roles/${role.id}`"
-            class="text-base font-semibold text-highlighted hover:text-primary"
-          >
-            {{ role.name }}
-          </NuxtLink>
-          <p class="text-xs text-muted mb-3 mt-1">
+          <h3 class="font-medium text-highlighted">
+            <NuxtLink
+              :to="`/admin/roles/${role.id}`"
+              class="hover:text-primary"
+            >
+              {{ role.name }}
+            </NuxtLink>
+          </h3>
+          <p class="text-xs text-muted mt-1 line-clamp-2">
             {{ role.description || 'No description.' }}
           </p>
-          <div class="flex flex-wrap gap-2">
+          <div class="mt-3 flex flex-wrap gap-1">
             <UBadge
               v-for="permission in role.permissions"
               :key="permission.permissionId"
@@ -155,7 +156,25 @@ async function createRole() {
               {{ permission.permissionName }}
             </UBadge>
           </div>
-        </div>
+          <div class="mt-4 pt-3 border-t border-stone-100 flex gap-2">
+            <UButton
+              :to="`/admin/roles/${role.id}`"
+              color="primary"
+              variant="outline"
+              size="xs"
+            >
+              Edit
+            </UButton>
+            <UButton
+              :to="`/admin/roles/${role.id}`"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+            >
+              Permissions
+            </UButton>
+          </div>
+        </UCard>
       </div>
     </UCard>
   </div>
