@@ -311,8 +311,8 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
       </nav>
     </aside>
 
-    <div class="flex min-h-screen flex-1 flex-col bg-primary-50 xl:ms-64">
-      <div class="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-default bg-default px-4 py-4 sm:px-6">
+    <div class="flex min-h-screen flex-1 flex-col bg-white xl:ms-64">
+      <div class="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-default bg-white px-4 py-4 sm:px-6">
         <div class="flex items-center gap-4">
           <UButton
             icon="i-lucide-menu"
@@ -348,7 +348,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
         <slot />
       </main>
 
-      <div class="mt-auto flex flex-wrap items-center justify-between gap-4 rounded-t-2xl bg-default px-5 py-5 sm:px-6">
+      <div class="mt-auto flex flex-wrap items-center justify-between gap-4 rounded-t-2xl bg-white px-5 py-5 sm:px-6">
         <p class="text-xs text-dimmed">
           &copy; Copyright {{ new Date().getFullYear() }}, All Right Reserved
         </p>
