@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   await requireEditorOrCopyDesk(event)
 
   const rows = await db
-    .select({ approvalStatus: journals.approvalStatus })
+    .select({ approvalStatus: journals.approvalStatus, copyEditStatus: journals.copyEditStatus })
     .from(journals)
 
   return {

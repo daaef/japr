@@ -22,10 +22,16 @@ logs
 .env.*
 
 # Captured local mail (dev)
-.data/mail/
+.data/
+
+# Local disk storage (dev only — production uses Vercel Blob)
+uploads/
+
 design_handoff_japr_redesign/
 .vercel
 .env*
+
+
 
 # Playwright E2E
 e2e-report/

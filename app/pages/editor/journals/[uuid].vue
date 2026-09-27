@@ -1,5 +1,30 @@
 <script setup lang="ts">
 import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
+import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
+import type { ManuscriptStatus } from '#shared/constants/manuscriptStatus'
+
+const EDITOR_STATUS_LABELS: Partial<Record<ManuscriptStatus, string>> = {
+  desk_review: 'Initial Editorial Review',
+  pending: 'Pending Initial Review',
+  'in-progress': 'Editorial Review in Progress',
+  under_peer_review: 'Under Peer Review',
+  reviewed: 'Peer Review Complete',
+  ready_for_managing_editor_notice: 'Ready for Final Decision',
+  approved: 'Approved',
+  approved_with_comment: 'Approved (with Comment)',
+  published: 'Published',
+  declined: 'Declined',
+  changes_requested: 'Revisions Requested'
+}
+
+// Consensus / reviewer cap: keep in sync with server/utils/journalWorkflow.ts
+const REVIEW_QUORUM = 3
+
+const ASSIGN_REVIEWERS_ALLOWED_STATUSES: ManuscriptStatus[] = [
+  MANUSCRIPT_STATUS.IN_PROGRESS,
+  MANUSCRIPT_STATUS.UNDER_PEER_REVIEW,
+  MANUSCRIPT_STATUS.REVIEWED
+]
 
 definePageMeta({
   middleware: ['auth', 'role'],
@@ -31,6 +56,28 @@ const canEditManuscript = computed(() =>
   || canSendDeclineNotice.value
   || canRequestRevisions.value
 )
+
+const canAssignReviewersNow = computed(() =>
+  canAssignReviewers.value
+  && ASSIGN_REVIEWERS_ALLOWED_STATUSES.includes(detailData.value.journal.approvalStatus as ManuscriptStatus)
+  && detailData.value.reviewers.length < REVIEW_QUORUM
+)
+
+const assignReviewersTooltip = computed(() => {
+  if (!canAssignReviewers.value) {
+    return "You don't have permission to assign reviewers."
+  }
+
+  if (detailData.value.reviewers.length >= REVIEW_QUORUM) {
+    return `Maximum of ${REVIEW_QUORUM} reviewers already assigned.`
+  }
+
+  if (!ASSIGN_REVIEWERS_ALLOWED_STATUSES.includes(detailData.value.journal.approvalStatus as ManuscriptStatus)) {
+    return 'Reviewers can only be assigned after the manuscript is sent to peer review.'
+  }
+
+  return ''
+})
 
 const [
   { data: detailData, refresh: refreshDetail },
@@ -217,17 +264,16 @@ const pendingExtensionRequests = computed(() =>
 // the empty-state message needs the same permission checks or it can stay hidden behind a
 // blank card when the status matches but the viewer lacks every relevant permission.
 const hasVisibleEditorialAction = computed(() =>
-  (showDeskReviewActions.value && (canSendToReview.value || canDeskDecline.value))
-  || (showPublicationAction.value && canApproveForPublication.value)
-  || (pendingExtensionRequests.value.length > 0 && canAssignReviewers.value)
-  || (showReadyForNotice.value && (canSendApprovalNotice.value || canSendDeclineNotice.value))
-  || (showReviewedActions.value && (canSendToReview.value || canRequestRevisions.value || canDeskDecline.value))
+  showDeskReviewActions.value
+  || showPublicationAction.value
+  || pendingExtensionRequests.value.length > 0
+  || showReadyForNotice.value
+  || showReviewedActions.value
 )
 
 // Advisory reviewer-consensus surfaced from the API (getReviewConsensus). The managing
 // editor still confirms every terminal decision via the buttons below — this only labels
-// the case. Quorum is 3 completed reviews.
-const REVIEW_QUORUM = 3
+// the case. Quorum is defined at the top of the script.
 const CONSENSUS_DISPLAY: Record<'accept' | 'reject' | 'revision' | 'inconclusive', { label: string, color: 'success' | 'error' | 'warning' | 'info', hint: string }> = {
   accept: { label: 'Accept', color: 'success', hint: 'All reviewers recommended acceptance.' },
   reject: { label: 'Reject', color: 'error', hint: 'All reviewers recommended rejection.' },
@@ -362,7 +408,7 @@ function declineManuscript() {
               {{ detailData.journal.abstract || detailData.journal.description }}
             </p>
           </div>
-          <JournalStatusBadge :status="detailData.journal.approvalStatus" />
+          <JournalStatusBadge :status="detailData.journal.approvalStatus" :label-overrides="EDITOR_STATUS_LABELS" />
         </div>
       </template>
 
@@ -468,6 +514,7 @@ function declineManuscript() {
             v-for="reviewer in suggestionsData.suggestions"
             :key="reviewer.id"
             :model-value="selectedReviewerIds.includes(reviewer.id)"
+            :disabled="!canAssignReviewersNow"
             class="mb-3 rounded-2xl border border-default p-4"
             @update:model-value="checked => toggleReviewerSelection(reviewer.id, checked)"
           >
@@ -486,9 +533,16 @@ function declineManuscript() {
           </p>
         </div>
 
-        <UButton color="primary" class="mt-3 rounded-full" :disabled="actionLoading" @click="assignReviewers">
+        <PermissionGatedAction
+          :allowed="canAssignReviewersNow"
+          :tooltip="assignReviewersTooltip"
+          color="primary"
+          class="mt-3 rounded-full"
+          :disabled="actionLoading"
+          @click="assignReviewers"
+        >
           Assign selected reviewers
-        </UButton>
+        </PermissionGatedAction>
       </UCard>
 
       <UCard class="xl:col-span-5">
@@ -533,7 +587,7 @@ function declineManuscript() {
         </div>
 
         <div
-          v-if="showDeskReviewActions && (canSendToReview || canDeskDecline)"
+          v-if="showDeskReviewActions"
           class="mb-5 rounded-2xl border border-warning-100 bg-warning-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -542,23 +596,35 @@ function declineManuscript() {
           <p class="mb-3 text-sm text-muted">
             Send this manuscript into peer review or decline it before review assignment.
           </p>
-          <div v-if="canSendToReview" class="mb-3 flex flex-wrap gap-2">
-            <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendToReview">
+          <div class="mb-3 flex flex-wrap gap-2">
+            <PermissionGatedAction
+              :allowed="canSendToReview"
+              tooltip="You don't have permission to move this manuscript into peer review."
+              color="primary"
+              class="rounded-full"
+              :disabled="actionLoading"
+              @click="sendToReview"
+            >
               Send to review
-            </UButton>
+            </PermissionGatedAction>
           </div>
-          <template v-if="canDeskDecline">
-            <UFormField label="Desk decline reason">
-              <UTextarea v-model="declineReason" :rows="3" class="mb-3 w-full" />
-            </UFormField>
-            <UButton color="error" class="rounded-full" :disabled="actionLoading || declineReason.trim().length < 5" @click="deskDecline">
-              Desk decline
-            </UButton>
-          </template>
+          <UFormField v-if="canDeskDecline" label="Desk decline reason">
+            <UTextarea v-model="declineReason" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <PermissionGatedAction
+            :allowed="canDeskDecline"
+            tooltip="You don't have permission to decline manuscripts."
+            color="error"
+            class="rounded-full"
+            :disabled="actionLoading || declineReason.trim().length < 5"
+            @click="deskDecline"
+          >
+            Desk decline
+          </PermissionGatedAction>
         </div>
 
         <div
-          v-if="showPublicationAction && canApproveForPublication"
+          v-if="showPublicationAction"
           class="mb-5 rounded-2xl border border-success-100 bg-success-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -567,16 +633,23 @@ function declineManuscript() {
           <p class="mb-3 text-sm text-muted">
             Mark this approved manuscript ready for the copy desk publication queue.
           </p>
-          <UFormField label="Publication note (optional)">
+          <UFormField v-if="canApproveForPublication" label="Publication note (optional)">
             <UTextarea v-model="approveComment" :rows="3" class="mb-3 w-full" />
           </UFormField>
-          <UButton color="success" class="rounded-full" :disabled="actionLoading" @click="approveForPublication">
+          <PermissionGatedAction
+            :allowed="canApproveForPublication"
+            tooltip="Only a publication manager can mark manuscripts ready for publication."
+            color="success"
+            class="rounded-full"
+            :disabled="actionLoading"
+            @click="approveForPublication"
+          >
             Approve for publication
-          </UButton>
+          </PermissionGatedAction>
         </div>
 
         <div
-          v-if="pendingExtensionRequests.length && canAssignReviewers"
+          v-if="pendingExtensionRequests.length"
           class="mb-5 rounded-2xl border border-info-100 bg-info-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -589,14 +662,22 @@ function declineManuscript() {
           >
             <p class="mb-1 font-semibold text-highlighted">{{ reviewer.fullname }}</p>
             <p class="mb-2 text-sm text-muted">{{ reviewer.deadlineExtensionReason || 'No reason provided.' }}</p>
-            <UButton color="info" variant="outline" size="sm" :disabled="actionLoading" @click="approveExtension(reviewer.id)">
+            <PermissionGatedAction
+              :allowed="canAssignReviewers"
+              tooltip="You don't have permission to manage reviewer deadlines."
+              color="info"
+              variant="outline"
+              size="sm"
+              :disabled="actionLoading"
+              @click="approveExtension(reviewer.id)"
+            >
               Approve 7-day extension
-            </UButton>
+            </PermissionGatedAction>
           </div>
         </div>
 
         <div
-          v-if="showReadyForNotice && (canSendApprovalNotice || canSendDeclineNotice)"
+          v-if="showReadyForNotice"
           class="mb-5 rounded-2xl border border-primary-100 bg-primary-50 p-4"
         >
           <h5 class="mb-2 text-sm font-semibold text-highlighted">
@@ -605,52 +686,84 @@ function declineManuscript() {
           <p class="mb-3 text-sm text-muted">
             Peer review is complete. Send the final publication decision to the author.
           </p>
-          <template v-if="canSendApprovalNotice">
-            <UFormField label="Approval comment (optional)">
-              <UTextarea v-model="noticeComment" :rows="3" class="mb-3 w-full" />
-            </UFormField>
-            <div class="mb-4 flex flex-wrap gap-2">
-              <UButton color="primary" class="rounded-full" :disabled="actionLoading" @click="sendApprovalNotice">
-                Send approval notice
-              </UButton>
-            </div>
-          </template>
-          <template v-if="canSendDeclineNotice">
-            <UFormField label="Decline reason">
-              <UTextarea v-model="noticeDeclineReason" :rows="3" class="mb-3 w-full" />
-            </UFormField>
-            <UButton color="error" class="rounded-full" :disabled="actionLoading || noticeDeclineReason.trim().length < 5" @click="sendDeclineNotice">
-              Send decline notice
-            </UButton>
-          </template>
+          <UFormField v-if="canSendApprovalNotice" label="Approval comment (optional)">
+            <UTextarea v-model="noticeComment" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <div class="mb-4 flex flex-wrap gap-2">
+            <PermissionGatedAction
+              :allowed="canSendApprovalNotice"
+              tooltip="Only a managing editor can send approval notices."
+              color="primary"
+              class="rounded-full"
+              :disabled="actionLoading"
+              @click="sendApprovalNotice"
+            >
+              Send approval notice
+            </PermissionGatedAction>
+          </div>
+          <UFormField v-if="canSendDeclineNotice" label="Decline reason">
+            <UTextarea v-model="noticeDeclineReason" :rows="3" class="mb-3 w-full" />
+          </UFormField>
+          <PermissionGatedAction
+            :allowed="canSendDeclineNotice"
+            tooltip="Only a managing editor can send decline notices."
+            color="error"
+            class="rounded-full"
+            :disabled="actionLoading || noticeDeclineReason.trim().length < 5"
+            @click="sendDeclineNotice"
+          >
+            Send decline notice
+          </PermissionGatedAction>
         </div>
 
         <template v-if="showReviewedActions">
-          <div v-if="canSendToReview" class="mb-5">
-            <UFormField label="Approval comment">
+          <div class="mb-5">
+            <UFormField v-if="canSendToReview" label="Approval comment">
               <UTextarea v-model="approveComment" :rows="3" class="w-full" />
             </UFormField>
-            <UButton color="primary" class="mt-3 rounded-full" :disabled="actionLoading" @click="approve">
+            <PermissionGatedAction
+              :allowed="canSendToReview"
+              tooltip="You don't have permission to approve this manuscript."
+              color="primary"
+              class="mt-3 rounded-full"
+              :disabled="actionLoading"
+              @click="approve"
+            >
               Approve manuscript
-            </UButton>
+            </PermissionGatedAction>
           </div>
 
-          <div v-if="canRequestRevisions" class="mb-5">
-            <UFormField label="Revision request">
+          <div class="mb-5">
+            <UFormField v-if="canRequestRevisions" label="Revision request">
               <UTextarea v-model="revisionDetails" :rows="4" class="w-full" />
             </UFormField>
-            <UButton color="primary" variant="outline" class="mt-3 rounded-full" :disabled="actionLoading" @click="requestRevisions">
+            <PermissionGatedAction
+              :allowed="canRequestRevisions"
+              tooltip="You don't have permission to request revisions."
+              color="primary"
+              variant="outline"
+              class="mt-3 rounded-full"
+              :disabled="actionLoading"
+              @click="requestRevisions"
+            >
               Request revisions
-            </UButton>
+            </PermissionGatedAction>
           </div>
 
-          <div v-if="canDeskDecline" class="mb-5">
-            <UFormField label="Decline reason">
+          <div class="mb-5">
+            <UFormField v-if="canDeskDecline" label="Decline reason">
               <UTextarea v-model="declineReason" :rows="4" class="w-full" />
             </UFormField>
-            <UButton color="error" class="mt-3 rounded-full" :disabled="actionLoading" @click="declineManuscript">
+            <PermissionGatedAction
+              :allowed="canDeskDecline"
+              tooltip="You don't have permission to decline this manuscript."
+              color="error"
+              class="mt-3 rounded-full"
+              :disabled="actionLoading"
+              @click="declineManuscript"
+            >
               Decline manuscript
-            </UButton>
+            </PermissionGatedAction>
           </div>
         </template>
 

@@ -9,6 +9,7 @@ export interface EditorDashboardSummary {
   reviewed: number
   readyForNotice: number
   approved: number
+  copyDesk: number
   published: number
   changesRequested: number
   declined: number

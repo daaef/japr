@@ -17,38 +17,39 @@ const showReadyForNotice = computed(() => {
   return roles.includes('managing_editor') || roles.includes('editor_in_chief')
 })
 
-const { data: dashboardSummary } = await useFetch<{ summary: EditorDashboardSummary }>('/api/editor/dashboard/summary', {
-  default: () => ({
-    summary: {
-      deskReview: 0,
-      legacyPending: 0,
-      pendingQueue: 0,
-      inProgress: 0,
-      underPeerReview: 0,
-      reviewed: 0,
-      readyForNotice: 0,
-      approved: 0,
-      published: 0,
-      changesRequested: 0,
-      declined: 0,
-      byStatus: {
-        desk_review: 0,
-        pending: 0,
-        'in-progress': 0,
-        under_peer_review: 0,
-        ready_for_managing_editor_notice: 0,
-        approved: 0,
-        approved_with_comment: 0,
-        published: 0,
-        declined: 0,
-        changes_requested: 0,
-        reviewed: 0
-      }
-    }
-  })
+const defaultEditorSummary = (): EditorDashboardSummary => ({
+  deskReview: 0,
+  legacyPending: 0,
+  pendingQueue: 0,
+  inProgress: 0,
+  underPeerReview: 0,
+  reviewed: 0,
+  readyForNotice: 0,
+  approved: 0,
+  copyDesk: 0,
+  published: 0,
+  changesRequested: 0,
+  declined: 0,
+  byStatus: {
+    desk_review: 0,
+    pending: 0,
+    'in-progress': 0,
+    under_peer_review: 0,
+    ready_for_managing_editor_notice: 0,
+    approved: 0,
+    approved_with_comment: 0,
+    published: 0,
+    declined: 0,
+    changes_requested: 0,
+    reviewed: 0
+  }
 })
 
-const summary = computed(() => dashboardSummary.value.summary)
+const { data: dashboardSummary } = await useFetch<{ summary: EditorDashboardSummary }>('/api/editor/dashboard/summary', {
+  default: () => ({ summary: defaultEditorSummary() })
+})
+
+const summary = computed(() => dashboardSummary.value?.summary ?? defaultEditorSummary())
 
 useHead({
   title: 'JAPR Website | Dashboard'
@@ -80,6 +81,7 @@ const journalsGroup = useSidebarGroup([
   '/editor/declined',
   '/editor/copy-desk'
 ])
+const notificationsGroup = useSidebarGroup(['/editor/notifications'])
 </script>
 
 <template>
@@ -150,7 +152,7 @@ const journalsGroup = useSidebarGroup([
                 name="i-lucide-graduation-cap"
                 class="text-xl"
               />
-              <span>Manage Journals</span>
+              <span>Journals</span>
               <UIcon
                 name="i-lucide-chevron-right"
                 class="ms-auto shrink-0 transition-transform duration-200"
@@ -313,31 +315,47 @@ const journalsGroup = useSidebarGroup([
           </li>
 
           <li>
-            <NuxtLink
-              to="/editor/notifications"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClassDark('/editor/notifications')"
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
+              :class="linkClassDark(notificationsGroup.isGroupActive)"
+              :aria-expanded="notificationsGroup.open"
+              @click="notificationsGroup.toggle"
             >
               <UIcon
                 name="i-lucide-bell"
                 class="text-xl"
               />
               <span>Notifications</span>
-            </NuxtLink>
-          </li>
-
-          <li>
-            <NuxtLink
-              to="/editor/notifications/preferences"
-              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClassDark('/editor/notifications/preferences')"
-            >
               <UIcon
-                name="i-lucide-sliders-horizontal"
-                class="text-xl"
+                name="i-lucide-chevron-right"
+                class="ms-auto shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-90': notificationsGroup.open }"
               />
-              <span>Notification Preferences</span>
-            </NuxtLink>
+            </button>
+            <ul
+              v-show="notificationsGroup.open"
+              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
+            >
+              <li>
+                <NuxtLink
+                  to="/editor/notifications"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/editor/notifications', true)"
+                >
+                  All Notifications
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  to="/editor/notifications/preferences"
+                  class="block text-sm"
+                  :class="dashboardSubLinkClassDark('/editor/notifications/preferences')"
+                >
+                  Preferences
+                </NuxtLink>
+              </li>
+            </ul>
           </li>
 
           <li>
@@ -350,7 +368,7 @@ const journalsGroup = useSidebarGroup([
                 name="i-lucide-settings"
                 class="text-xl"
               />
-              <span>Account Settings</span>
+              <span>Settings</span>
             </NuxtLink>
           </li>
         </ul>
@@ -390,7 +408,7 @@ const journalsGroup = useSidebarGroup([
         </div>
       </div>
 
-      <main class="flex-1 px-4 py-6 sm:px-6">
+      <main class="min-w-0 flex-1 px-4 py-6 sm:px-6">
         <slot />
       </main>
 

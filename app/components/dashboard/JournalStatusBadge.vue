@@ -4,6 +4,7 @@ import type { ManuscriptStatus } from '#shared/constants/manuscriptStatus'
 
 const props = defineProps<{
   status: string
+  labelOverrides?: Record<string, string>
 }>()
 
 type BadgeColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
@@ -45,6 +46,10 @@ const color = computed<BadgeColor>(() => {
 })
 
 const label = computed(() => {
+  if (props.labelOverrides?.[props.status]) {
+    return props.labelOverrides[props.status]
+  }
+
   if (isManuscriptStatus(props.status)) {
     return MANUSCRIPT_STATUS_LABELS[props.status]
   }

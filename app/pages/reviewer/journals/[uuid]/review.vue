@@ -121,6 +121,32 @@ const criteriaLabels: Record<keyof NonNullable<typeof data.value.reviewer.criter
   dataAnalysis: 'Data analysis'
 }
 
+const CRITERIA_VALUE_LABELS = [
+  'Unacceptable / fatal flaw',
+  'Poor / deficient',
+  'Fair / adequate',
+  'Good / acceptable',
+  'Very good / strong',
+  'Excellent / outstanding'
+]
+
+const OVERALL_RATING_LABELS = [
+  '—',
+  'Reject',
+  'Major revision required',
+  'Accept with minor revision',
+  'Accept',
+  'Strong accept / publish as is'
+]
+
+function criteriaValueLabel(value: number) {
+  return CRITERIA_VALUE_LABELS[value] ?? value.toString()
+}
+
+function overallRatingLabel(value: number) {
+  return OVERALL_RATING_LABELS[value] ?? value.toString()
+}
+
 async function acceptInvite() {
   actionLoading.value = true
   actionMessage.value = ''
@@ -394,24 +420,45 @@ async function submitReview() {
               </UFormField>
               <UFormField label="Originality">
                 <USlider id="review-slider-originality" v-model="form.originality" :min="0" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.originality }} — {{ criteriaValueLabel(form.originality) }}
+                </p>
               </UFormField>
               <UFormField label="Methodology">
                 <USlider id="review-slider-methodology" v-model="form.methodology" :min="0" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.methodology }} — {{ criteriaValueLabel(form.methodology) }}
+                </p>
               </UFormField>
               <UFormField label="Significance">
                 <USlider id="review-slider-significance" v-model="form.significance" :min="0" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.significance }} — {{ criteriaValueLabel(form.significance) }}
+                </p>
               </UFormField>
               <UFormField label="Clarity">
                 <USlider id="review-slider-clarity" v-model="form.clarity" :min="0" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.clarity }} — {{ criteriaValueLabel(form.clarity) }}
+                </p>
               </UFormField>
               <UFormField label="Literature review">
                 <USlider id="review-slider-literature-review" v-model="form.literatureReview" :min="0" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.literatureReview }} — {{ criteriaValueLabel(form.literatureReview) }}
+                </p>
               </UFormField>
               <UFormField label="Data analysis">
                 <USlider id="review-slider-data-analysis" v-model="form.dataAnalysis" :min="0" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.dataAnalysis }} — {{ criteriaValueLabel(form.dataAnalysis) }}
+                </p>
               </UFormField>
               <UFormField label="Overall rating">
                 <USlider id="review-slider-overall-rating" v-model="form.rating" :min="1" :max="5" :step="1" />
+                <p class="mt-1 text-sm font-medium text-primary-600">
+                  {{ form.rating }} — {{ overallRatingLabel(form.rating) }}
+                </p>
               </UFormField>
               <UFormField label="Recommendation">
                 <URadioGroup v-model="form.recommendation" :items="recommendationItems" />

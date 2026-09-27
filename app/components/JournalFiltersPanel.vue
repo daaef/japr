@@ -12,17 +12,65 @@ const selectedLanguages = defineModel<string[]>('selectedLanguages', { default: 
 const selectedLicenses = defineModel<string[]>('selectedLicenses', { default: () => [] })
 const selectedCountries = defineModel<string[]>('selectedCountries', { default: () => [] })
 
-defineProps<{
+interface FacetCounts {
+  categories: Record<string, number>
+  subcategories: Record<string, number>
+  subsubcategories: Record<string, number>
+  languages: Record<string, number>
+  licenses: Record<string, number>
+  countries: Record<string, number>
+}
+
+const props = defineProps<{
   categories: Category[]
   countries: string[]
+  facets?: FacetCounts | null
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
   apply: []
 }>()
 
+function getCount(map: Record<string, number> | undefined, key: string) {
+  return map?.[key] ?? 0
+}
+
+function isDisabled(count: number) {
+  return !props.loading && count === 0
+}
+
+function countLabel(count: number) {
+  return count > 0 ? ` (${count})` : ''
+}
+
 const languageOptions = ['British English', 'American English', 'French']
 const licenseOptions = JOURNAL_LICENSE_OPTIONS
+
+function sortByCount<T>(items: readonly T[], getKey: (item: T) => string, map?: Record<string, number>): T[] {
+  return [...items].sort((a, b) => {
+    const countA = map?.[getKey(a)] ?? 0
+    const countB = map?.[getKey(b)] ?? 0
+    return countB - countA
+  })
+}
+
+const sortedCategories = computed(() => {
+  return props.categories
+    .map(category => ({
+      ...category,
+      subCategories: sortByCount(category.subCategories, sub => sub.id, props.facets?.subcategories)
+        .map(sub => ({
+          ...sub,
+          subSubCategories: sortByCount(sub.subSubCategories, ss => ss.id, props.facets?.subsubcategories)
+        }))
+    }))
+    .sort((a, b) => (props.facets?.categories[b.id] ?? 0) - (props.facets?.categories[a.id] ?? 0))
+})
+
+const sortedLanguageOptions = computed(() => sortByCount(languageOptions, l => l, props.facets?.languages))
+const sortedLicenseOptions = computed(() => sortByCount(licenseOptions, l => l.label, props.facets?.licenses))
+const sortedCountries = computed(() => sortByCount(props.countries, c => c, props.facets?.countries))
 
 const filterAccordionItems = [
   { label: 'Categories', value: 'categories', slot: 'categories' as const },
@@ -83,23 +131,25 @@ function onCountryChange(country: string, event: Event) {
         <template #categories>
           <ul class="pt-2 ps-2 max-h-[200px] overflow-y-auto">
             <li
-              v-for="category in categories"
+              v-for="category in sortedCategories"
               :key="category.id"
             >
               <label
-                class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-default rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm rounded-lg focus:outline-none"
+                :class="isDisabled(getCount(props.facets?.categories, category.id)) ? 'text-muted cursor-not-allowed' : 'text-default hover:bg-elevated focus:bg-elevated'"
                 :for="`cat-${category.id}`"
               >
                 <input
                   :id="`cat-${category.id}`"
                   type="checkbox"
                   name="category[]"
-                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600 disabled:opacity-50"
                   :value="category.id"
                   :checked="selectedCategories.includes(category.id)"
+                  :disabled="isDisabled(getCount(props.facets?.categories, category.id))"
                   @change="onCategoryChange(category.id, $event)"
                 >
-                <span class="inline-block">{{ category.name }}</span>
+                <span class="inline-block">{{ category.name }}{{ countLabel(getCount(props.facets?.categories, category.id)) }}</span>
               </label>
 
               <ul
@@ -111,19 +161,21 @@ function onCountryChange(country: string, event: Event) {
                   :key="subCategory.id"
                 >
                   <label
-                    class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-toned rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                    class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm rounded-lg focus:outline-none"
+                    :class="isDisabled(getCount(props.facets?.subcategories, subCategory.id)) ? 'text-muted cursor-not-allowed' : 'text-toned hover:bg-elevated focus:bg-elevated'"
                     :for="`subcat-${subCategory.id}`"
                   >
                     <input
                       :id="`subcat-${subCategory.id}`"
                       type="checkbox"
                       name="subcategory[]"
-                      class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                      class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600 disabled:opacity-50"
                       :value="subCategory.id"
                       :checked="selectedSubcategories.includes(subCategory.id)"
+                      :disabled="isDisabled(getCount(props.facets?.subcategories, subCategory.id))"
                       @change="onSubcategoryChange(subCategory.id, $event)"
                     >
-                    <span class="inline-block">{{ subCategory.name }}</span>
+                    <span class="inline-block">{{ subCategory.name }}{{ countLabel(getCount(props.facets?.subcategories, subCategory.id)) }}</span>
                   </label>
 
                   <ul
@@ -135,19 +187,21 @@ function onCountryChange(country: string, event: Event) {
                       :key="subSubCategory.id"
                     >
                       <label
-                        class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm text-muted rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                        class="flex items-center gap-x-3.5 py-1.5 px-2.5 text-sm rounded-lg focus:outline-none"
+                        :class="isDisabled(getCount(props.facets?.subsubcategories, subSubCategory.id)) ? 'text-muted cursor-not-allowed' : 'text-muted hover:bg-elevated focus:bg-elevated'"
                         :for="`subsubcat-${subSubCategory.id}`"
                       >
                         <input
                           :id="`subsubcat-${subSubCategory.id}`"
                           type="checkbox"
                           name="subsubcategory[]"
-                          class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                          class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600 disabled:opacity-50"
                           :value="subSubCategory.id"
                           :checked="selectedSubSubcategories.includes(subSubCategory.id)"
+                          :disabled="isDisabled(getCount(props.facets?.subsubcategories, subSubCategory.id))"
                           @change="onSubSubcategoryChange(subSubCategory.id, $event)"
                         >
-                        <span class="inline-block">{{ subSubCategory.name }}</span>
+                        <span class="inline-block">{{ subSubCategory.name }}{{ countLabel(getCount(props.facets?.subsubcategories, subSubCategory.id)) }}</span>
                       </label>
                     </li>
                   </ul>
@@ -160,21 +214,23 @@ function onCountryChange(country: string, event: Event) {
         <template #languages>
           <ul class="pt-2 ps-2">
             <li
-              v-for="(language, index) in languageOptions"
+              v-for="(language, index) in sortedLanguageOptions"
               :key="language"
             >
               <label
-                class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-default rounded-lg hover:bg-elevated focus:outline-none focus:bg-elevated"
+                class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm rounded-lg focus:outline-none"
+                :class="isDisabled(getCount(props.facets?.languages, language)) ? 'text-muted cursor-not-allowed' : 'text-default hover:bg-elevated focus:bg-elevated'"
                 :for="`lang-${index + 1}`"
               >
                 <input
                   :id="`lang-${index + 1}`"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600 disabled:opacity-50"
                   :checked="selectedLanguages.includes(language)"
+                  :disabled="isDisabled(getCount(props.facets?.languages, language))"
                   @change="onLanguageChange(language, $event)"
                 >
-                <span class="inline-block">{{ language }}</span>
+                <span class="inline-block">{{ language }}{{ countLabel(getCount(props.facets?.languages, language)) }}</span>
               </label>
             </li>
           </ul>
@@ -183,7 +239,7 @@ function onCountryChange(country: string, event: Event) {
         <template #licenses>
           <ul class="pt-2 ps-2">
             <li
-              v-for="license in licenseOptions"
+              v-for="license in sortedLicenseOptions"
               :key="license.id"
               class="relative flex gap-x-3 px-2.5"
             >
@@ -193,16 +249,17 @@ function onCountryChange(country: string, event: Event) {
                   name="license[]"
                   type="checkbox"
                   :value="license.label"
-                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600 disabled:opacity-50"
                   :checked="selectedLicenses.includes(license.label)"
+                  :disabled="isDisabled(getCount(props.facets?.licenses, license.label))"
                   @change="onLicenseChange(license.label, $event)"
                 >
               </div>
               <div class="text-sm leading-6">
                 <label
                   :for="license.id"
-                  class="text-muted"
-                >{{ license.label }}</label>
+                  :class="isDisabled(getCount(props.facets?.licenses, license.label)) ? 'text-muted cursor-not-allowed' : 'text-muted'"
+                >{{ license.label }}{{ countLabel(getCount(props.facets?.licenses, license.label)) }}</label>
               </div>
             </li>
           </ul>
@@ -211,7 +268,7 @@ function onCountryChange(country: string, event: Event) {
         <template #countries>
           <ul class="pt-2 ps-2 max-h-[200px] overflow-y-auto">
             <li
-              v-for="country in countries"
+              v-for="country in sortedCountries"
               :key="country"
               class="relative flex gap-x-3 px-2.5"
             >
@@ -220,17 +277,18 @@ function onCountryChange(country: string, event: Event) {
                   :id="country"
                   name="country[]"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600"
+                  class="h-4 w-4 rounded border-accented text-primary-600 focus:ring-primary-600 disabled:opacity-50"
                   :value="country"
                   :checked="selectedCountries.includes(country)"
+                  :disabled="isDisabled(getCount(props.facets?.countries, country))"
                   @change="onCountryChange(country, $event)"
                 >
               </div>
               <div class="text-sm leading-6">
                 <label
                   :for="country"
-                  class="text-muted"
-                >{{ country }}</label>
+                  :class="isDisabled(getCount(props.facets?.countries, country)) ? 'text-muted cursor-not-allowed' : 'text-muted'"
+                >{{ country }}{{ countLabel(getCount(props.facets?.countries, country)) }}</label>
               </div>
             </li>
           </ul>

@@ -56,8 +56,16 @@ function formatDate(value?: string) {
 
 const columns = [
   { accessorKey: 'title', header: 'Title' },
-  { accessorKey: 'author', header: 'Author', meta: { class: { th: 'w-[100px]' } } },
-  { accessorKey: 'country', header: 'Country' },
+  {
+    accessorKey: 'author',
+    header: 'Author',
+    meta: { class: { th: 'w-[100px] hidden md:table-cell', td: 'hidden md:table-cell' } }
+  },
+  {
+    accessorKey: 'country',
+    header: 'Country',
+    meta: { class: { th: 'hidden md:table-cell', td: 'hidden md:table-cell' } }
+  },
   { accessorKey: 'approvalStatus', header: 'Status', meta: { class: { th: 'text-center', td: 'text-center' } } },
   { id: 'actions', header: 'Actions', meta: { class: { th: 'text-center', td: 'text-center' } } }
 ]
@@ -103,18 +111,18 @@ const columns = [
         :columns="columns"
       >
         <template #title-cell="{ row }">
-          <div class="flex items-center gap-2">
-            <div class="size-10 rounded-[10px] bg-primary-100 flex items-center justify-center shrink-0">
+          <div class="flex items-start gap-2 min-w-0">
+            <div class="size-10 rounded-[10px] bg-primary-100 flex items-center justify-center shrink-0 mt-0.5">
               <UIcon
                 name="i-lucide-file-text"
                 class="text-primary-600 text-lg"
               />
             </div>
-            <div>
-              <h6 class="text-sm font-medium text-highlighted mb-0">
+            <div class="min-w-0">
+              <h6 class="text-sm font-medium text-highlighted mb-0 whitespace-normal">
                 {{ row.original.title }}
               </h6>
-              <span class="text-xs text-muted">{{ formatDate(row.original.createdAt ?? row.original.updatedAt) }}</span>
+              <span class="text-xs text-muted whitespace-normal">{{ formatDate(row.original.createdAt ?? row.original.updatedAt) }}</span>
             </div>
           </div>
         </template>

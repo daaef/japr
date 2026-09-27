@@ -431,17 +431,6 @@ const createSubmission = handleSubmit(async (values) => {
                 class="w-full"
               />
             </UFormField>
-
-            <UFormField label="Abstract" :error="errors.abstract" class="sm:col-span-2">
-              <UTextarea
-                v-model="abstract"
-                v-bind="abstractAttrs"
-                :rows="3"
-                placeholder="Brief summary of your research (150-300 words)"
-                class="w-full"
-              />
-            </UFormField>
-
             <UFormField label="Institution/Affiliation" :error="errors.institution">
               <UInput
                 v-model="institution"
@@ -451,6 +440,17 @@ const createSubmission = handleSubmit(async (values) => {
                 class="w-full"
               />
             </UFormField>
+
+            <UFormField label="Abstract" :error="errors.abstract" class="sm:col-span-3">
+              <UTextarea
+                v-model="abstract"
+                v-bind="abstractAttrs"
+                :rows="3"
+                placeholder="Brief summary of your research (150-300 words)"
+                class="w-full"
+              />
+            </UFormField>
+
 
             <UFormField label="Keywords (3-6 keywords, comma separated)" :error="errors.metaKeywords">
               <UInput

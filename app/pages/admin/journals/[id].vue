@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { $fetch as fetch } from 'ofetch'
 import { ADMIN_ROLES } from '#shared/constants/roles'
 import { getInitials } from '~/utils/initials'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
@@ -98,18 +99,17 @@ const {
 
 const journalId = computed(() => detailData.value?.journal.id ?? '')
 
-const commentsUrl = computed(() =>
-  journalId.value ? `/api/journals/${journalId.value}/comments` : null
-)
-
-const { data: commentsData, refresh: refreshComments } = await useFetch<{
+const { data: commentsData } = await useFetch<{
   comments: Array<{
     id: string
     comment: string
     authorName: string
     createdAt: string
   }>
-}>(commentsUrl)
+}>(
+  () => `/api/journals/${journalId.value}/comments`,
+  { watch: [journalId] }
+)
 
 watchEffect(() => {
   usePageHeading().value = detailData.value?.journal.title || 'Journal detail'
@@ -158,7 +158,7 @@ async function deactivateJournal() {
   deactivateError.value = ''
 
   try {
-    await $fetch(`/api/journals/${journalId.value}`, { method: 'DELETE' })
+    await fetch(`/api/journals/${journalId.value}`, { method: 'DELETE' })
     deactivateMessage.value = 'Journal deactivated.'
     await refreshDetail()
   }

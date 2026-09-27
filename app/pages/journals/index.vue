@@ -41,6 +41,19 @@ const flatCountries = computed(() => {
   return countriesData.value?.regions.flatMap(region => region.countries.map(country => country.name)) ?? []
 })
 
+interface FacetCounts {
+  categories: Record<string, number>
+  subcategories: Record<string, number>
+  subsubcategories: Record<string, number>
+  languages: Record<string, number>
+  licenses: Record<string, number>
+  countries: Record<string, number>
+}
+
+const { data: facetsData, pending: facetsPending } = await useFetch<FacetCounts>('/api/journals/facets', {
+  default: () => ({ categories: {}, subcategories: {}, subsubcategories: {}, languages: {}, licenses: {}, countries: {} })
+})
+
 const { data, pending, refresh } = await useFetch<{
   journals: Array<{
     id: string
@@ -200,6 +213,8 @@ const categoryCount = computed(() => categoryData.value?.categories.length ?? 0)
           v-model:selected-countries="selectedCountries"
           :categories="categoryData.categories"
           :countries="flatCountries"
+          :facets="facetsData"
+          :loading="facetsPending"
           @apply="applyFilters"
         />
       </div>

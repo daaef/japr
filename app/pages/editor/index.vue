@@ -10,6 +10,7 @@ definePageMeta({
 usePageHeading().value = 'Dashboard'
 
 const { data: currentUser } = useCurrentUser()
+const can = useCan()
 
 const defaultEditorSummary = (): EditorDashboardSummary => ({
   deskReview: 0,
@@ -20,6 +21,7 @@ const defaultEditorSummary = (): EditorDashboardSummary => ({
   reviewed: 0,
   readyForNotice: 0,
   approved: 0,
+  copyDesk: 0,
   published: 0,
   changesRequested: 0,
   declined: 0,
@@ -41,6 +43,10 @@ const defaultEditorSummary = (): EditorDashboardSummary => ({
 const isSeniorEditor = computed(() =>
   currentUser.value.roles.some(role => ['admin', 'editor_in_chief', 'managing_editor'].includes(role))
 )
+
+const canPublish = computed(() => can('journal', 'publish'))
+const canCopyEdit = computed(() => can('journal', 'copy_edit'))
+const canAssignReviewers = computed(() => can('reviewer', 'assign'))
 
 const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] ?? 'there')
 
@@ -181,6 +187,57 @@ const summary = computed(() => summaryData.value.summary)
         </div>
         <UButton to="/editor/ready-for-notice" color="primary" class="shrink-0">
           Review & Send Notices
+        </UButton>
+      </div>
+
+      <div
+        v-if="canPublish && summary.approved > 0"
+        class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-primary-200 bg-primary-50 px-6 py-5.5"
+      >
+        <div>
+          <h4 class="mb-1 text-[15px] font-bold text-highlighted">
+            Approve for Publication
+          </h4>
+          <p class="text-sm text-primary-900">
+            {{ summary.approved }} manuscript(s) approved by the managing editor are awaiting your publication approval.
+          </p>
+        </div>
+        <UButton to="/editor/approved" color="primary" class="shrink-0">
+          Review & Approve
+        </UButton>
+      </div>
+
+      <div
+        v-if="canCopyEdit && summary.copyDesk > 0"
+        class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-success-200 bg-success-50 px-6 py-5.5"
+      >
+        <div>
+          <h4 class="mb-1 text-[15px] font-bold text-highlighted">
+            Copy Desk Ready to Publish
+          </h4>
+          <p class="text-sm text-success-900">
+            {{ summary.copyDesk }} manuscript(s) have been handed off and are ready to be marked published.
+          </p>
+        </div>
+        <UButton to="/editor/copy-desk" color="success" class="shrink-0">
+          Publish
+        </UButton>
+      </div>
+
+      <div
+        v-if="canAssignReviewers && (summary.pendingQueue > 0 || summary.changesRequested > 0)"
+        class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-warning-200 bg-warning-50 px-6 py-5.5"
+      >
+        <div>
+          <h4 class="mb-1 text-[15px] font-bold text-highlighted">
+            Desk Review Queue
+          </h4>
+          <p class="text-sm text-warning-900">
+            {{ summary.pendingQueue + summary.changesRequested }} manuscript(s) need initial or revised desk review.
+          </p>
+        </div>
+        <UButton to="/editor/submissions" color="warning" class="shrink-0">
+          Review Submissions
         </UButton>
       </div>
 

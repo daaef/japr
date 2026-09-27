@@ -344,7 +344,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
         </div>
       </div>
 
-      <main class="flex-1 px-4 py-6 sm:px-6">
+      <main class="min-w-0 flex-1 px-4 py-6 sm:px-6">
         <slot />
       </main>
 

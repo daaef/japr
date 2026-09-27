@@ -14,6 +14,7 @@ import type {
 
 interface JournalStatusRow {
   approvalStatus: string
+  copyEditStatus?: string | null
 }
 
 interface ReviewerMetricRow {
@@ -79,6 +80,14 @@ export function buildEditorDashboardSummary(rows: JournalStatusRow[]): EditorDas
   const approved = byStatus[MANUSCRIPT_STATUS.APPROVED]
     + byStatus[MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT]
 
+  const copyDesk = rows.filter(row =>
+    (
+      row.approvalStatus === MANUSCRIPT_STATUS.APPROVED
+      || row.approvalStatus === MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT
+    )
+    && row.copyEditStatus === 'ready_for_publication'
+  ).length
+
   return {
     deskReview: byStatus[MANUSCRIPT_STATUS.DESK_REVIEW],
     legacyPending: byStatus[MANUSCRIPT_STATUS.PENDING],
@@ -88,6 +97,7 @@ export function buildEditorDashboardSummary(rows: JournalStatusRow[]): EditorDas
     reviewed: byStatus[MANUSCRIPT_STATUS.REVIEWED],
     readyForNotice: byStatus[MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE],
     approved,
+    copyDesk,
     published: byStatus[MANUSCRIPT_STATUS.PUBLISHED],
     changesRequested: byStatus[MANUSCRIPT_STATUS.CHANGES_REQUESTED],
     declined: byStatus[MANUSCRIPT_STATUS.DECLINED],
