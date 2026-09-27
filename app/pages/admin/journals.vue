@@ -50,6 +50,7 @@ function goToPage(nextPage: number) {
         v-for="journal in data.journals"
         :key="journal.id"
         :journal="journal"
+        :to="`/admin/journals/${journal.id}`"
       />
     </div>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const props = withDefaults(defineProps<{
   journal: {
     id: string
     slug: string
@@ -11,7 +11,12 @@ defineProps<{
     coverImage?: string | null
     createdAt: string
   }
-}>()
+  to?: string
+}>(), {
+  to: undefined
+})
+
+const journalLink = computed(() => props.to || `/journals/${props.journal.slug}`)
 </script>
 
 <template>
@@ -22,7 +27,7 @@ defineProps<{
     </div>
     <h2 class="font-serif text-xl font-semibold text-highlighted">
       <NuxtLink
-        :to="`/journals/${journal.slug}`"
+        :to="journalLink"
         class="hover:text-primary-700"
       >
         {{ journal.title }}
@@ -36,7 +41,7 @@ defineProps<{
     </p>
     <div class="mt-4 border-t border-taupe-100 pt-3">
       <NuxtLink
-        :to="`/journals/${journal.slug}`"
+        :to="journalLink"
         class="text-xs font-bold text-primary-600 hover:text-primary-700"
       >
         Read Article →
