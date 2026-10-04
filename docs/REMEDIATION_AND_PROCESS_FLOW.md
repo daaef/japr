@@ -190,7 +190,7 @@ Adopt this as the *one* authoritative diagram; every queue page, guard, and emai
 | `desk_editor` | Reviewer/triage | Reviewer-class actions | `requireReviewer` |
 | `managing_editor` | Editor | Assign reviewers, send approval/decline notices | `requireEditor` |
 | `editor_in_chief` | Editor | Final approve/reject, oversight | `requireEditor` |
-| `copy_desk_editor` | Production | Copy-edit approved manuscripts, prep publication | `requireEditorOrCopyDesk` |
+| `copy_desk_editor` | Deputy editor | Full editorial workflow + copy desk production | `requireEditor` + `requirePermission` |
 | `admin` | Superuser | Users, roles, categories, settings, (debug mail) | `requireAdmin` |
 
 **REC — make the Editor-in-Chief vs Managing-Editor split explicit.** Both currently pass `requireEditor`, so any editor can do any editor action. Recommend: Managing Editor owns *assignment* + *notices*; Editor-in-Chief owns *final approve/reject* + *publication approval*. Enforce with `requirePermission` (the permission rows already exist) rather than the coarse `requireEditor`.
@@ -222,8 +222,10 @@ Pages and endpoints below are all verified present; the binding is the recommend
    - From `reviewed`: `approve`/`reject`; `approve-for-publication` (needs ≥2 reviews) → sets `publishedAt`. *(REC: Editor-in-Chief)*
    - `request-revisions` → **changes_requested** (add B7 guard).
 
-**COPY DESK EDITOR** — `/editor/copy-desk` (via `requireEditorOrCopyDesk`).
-- **CURRENT:** can view approved manuscripts. **REC:** add an explicit "mark copy-edited / ready to publish" action that drives `copyEditStatus` → the (recommended) `published` terminal status, closing the publication gap in B.1.
+**COPY DESK EDITOR** — `/editor` (via `requireEditor`, now a full editor role).
+- Has the union of EIC + managing editor editorial permissions plus copy desk production.
+  Publication gated by `requirePermission(event, 'journal', 'publish')` via
+  `mark-published.post.ts`.
 
 **ADMIN** — layout `admin.vue`, `requireAdmin`.
 - `/admin` overview; `/admin/users` + `/admin/users/[id]` (CRUD, role assignment, activation); `/admin/roles` + `/admin/roles/[id]` (RBAC); `/admin/categories` (3-level taxonomy); `/admin/journals`; `/admin/settings`.

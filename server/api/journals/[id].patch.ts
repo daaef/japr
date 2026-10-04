@@ -34,17 +34,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden.' })
   }
 
-  // F-G: new submissions start at DESK_REVIEW (journals/index.post.ts), not PENDING —
-  // PENDING is only reached via changes_requested -> pending (an author resubmitting a
-  // revision). The old check let authors edit a resubmitted revision but not their own
-  // brand-new submission. Authors may now edit while the manuscript hasn't left their
-  // hands yet: DESK_REVIEW (awaiting desk screen) or PENDING (revision awaiting re-review).
-  const authorEditableStatuses: string[] = [MANUSCRIPT_STATUS.DESK_REVIEW, MANUSCRIPT_STATUS.PENDING]
+  // Authors may edit while the manuscript is still in the revision resubmission stage.
+  // New submissions now start at IN_PROGRESS (no desk review gate), which is intentionally
+  // NOT author-editable — once submitted, the editorial process has begun.
+  const authorEditableStatuses: string[] = [MANUSCRIPT_STATUS.PENDING]
 
   if (isOwner && !canEditAny && !authorEditableStatuses.includes(journal.approvalStatus)) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Only manuscripts awaiting desk review or resubmission can be edited by their author.'
+      statusMessage: 'Only manuscripts awaiting resubmission review can be edited by their author.'
     })
   }
 

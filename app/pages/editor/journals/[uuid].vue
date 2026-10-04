@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
+import { EDITOR_ROLES } from '#shared/constants/roles'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 import type { ManuscriptStatus } from '#shared/constants/manuscriptStatus'
 
 const EDITOR_STATUS_LABELS: Partial<Record<ManuscriptStatus, string>> = {
-  desk_review: 'Initial Editorial Review',
   pending: 'Pending Initial Review',
   'in-progress': 'Editorial Review in Progress',
   under_peer_review: 'Under Peer Review',
@@ -28,7 +27,7 @@ const ASSIGN_REVIEWERS_ALLOWED_STATUSES: ManuscriptStatus[] = [
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
+  requiredRoles: EDITOR_ROLES
 })
 
 const route = useRoute()
@@ -40,8 +39,8 @@ const uuid = computed(() => route.params.uuid as string)
 // check let each see actions only the other could actually perform.
 const can = useCan()
 const canAssignReviewers = computed(() => can('reviewer', 'assign'))
-const canSendToReview = computed(() => can('journal', 'approve'))
-const canDeskDecline = computed(() => can('journal', 'reject'))
+const canApprove = computed(() => can('journal', 'approve'))
+const canReject = computed(() => can('journal', 'reject'))
 const canApproveForPublication = computed(() => can('journal', 'publish'))
 const canSendApprovalNotice = computed(() => can('journal', 'send_approval_notice'))
 const canSendDeclineNotice = computed(() => can('journal', 'send_decline_notice'))
@@ -49,8 +48,8 @@ const canRequestRevisions = computed(() => can('journal', 'request_revisions'))
 
 const canEditManuscript = computed(() =>
   canAssignReviewers.value
-  || canSendToReview.value
-  || canDeskDecline.value
+  || canApprove.value
+  || canReject.value
   || canApproveForPublication.value
   || canSendApprovalNotice.value
   || canSendDeclineNotice.value
@@ -73,7 +72,7 @@ const assignReviewersTooltip = computed(() => {
   }
 
   if (!ASSIGN_REVIEWERS_ALLOWED_STATUSES.includes(detailData.value.journal.approvalStatus as ManuscriptStatus)) {
-    return 'Reviewers can only be assigned after the manuscript is sent to peer review.'
+    return 'Reviewers can only be assigned to manuscripts that are in progress, under peer review, or reviewed.'
   }
 
   return ''
@@ -268,7 +267,6 @@ function toggleReviewerSelection(reviewerId: string, checked: boolean | 'indeter
 
 const showReadyForNotice = computed(() => detailData.value.journal.approvalStatus === 'ready_for_managing_editor_notice')
 const showReviewedActions = computed(() => detailData.value.journal.approvalStatus === 'reviewed')
-const showDeskReviewActions = computed(() => ['desk_review', 'pending'].includes(detailData.value.journal.approvalStatus))
 const showPublicationAction = computed(() =>
   ['approved', 'approved_with_comment'].includes(detailData.value.journal.approvalStatus)
     && detailData.value.journal.copyEditStatus !== 'ready_for_publication'
@@ -289,8 +287,7 @@ const pendingReviewerChangeRequests = computed(() =>
 // the empty-state message needs the same permission checks or it can stay hidden behind a
 // blank card when the status matches but the viewer lacks every relevant permission.
 const hasVisibleEditorialAction = computed(() =>
-  showDeskReviewActions.value
-  || showPublicationAction.value
+  showPublicationAction.value
   || pendingExtensionRequests.value.length > 0
   || showReadyForNotice.value
   || showReviewedActions.value
@@ -314,23 +311,6 @@ const needsReplacementReviewer = computed(() =>
   && detailData.value.reviewers.some(reviewer => reviewer.status === 'reviewed' || reviewer.status === 'declined')
   && ['in-progress', 'under_peer_review', 'reviewed'].includes(detailData.value.journal.approvalStatus)
 )
-
-function sendToReview() {
-  return runAction(async () => {
-    await $fetch(`/api/editor/journals/${uuid.value}/send-to-review`, { method: 'POST' })
-    await refreshAll()
-  }, 'Manuscript sent to peer review.', 'Unable to send manuscript to review.')
-}
-
-function deskDecline() {
-  return runAction(async () => {
-    await $fetch(`/api/editor/journals/${uuid.value}/desk-decline`, {
-      method: 'POST',
-      body: { reason: declineReason.value }
-    })
-    await refreshAll()
-  }, 'Manuscript desk declined.', 'Unable to desk decline this manuscript.')
-}
 
 function approveForPublication() {
   return runAction(async () => {
@@ -433,7 +413,10 @@ function declineManuscript() {
               {{ detailData.journal.abstract || detailData.journal.description }}
             </p>
           </div>
-          <JournalStatusBadge :status="detailData.journal.approvalStatus" :label-overrides="EDITOR_STATUS_LABELS" />
+          <div class="flex items-center gap-2">
+            <EditorPingMenu :journal-id="uuid" />
+            <JournalStatusBadge :status="detailData.journal.approvalStatus" :label-overrides="EDITOR_STATUS_LABELS" />
+          </div>
         </div>
       </template>
 
@@ -612,43 +595,6 @@ function declineManuscript() {
         </div>
 
         <div
-          v-if="showDeskReviewActions"
-          class="mb-5 rounded-2xl border border-warning-100 bg-warning-50 p-4"
-        >
-          <h5 class="mb-2 text-sm font-semibold text-highlighted">
-            Desk review
-          </h5>
-          <p class="mb-3 text-sm text-muted">
-            Send this manuscript into peer review or decline it before review assignment.
-          </p>
-          <div class="mb-3 flex flex-wrap gap-2">
-            <PermissionGatedAction
-              :allowed="canSendToReview"
-              tooltip="You don't have permission to move this manuscript into peer review."
-              color="primary"
-              class="rounded-full"
-              :disabled="actionLoading"
-              @click="sendToReview"
-            >
-              Send to review
-            </PermissionGatedAction>
-          </div>
-          <UFormField v-if="canDeskDecline" label="Desk decline reason">
-            <UTextarea v-model="declineReason" :rows="3" class="mb-3 w-full" />
-          </UFormField>
-          <PermissionGatedAction
-            :allowed="canDeskDecline"
-            tooltip="You don't have permission to decline manuscripts."
-            color="error"
-            class="rounded-full"
-            :disabled="actionLoading || declineReason.trim().length < 5"
-            @click="deskDecline"
-          >
-            Desk decline
-          </PermissionGatedAction>
-        </div>
-
-        <div
           v-if="showPublicationAction"
           class="mb-5 rounded-2xl border border-success-100 bg-success-50 p-4"
         >
@@ -760,11 +706,11 @@ function declineManuscript() {
 
         <template v-if="showReviewedActions">
           <div class="mb-5">
-            <UFormField v-if="canSendToReview" label="Approval comment">
+            <UFormField v-if="canApprove" label="Approval comment">
               <UTextarea v-model="approveComment" :rows="3" class="w-full" />
             </UFormField>
             <PermissionGatedAction
-              :allowed="canSendToReview"
+              :allowed="canApprove"
               tooltip="You don't have permission to approve this manuscript."
               color="primary"
               class="mt-3 rounded-full"
@@ -793,11 +739,11 @@ function declineManuscript() {
           </div>
 
           <div class="mb-5">
-            <UFormField v-if="canDeskDecline" label="Decline reason">
+            <UFormField v-if="canReject" label="Decline reason">
               <UTextarea v-model="declineReason" :rows="4" class="w-full" />
             </UFormField>
             <PermissionGatedAction
-              :allowed="canDeskDecline"
+              :allowed="canReject"
               tooltip="You don't have permission to decline this manuscript."
               color="error"
               class="mt-3 rounded-full"

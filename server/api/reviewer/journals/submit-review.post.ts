@@ -5,13 +5,14 @@ import { reviewers } from '#server/db/schema'
 import { notifyEditorsAllReviewsComplete } from '#server/utils/editorNotifications'
 import { logAdminAction } from '#server/utils/adminAudit'
 import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
-import { requireReviewer } from '#server/utils/permissions'
+import { requirePermission, requireReviewer } from '#server/utils/permissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 import { reviewSubmitSchema } from '#shared/validation/reviews'
 
 export default defineEventHandler(async (event) => {
   const session = await requireReviewer(event)
+  await requirePermission(event, 'review', 'submit')
   const body = await readValidatedBody(event, payload => reviewSubmitSchema.parse(payload))
 
   // The client-side gate (app/middleware/auth.ts) only guards the SPA route; this

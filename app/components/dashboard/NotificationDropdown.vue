@@ -27,7 +27,8 @@ const legacyIconMap: Record<string, string> = {
   'ph-file-text': 'i-lucide-file-text'
 }
 
-function notificationIcon(icon: string) {
+function notificationIcon(icon: string, type?: string) {
+  if (type === 'ping') return 'i-lucide-bell-ring'
   return legacyIconMap[icon] ?? 'i-lucide-bell'
 }
 
@@ -192,7 +193,7 @@ async function markAllRead() {
                   class="size-9 rounded-full flex items-center justify-center shrink-0"
                   :class="avatarClass(notification.color)"
                 >
-                  <UIcon :name="notificationIcon(notification.icon)" />
+                  <UIcon :name="notificationIcon(notification.icon, notification.type)" />
                 </div>
                 <div class="grow min-w-0">
                   <h4 class="text-sm font-semibold text-highlighted mb-0.5">

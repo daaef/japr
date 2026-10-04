@@ -4,12 +4,12 @@ import { journals } from '#server/db/schema'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { notifyAuthorOfManuscriptStatus } from '#server/utils/manuscriptStatusNotifications'
 import { logAdminAction } from '#server/utils/adminAudit'
-import { requireEditorOrCopyDesk } from '#server/utils/permissions'
+import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 
 export default defineEventHandler(async (event) => {
-  await requireEditorOrCopyDesk(event)
+  await requirePermission(event, 'journal', 'publish')
   const uuid = getRouterParam(event, 'uuid')
 
   if (!uuid) {

@@ -18,6 +18,7 @@ export interface SystemRoleDefinition {
 }
 
 export const permissionDefinitions: PermissionDefinition[] = [
+  { name: 'superadmin', resource: '*', action: 'manage', scope: 'any', description: 'Full system access — bypasses all permission checks.' },
   { name: 'create-users', resource: 'user', action: 'create', scope: 'any', description: 'Create new users.' },
   { name: 'edit-users', resource: 'user', action: 'update', scope: 'any', description: 'Update users.' },
   { name: 'delete-users', resource: 'user', action: 'delete', scope: 'any', description: 'Suspend or delete users.' },
@@ -40,7 +41,8 @@ export const permissionDefinitions: PermissionDefinition[] = [
   { name: 'prepare-for-publication', resource: 'journal', action: 'prepare_publication', scope: 'any', description: 'Prepare for publication.' },
   { name: 'read-public-journals', resource: 'journal', action: 'read', scope: 'public', description: 'Read public journals.' },
   { name: 'read-notifications', resource: 'notification', action: 'read', scope: 'own', description: 'Read notifications.' },
-  { name: 'read-categories', resource: 'category', action: 'read', scope: 'public', description: 'Read category tree.' }
+  { name: 'read-categories', resource: 'category', action: 'read', scope: 'public', description: 'Read category tree.' },
+  { name: 'send-ping', resource: 'ping', action: 'send', scope: 'any', description: 'Send preset nudge messages to other users.' }
 ]
 
 export const systemRoles: SystemRoleDefinition[] = [
@@ -59,7 +61,8 @@ export const systemRoles: SystemRoleDefinition[] = [
       'final-reject-manuscript',
       'publish-manuscript',
       'request-revisions',
-      'read-public-journals'
+      'read-public-journals',
+      'send-ping'
     ]
   },
   {
@@ -71,7 +74,8 @@ export const systemRoles: SystemRoleDefinition[] = [
       'send-approval-notice',
       'send-decline-notice',
       'request-revisions',
-      'read-public-journals'
+      'read-public-journals',
+      'send-ping'
     ]
   },
   {
@@ -124,13 +128,25 @@ export const systemRoles: SystemRoleDefinition[] = [
   },
   {
     name: 'copy_desk_editor',
-    description: 'Final editing',
+    description: 'Deputy editor — full editorial workflow plus copy desk production',
     isSystem: true,
     permissions: [
+      // From EIC
+      'final-approve-manuscript',
+      'final-reject-manuscript',
+      'publish-manuscript',
+      // From managing editor
+      'assign-reviewers',
+      'send-approval-notice',
+      'send-decline-notice',
+      // Shared EIC + ME
+      'request-revisions',
+      // Original copy desk
       'copy-edit-manuscript',
       'final-edit-manuscript',
       'prepare-for-publication',
-      'read-public-journals'
+      'read-public-journals',
+      'send-ping'
     ]
   }
 ]

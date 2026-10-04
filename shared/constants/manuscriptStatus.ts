@@ -69,10 +69,7 @@ export const REVIEW_STAGE_STATUSES = [
 ] as const
 
 export const ALLOWED_MANUSCRIPT_TRANSITIONS: Record<ManuscriptStatus, ManuscriptStatus[]> = {
-  [MANUSCRIPT_STATUS.DESK_REVIEW]: [
-    MANUSCRIPT_STATUS.IN_PROGRESS,
-    MANUSCRIPT_STATUS.DECLINED
-  ],
+  [MANUSCRIPT_STATUS.DESK_REVIEW]: [],  // legacy — no longer used for new submissions
   [MANUSCRIPT_STATUS.PENDING]: [
     MANUSCRIPT_STATUS.IN_PROGRESS,
     MANUSCRIPT_STATUS.DECLINED

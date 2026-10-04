@@ -424,3 +424,25 @@ export async function sendReviewDeadlineReminderEmail(
     )
   })
 }
+
+export async function sendPingEmail(
+  to: string,
+  recipientName: string,
+  senderName: string,
+  manuscriptTitle: string,
+  message: string,
+  actionUrl: string
+) {
+  const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || ''
+
+  return sendEmail({
+    to,
+    subject: `${senderName} pinged you about: ${manuscriptTitle}`,
+    html: buildBaseEmail(
+      'You have been pinged',
+      `<p>Hello ${escapeHtml(recipientName)},</p>
+       <p>${escapeHtml(message)}</p>
+       <p><a href="${escapeHtml(siteUrl)}${escapeHtml(actionUrl)}" style="display:inline-block;padding:12px 18px;background:#047857;color:#fff;text-decoration:none;border-radius:999px;">View manuscript</a></p>`
+    )
+  })
+}

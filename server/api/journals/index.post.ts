@@ -9,6 +9,7 @@ import { journalCreateSchema } from '#shared/validation/journals'
 import { sendSubmissionReceivedEmail, sendManuscriptSubmissionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
+import { notifyAssignersOfReviewStart } from '#server/utils/editorNotifications'
 import { logAdminAction } from '#server/utils/adminAudit'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 import { EDITOR_ROLES } from '#shared/constants/roles'
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
       metaDescription: body.metaDescription ?? null,
       agree: body.agree,
       accept: body.accept,
-      approvalStatus: MANUSCRIPT_STATUS.DESK_REVIEW,
+      approvalStatus: MANUSCRIPT_STATUS.IN_PROGRESS,
       isDraft: false,
       createdBy: { userId: session.user.id, email: session.user.email }
     }).returning()
@@ -154,7 +155,7 @@ export default defineEventHandler(async (event) => {
         type: 'new-submission',
         data: {
           title: 'New manuscript submitted',
-          message: `${journal.title} is ready for desk review.`,
+          message: `${journal.title} is ready for reviewer assignment.`,
           journalId: journal.id,
           journalTitle: journal.title,
           priority: 'high',
@@ -183,12 +184,20 @@ export default defineEventHandler(async (event) => {
     console.error('Failed to notify editors:', error)
   }
 
+  // Manuscripts now start at in_progress (no desk review gate), so immediately notify
+  // users who can assign reviewers (managing editors) that this submission is ready.
+  try {
+    await notifyAssignersOfReviewStart(journal.id)
+  } catch (error) {
+    console.error('Failed to notify assigners:', error)
+  }
+
   await logAdminAction(event, {
     action: 'manuscript_created',
     resourceType: 'journal',
     resourceId: journal.id,
     description: `Manuscript "${journal.title}" submitted by ${session.user.email}`,
-    metadata: { status: MANUSCRIPT_STATUS.DESK_REVIEW }
+    metadata: { status: MANUSCRIPT_STATUS.IN_PROGRESS }
   })
 
   return { journal }

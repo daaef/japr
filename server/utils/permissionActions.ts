@@ -11,12 +11,10 @@ export interface PermissionRow {
 // Kept free of ./session (which pulls in h3, only resolvable inside Nuxt's Nitro build) so
 // this stays importable from tests/permissions.test.ts under plain `tsx --test`.
 export function derivePermissionActions(permissionRows: PermissionRow[]): string[] {
-  const isAdmin = permissionRows.some(row => row.roleName === 'admin')
+  // Sentinel: *:manage bypasses all checks — expand to every known permission.
+  const hasSuperAdmin = permissionRows.some(row => row.resource === '*' && row.action === 'manage')
 
-  // Mirrors checkUserPermission's own admin bypass (server/utils/permissions.ts) rather than
-  // relying solely on admin's seeded rows, so a newly-added permission shows up for admin
-  // immediately.
-  if (isAdmin) {
+  if (hasSuperAdmin) {
     return permissionDefinitions.map(permission => `${permission.resource}:${permission.action}`)
   }
 

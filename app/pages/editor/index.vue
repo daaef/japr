@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
+import { EDITOR_ROLES } from '#shared/constants/roles'
 import type { EditorDashboardSummary } from '#shared/types/dashboard'
 
 definePageMeta({
   middleware: ['auth', 'role', 'copy-desk-redirect'],
-  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
+  requiredRoles: EDITOR_ROLES
 })
 
 usePageHeading().value = 'Dashboard'
@@ -80,7 +80,7 @@ const summary = computed(() => summaryData.value.summary)
                 {{ summary.pendingQueue }}
               </p>
               <p class="mt-1 text-[11px] font-semibold text-primary-300">
-                Desk Review
+                Pending
               </p>
             </div>
             <div>
@@ -232,7 +232,7 @@ const summary = computed(() => summaryData.value.summary)
             Documents Pending Review
           </h4>
           <p class="text-sm text-warning-900">
-            {{ summary.pendingQueue }} manuscript(s) are awaiting desk review.
+            {{ summary.pendingQueue }} manuscript(s) are awaiting review.
           </p>
         </div>
         <UButton to="/editor/submissions" color="warning" class="shrink-0">
@@ -275,10 +275,10 @@ const summary = computed(() => summaryData.value.summary)
       </div>
 
       <JournalQueueList
-        title="Desk Review Queue"
+        title="Pending Queue"
         api-url="/api/editor/journals/pending"
         detail-path-prefix="/editor/journals"
-        empty-message="No manuscripts in desk review."
+        empty-message="No manuscripts pending review."
         :set-page-heading="false"
       />
 
@@ -313,7 +313,7 @@ const summary = computed(() => summaryData.value.summary)
           </p>
           <div class="flex flex-wrap gap-2.5">
             <UButton to="/editor/submissions" color="primary" variant="outline" size="sm">
-              Desk Review Queue
+              Pending Queue
             </UButton>
             <UButton to="/editor/under-peer-review" color="success" variant="outline" size="sm">
               Under Peer Review

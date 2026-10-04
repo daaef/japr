@@ -8,7 +8,8 @@ export const notificationPreferencesSchema = z.object({
   email: z.object({
     manuscript_status: z.boolean(),
     review_assignment: z.boolean(),
-    new_submissions: z.boolean()
+    new_submissions: z.boolean(),
+    ping: z.boolean()
   }),
   in_app: z.object({
     realtime: z.boolean(),
@@ -23,7 +24,8 @@ export const defaultNotificationPreferences: NotificationPreferences = {
   email: {
     manuscript_status: true,
     review_assignment: true,
-    new_submissions: true
+    new_submissions: true,
+    ping: true
   },
   in_app: {
     realtime: true,

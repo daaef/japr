@@ -47,9 +47,9 @@ happens *before* the status guard, so an unauthorized caller never learns the ma
 |---|---|
 | **Author (owner)** | Create submission; edit while `pending`; submit revisions; resolve change requests; view own feedback/versions |
 | **Reviewer** (`admin`, `associate_editor`, `external_reviewer`, `desk_editor`) | Accept/decline invitation; submit review; request field-level changes; request deadline extension |
-| **Editor** (`admin`, `editor_in_chief`, `managing_editor`) | Desk triage; assign reviewers; approve/decline; request revisions; send managing-editor notices; approve extensions |
-| **Copy desk** (`copy_desk_editor` + the editor roles) | Mark approved manuscript as published |
-| **Admin** | All of the above + soft-delete |
+| **Editor** (`admin`, `editor_in_chief`, `managing_editor`, `copy_desk_editor`) | Assign reviewers; approve/decline; request revisions; send managing-editor notices; approve extensions |
+| **Copy desk** (`copy_desk_editor` — now also a full editor role) | All editor actions + copy-edit, final-edit, prepare-for-publication, mark published |
+| **Admin** | All of the above + soft-delete (via `superadmin` sentinel permission `*:manage`) |
 
 > **Author-cannot-review guard.** `assign-reviewers` explicitly rejects assigning
 > `journal.userId` as a reviewer of their own manuscript → **400** `"A manuscript's own author
@@ -65,16 +65,16 @@ the same constants file.
 
 | Status | Label | Meaning | Group |
 |---|---|---|---|
-| `desk_review` | Desk Review | **Initial state** of a new submission; awaiting editor triage | pre-review |
-| `pending` | Pending | Legacy initial state / where a revised manuscript lands after resubmission | pre-review |
-| `in-progress` | In Progress | Sent to review; reviewers invited, none completed yet | review stage |
+| `desk_review` | Desk Review | **Legacy** — was the initial state before 20261004; no longer used for new submissions | legacy |
+| `pending` | Pending | Where a revised manuscript lands after resubmission | pre-review |
+| `in-progress` | In Progress | **Initial state** of a new submission; reviewers may be invited | review stage |
 | `under_peer_review` | Under Peer Review | At least 1 review completed, but fewer than 2 | review stage |
 | `ready_for_managing_editor_notice` | Ready For Managing Editor Notice | ≥ 2 reviews completed; ready for an editorial decision | review stage |
 | `reviewed` | Reviewed | All invited reviewers responded (terminally), but < 2 *completed* reviews | review stage |
 | `approved` | Approved | Editor accepted, no comment | terminal* |
 | `approved_with_comment` | Approved With Comment | Editor accepted, with a comment | terminal* |
 | `published` | Published | Copy desk published it | terminal |
-| `declined` | Declined | Rejected (desk-decline, review decline, or notice) | terminal |
+| `declined` | Declined | Rejected (review decline or notice) | terminal |
 | `changes_requested` | Changes Requested | Sent back to the author for revision | recoverable |
 
 \* `approved` / `approved_with_comment` are terminal for the *review* workflow but still have one
@@ -141,9 +141,7 @@ never cause a collision. The initial submission is `1.0`.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> desk_review: author submits (index.post)
-    desk_review --> in_progress: editor send-to-review
-    desk_review --> declined: editor desk-decline
+    [*] --> in_progress: author submits (index.post)
 
     in_progress --> under_peer_review: 1st review completes (sync)
     in_progress --> ready_notice: 2 reviews complete at once (sync)
@@ -181,18 +179,18 @@ stateDiagram-v2
 
 Narrative:
 
-1. **Submit** → `desk_review`. A `manuscript_versions` row `1.0` is created in the *same
-   transaction*; editors are notified; the author gets a "submission received" email.
-2. **Desk triage** → editor either `send-to-review` (`→ in-progress`) or `desk-decline`
-   (`→ declined`).
-3. **Assign reviewers** → invitations sent (14-day default deadline). Assignment re-runs the
+1. **Submit** → `in_progress`. A `manuscript_versions` row `1.0` is created in the *same
+   transaction*; all editors (including copy desk editor) are notified; the author gets a
+   "submission received" email; users with `reviewer:assign` are notified the manuscript is
+   ready for reviewer assignment.
+2. **Assign reviewers** → invitations sent (14-day default deadline). Assignment re-runs the
    sync engine.
-4. **Reviewers respond** → each accept/decline/submit re-runs `syncJournalReviewStatus`, which
+3. **Reviewers respond** → each accept/decline/submit re-runs `syncJournalReviewStatus`, which
    walks the manuscript through `in-progress → under_peer_review → ready_for_managing_editor_notice`
    (or into `reviewed`, §9).
-5. **Editorial decision** at `ready_for_managing_editor_notice` (or `reviewed`) → `approved` /
+4. **Editorial decision** at `ready_for_managing_editor_notice` (or `reviewed`) → `approved` /
    `approved_with_comment` / `declined` / `changes_requested`.
-6. **Publish** → editor hands off (`approve-for-publication` sets an internal flag), then copy
+5. **Publish** → editor hands off (`approve-for-publication` sets an internal flag), then copy
    desk `mark-published` → `published`.
 
 ---
@@ -205,7 +203,7 @@ Narrative:
 is the single contract. `canTransitionManuscriptStatus(from, to)` is the check.
 
 ```
-desk_review                       → in-progress, declined
+desk_review                       → (none — legacy, no longer used)
 pending                           → in-progress, declined
 in-progress                       → under_peer_review, ready_for_managing_editor_notice,
                                     reviewed, changes_requested
@@ -276,24 +274,20 @@ Every route below is grouped by phase. Error codes and messages are verbatim.
   `abstract` 50–12000, `country` 2–120, `journalLanguage` ∈ {American English, British English,
   French}, optional category UUIDs / meta fields / `journalUrl` / `license`, `agree`/`accept`
   booleans (default true).
-- **Effect (one transaction):** insert journal with `approvalStatus = desk_review`,
+- **Effect (one transaction):** insert journal with `approvalStatus = in-progress`,
   `isDraft = false`; attach the uploaded file; insert `manuscript_versions` `1.0`
   (`status: 'submitted'`). Crash mid-sequence leaves nothing partial (comment B7).
 - **Side effects:** "submission received" email to author; in-app `new-submission` notification +
-  email to every editor/admin/managing-editor.
+  email to every editor (including copy desk editor); assigner notification to users with
+  `reviewer:assign` permission.
 - **Note:** `isDraft` is hard-coded `false` here; the create path never produces a draft. *(inference: draft manuscripts are not currently reachable via this route.)*
 
-### 8.2 Desk triage (editor)
+### 8.2 Desk triage — REMOVED
 
-**`POST …/[uuid]/send-to-review`** ([send-to-review.post.ts](../server/api/editor/journals/[uuid]/send-to-review.post.ts))
-- Permission `journal:approve`. Guard: `[desk_review, pending]`. Sets `→ in-progress`.
-  Author notified.
-
-**`POST …/[uuid]/desk-decline`** ([desk-decline.post.ts](../server/api/editor/journals/[uuid]/desk-decline.post.ts))
-- Permission `journal:reject`. Guard: `[desk_review, pending]`. Body `reason` 5–2000 **required**.
-  Sets `→ declined`, `editorDecisionComment = reason`, `editorDecisionDate`. Decision email +
-  `journal-declined` notification. `notifyReviewersOfFinalDecision` runs but is a practical no-op
-  (no reviewers assigned at desk stage).
+The `send-to-review` and `desk-decline` endpoints were removed in
+`20261004_promote-copy-desk-collapse-desk-review`. New submissions go directly to `in-progress`.
+The `desk_review` status value is retained in the DB enum for backward compatibility with legacy
+rows but is no longer written by any code path.
 
 ### 8.3 Reviewer assignment (editor)
 
@@ -577,6 +571,36 @@ Downloads always go through the authz'd `/api/journals/[id]/download` endpoint, 
 - **Publish without hand-off** → **400**, `"This manuscript must be approved for publication by an editor before copy desk can publish it."`
 - **Author self-edit outside `pending`** → **400**, `"Only pending manuscripts can be edited by authors."`
 - **Permission gate** → **403**; **not found** → **404**; **missing id** → **400** `"Missing journal id."`
+
+---
+
+## 11. Ping / nudge system
+
+Editors with the `ping:send` permission can send preset nudge messages to other users in the
+context of a specific manuscript. Pings are delivered through the existing notification + email
+infrastructure (no new DB tables).
+
+### Templates
+
+Six preset templates are defined in `shared/constants/pingTemplates.ts`. Each specifies target
+roles and optional manuscript-status filters. The `general-attention` and `escalate-to-admin`
+templates work at any status; others are status-gated (e.g. `remind-reviewer-deadline` only
+when `under_peer_review` or `in-progress`).
+
+### Deduplication
+
+A 4-hour cooldown prevents the same template + journal + user combination from being sent
+repeatedly. Enforced by a partial index (`notifications_ping_cooldown_idx`) on
+`notifications(user_id, created_at) WHERE type = 'ping'`.
+
+### Email opt-out
+
+Users can disable ping emails via the `ping` email preference category in their notification
+settings (`shared/validation/notifications.ts`). Missing key defaults to `true`.
+
+### Audit
+
+Every ping is logged via `logAdminAction` for accountability.
 
 ---
 

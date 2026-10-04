@@ -11,7 +11,7 @@ export const roleKeys = [
 
 export type RoleKey = (typeof roleKeys)[number]
 
-export const editorRoleKeys = ['admin', 'editor_in_chief', 'managing_editor'] as const
+export const editorRoleKeys = ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor'] as const
 export const reviewerRoleKeys = ['associate_editor', 'external_reviewer', 'desk_editor'] as const
 
 // `requiredRoles` allow-lists for definePageMeta, grouped to match the six distinct
@@ -19,7 +19,6 @@ export const reviewerRoleKeys = ['associate_editor', 'external_reviewer', 'desk_
 export const ADMIN_ROLES = ['admin'] as const
 export const AUTHOR_ROLES = ['author', 'admin'] as const
 export const EDITOR_ROLES = editorRoleKeys
-export const EDITOR_ROLES_WITH_COPY_DESK = [...editorRoleKeys, 'copy_desk_editor'] as const
 export const REVIEWER_ROLES = ['admin', ...reviewerRoleKeys] as const
 
 export function hasEditorRole(roles: readonly string[]): boolean {

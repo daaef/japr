@@ -49,7 +49,7 @@ export const journals = pgTable('journals', {
   journalLanguage: text('journal_language'),
   journalUrl: text('journal_url'),
 
-  approvalStatus: approvalStatusEnum('approval_status').notNull().default('desk_review'),
+  approvalStatus: approvalStatusEnum('approval_status').notNull().default('in-progress'),
   approvalLevel: integer('approval_level').notNull().default(0),
   // Peer-review round. Incremented by an author revision, so a re-reviewed manuscript
   // never inherits the previous draft's completed reviews: every quorum/consensus

@@ -7,5 +7,5 @@ import { paginationSchema } from '#shared/validation/common'
 export default defineEventHandler(async (event) => {
   await requireEditor(event)
   const query = await getValidatedQuery(event, value => paginationSchema.parse(value))
-  return listJournalsByStatus(query, [MANUSCRIPT_STATUS.DESK_REVIEW, MANUSCRIPT_STATUS.PENDING])
+  return listJournalsByStatus(query, [MANUSCRIPT_STATUS.PENDING])
 })

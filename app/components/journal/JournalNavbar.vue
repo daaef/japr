@@ -117,16 +117,9 @@ const mobileMenuOpen = ref(false)
                 Dashboard
               </NuxtLink>
               <NuxtLink
-                v-if="hasAnyRole(['editor_in_chief', 'managing_editor'])"
+                v-if="hasAnyRole(['editor_in_chief', 'managing_editor', 'copy_desk_editor'])"
                 class="font-bold lg:hidden text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
                 to="/editor"
-              >
-                Dashboard
-              </NuxtLink>
-              <NuxtLink
-                v-if="hasRole('copy_desk_editor')"
-                class="font-bold lg:hidden text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
-                to="/editor/copy-desk"
               >
                 Dashboard
               </NuxtLink>
@@ -236,22 +229,13 @@ const mobileMenuOpen = ref(false)
                   Dashboard
                 </NuxtLink>
                 <NuxtLink
-                  v-if="hasAnyRole(['editor_in_chief', 'managing_editor'])"
+                  v-if="hasAnyRole(['editor_in_chief', 'managing_editor', 'copy_desk_editor'])"
                   class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
                   :class="navClass(route.path.startsWith('/editor'), 'text-taupe-700 font-medium')"
                   to="/editor"
                   @click="close"
                 >
                   Dashboard
-                </NuxtLink>
-                <NuxtLink
-                  v-if="hasRole('copy_desk_editor')"
-                  class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
-                  :class="navClass(route.path.startsWith('/editor/copy-desk'), 'text-taupe-700 font-medium')"
-                  to="/editor/copy-desk"
-                  @click="close"
-                >
-                  Copy Desk
                 </NuxtLink>
                 <NuxtLink
                   v-if="hasRole('author')"

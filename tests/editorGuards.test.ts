@@ -17,15 +17,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // --- F-G: author edit window (journals/[id].patch.ts) ---
 
-const authorEditableStatuses: string[] = [MANUSCRIPT_STATUS.DESK_REVIEW, MANUSCRIPT_STATUS.PENDING]
+// After collapsing desk review (20261004_promote-copy-desk), new submissions start at
+// in_progress. Authors may only edit while a revision is awaiting re-review (pending).
+const authorEditableStatuses: string[] = [MANUSCRIPT_STATUS.PENDING]
 
-test('F-G: authors may edit a brand-new submission (desk_review) and a resubmitted revision (pending)', () => {
-  assert.equal(authorEditableStatuses.includes(MANUSCRIPT_STATUS.DESK_REVIEW), true)
+test('F-G: authors may edit a resubmitted revision (pending)', () => {
   assert.equal(authorEditableStatuses.includes(MANUSCRIPT_STATUS.PENDING), true)
 })
 
-test('F-G: authors may not edit once the manuscript has left desk review for peer review', () => {
+test('F-G: authors may not edit once the manuscript is in the editorial pipeline', () => {
   for (const status of [
+    MANUSCRIPT_STATUS.DESK_REVIEW,
     MANUSCRIPT_STATUS.IN_PROGRESS,
     MANUSCRIPT_STATUS.UNDER_PEER_REVIEW,
     MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE,

@@ -127,6 +127,10 @@ async function save() {
             label="New submissions (editors)"
             :disabled="!isEditor"
           />
+          <USwitch
+            v-model="form.email.ping"
+            label="Ping / nudge messages"
+          />
         </div>
       </section>
 

@@ -1,10 +1,10 @@
 import { getRouterParam } from 'h3'
 import { db } from '#server/db/client'
 import { splitReviewerRounds } from '#server/utils/journalWorkflow'
-import { requireEditorOrCopyDesk } from '#server/utils/permissions'
+import { requireEditor } from '#server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
-  await requireEditorOrCopyDesk(event)
+  await requireEditor(event)
   const uuid = getRouterParam(event, 'uuid')
 
   if (!uuid) {

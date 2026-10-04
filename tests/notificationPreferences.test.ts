@@ -18,3 +18,7 @@ test('preferencesAllowRealtime follows the in-app realtime preference', () => {
     }
   }), false)
 })
+
+test('defaultNotificationPreferences includes the ping email category', () => {
+  assert.equal(defaultNotificationPreferences.email.ping, true)
+})

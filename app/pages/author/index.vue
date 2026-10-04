@@ -56,7 +56,6 @@ const journeyStages = computed(() => {
   const all = submissions.value.submissions
   return [
     { label: 'Submitted', count: all.length },
-    { label: 'Desk Review', count: all.filter(s => s.approvalStatus !== 'desk_review').length },
     {
       label: 'Peer Review',
       count: all.filter(s => ['under_peer_review', 'reviewed', 'ready_for_managing_editor_notice', 'approved', 'approved_with_comment', 'published'].includes(s.approvalStatus)).length

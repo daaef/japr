@@ -78,7 +78,7 @@ const {
       country: null,
       institution: null,
       journalLanguage: null,
-      approvalStatus: 'desk_review',
+      approvalStatus: 'in-progress',
       isActive: true,
       isDraft: false,
       publishedAt: null,

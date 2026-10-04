@@ -4,7 +4,7 @@ import { getJournalById } from '#server/utils/submissions'
 import { getCurrentUserContext } from '#server/utils/session'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
-import { isEditorialProfileRole } from '#server/utils/permissions'
+import { isEditorRole } from '#server/utils/permissions'
 import {
   convertDocToHtml,
   injectWatermark,
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
   const userRoles = context.roles
   const userEmail = context.session.user.email
   const isOwner = journal.userId === userId
-  const isEditor = userRoles.some(role => isEditorialProfileRole(role))
+  const isEditor = userRoles.some(role => isEditorRole(role))
 
   let isAssignedReviewer = false
   if (!isOwner && !isEditor) {

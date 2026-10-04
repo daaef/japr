@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import { db } from '#server/db/client'
 import type { JournalViewerRole, JournalVisibilityFields } from '#server/utils/journal-visibility'
-import { isEditorialProfileRole } from '#server/utils/permissions'
+import { isEditorRole } from '#server/utils/permissions'
 import { getCurrentUserContext } from '#server/utils/session'
 
 /**
@@ -19,7 +19,7 @@ export async function resolveJournalViewerRole(
     return 'public'
   }
 
-  if (context.roles.some(role => isEditorialProfileRole(role))) {
+  if (context.roles.some(role => isEditorRole(role))) {
     return 'editor'
   }
 

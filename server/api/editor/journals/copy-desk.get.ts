@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { getValidatedQuery } from 'h3'
 import { journals } from '#server/db/schema'
 import { listJournalsByStatus } from '#server/utils/journalQueue'
-import { requireEditorOrCopyDesk } from '#server/utils/permissions'
+import { requireEditor } from '#server/utils/permissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 import { paginationSchema } from '#shared/validation/common'
 
@@ -10,7 +10,7 @@ import { paginationSchema } from '#shared/validation/common'
 // editor's general "approved" page) — the copy desk only sees manuscripts an editor has
 // actually handed off via approve-for-publication.post.ts (F12).
 export default defineEventHandler(async (event) => {
-  await requireEditorOrCopyDesk(event)
+  await requireEditor(event)
   const query = await getValidatedQuery(event, value => paginationSchema.parse(value))
   return listJournalsByStatus(
     query,

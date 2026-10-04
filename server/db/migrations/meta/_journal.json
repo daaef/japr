@@ -120,6 +120,27 @@
       "when": 1785110400000,
       "tag": "0016_review_rounds",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785888000000,
+      "tag": "0017_version_file_urls",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785888000001,
+      "tag": "0018_collapse_desk_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785888000002,
+      "tag": "0019_ping_cooldown_index",
+      "breakpoints": true
     }
   ]
 }

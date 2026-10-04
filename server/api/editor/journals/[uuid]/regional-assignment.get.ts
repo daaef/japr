@@ -1,9 +1,9 @@
 import { db } from '#server/db/client'
-import { requireEditorOrCopyDesk } from '#server/utils/permissions'
+import { requireEditor } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 
 export default defineEventHandler(async (event) => {
-  await requireEditorOrCopyDesk(event)
+  await requireEditor(event)
   const uuid = getRouterParam(event, 'uuid')
 
   if (!uuid) {

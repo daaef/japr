@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { and, eq, notInArray } from 'drizzle-orm'
 import { hashPassword } from 'better-auth/crypto'
 import { permissionDefinitions, systemRoles } from '#shared/constants/permissions'
 import { roleKeys, type RoleKey } from '#shared/constants/roles'
@@ -110,6 +111,23 @@ export async function seedSystemData(database: Database, options?: {
           roleId: record.id,
           permissionId
         })
+      }
+    }
+
+    // Diff-aware cleanup: remove permissions from system roles that are no longer
+    // in the code definition. Only touches isSystem roles — custom roles are never pruned.
+    if (role.isSystem) {
+      const desiredPermissionIds = role.permissions
+        .map(name => permissionIdMap.get(name))
+        .filter((id): id is string => id != null)
+
+      if (desiredPermissionIds.length) {
+        await database.delete(rolePermissions).where(
+          and(
+            eq(rolePermissions.roleId, record.id),
+            notInArray(rolePermissions.permissionId, desiredPermissionIds)
+          )
+        )
       }
     }
   }

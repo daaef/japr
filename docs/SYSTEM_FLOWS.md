@@ -9,12 +9,10 @@ Every state/edge below is backed by an actual endpoint or transition table entry
 
 ```mermaid
 stateDiagram-v2
-    [*] --> desk_review : POST /api/journals (author submits)
+    [*] --> in_progress : POST /api/journals (author submits)
 
-    desk_review --> in_progress : editor send-to-review
-    desk_review --> declined : editor desk-decline
-    pending --> in_progress : editor send-to-review
-    pending --> declined : editor desk-decline
+    pending --> in_progress : editor moves to review
+    pending --> declined : editor declines
 
     in_progress --> under_peer_review : >=1 review completed (sync)
     in_progress --> ready_notice : quorum(3) reached (sync)
@@ -90,11 +88,9 @@ sequenceDiagram
 
     A->>API: POST /api/files/upload-token → Blob upload
     A->>API: POST /api/journals (metadata + journalUrl)
-    API->>DB: insert status=desk_review, isDraft=false
-    API->>N: notify editors of new submission
+    API->>DB: insert status=in-progress, isDraft=false
+    API->>N: notify editors of new submission + notify assigners
 
-    E->>API: POST /editor/journals/:uuid/send-to-review
-    API->>DB: status=in-progress
     E->>API: POST .../assign-reviewers
     API->>DB: reviewers rows status=pending, reviewDeadline=+14d
     API->>N: invite each reviewer
@@ -121,11 +117,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    S([Submission: desk_review]) --> D{Desk screen}
-    D -->|out of scope| DD[desk-decline → declined ⛔]
-    D -->|passes| IP[send-to-review → in-progress]
-
-    IP --> AR[assign-reviewers]
+    S([Submission: in-progress]) --> AR[assign-reviewers]
     AR --> RV{Reviewer responses}
 
     RV -->|decline| BF[Backfill required — decline does NOT count toward quorum]

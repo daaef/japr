@@ -8,7 +8,6 @@ import {
   ADMIN_ROLES,
   AUTHOR_ROLES,
   EDITOR_ROLES,
-  EDITOR_ROLES_WITH_COPY_DESK,
   REVIEWER_ROLES,
   editorRoleKeys,
   reviewerRoleKeys
@@ -53,7 +52,8 @@ export async function checkUserPermission(userId: string, resource: string, acti
   const permissionRows = await getUserPermissions(userId)
 
   for (const row of permissionRows) {
-    if (row.roleName === 'admin') {
+    // Sentinel: *:manage bypasses all checks (granted only to admin via seeds).
+    if (row.resource === '*' && row.action === 'manage') {
       return true
     }
 
@@ -122,10 +122,6 @@ export function isEditorRole(roleName: string) {
   return (editorRoleKeys as readonly string[]).includes(roleName)
 }
 
-export function isEditorialProfileRole(roleName: string) {
-  return isEditorRole(roleName) || roleName === 'copy_desk_editor'
-}
-
 export function isReviewerRole(roleName: string) {
   return (reviewerRoleKeys as readonly string[]).includes(roleName)
 }
@@ -138,10 +134,6 @@ export async function requireEditor(event: H3Event) {
   return requireAnyRole(event, [...EDITOR_ROLES])
 }
 
-export async function requireEditorOrCopyDesk(event: H3Event) {
-  return requireAnyRole(event, [...EDITOR_ROLES_WITH_COPY_DESK])
-}
-
 export async function requireReviewer(event: H3Event) {
   return requireAnyRole(event, [...REVIEWER_ROLES])
 }
@@ -152,10 +144,11 @@ export async function requireAuthor(event: H3Event) {
 
 /**
  * Returns every active user who holds the given resource:action permission, either
- * directly through role permissions or implicitly via the `admin` role. Useful for
- * workflow notifications that should reach everyone who can act on an event.
+ * directly through role permissions or implicitly via the sentinel *:manage permission.
+ * Useful for workflow notifications that should reach everyone who can act on an event.
  */
 export async function getUsersWithPermission(resource: string, action: string) {
+  // Roles that hold the specific permission
   const permissionRoleRows = await db
     .select({ roleId: rolePermissions.roleId })
     .from(permissions)
@@ -165,15 +158,20 @@ export async function getUsersWithPermission(resource: string, action: string) {
       eq(permissions.action, action)
     ))
 
-  const permissionRoleIds = permissionRoleRows.map(row => row.roleId)
+  // Roles that hold the sentinel *:manage (superadmin bypass)
+  const sentinelRoleRows = await db
+    .select({ roleId: rolePermissions.roleId })
+    .from(permissions)
+    .innerJoin(rolePermissions, eq(rolePermissions.permissionId, permissions.id))
+    .where(and(
+      eq(permissions.resource, '*'),
+      eq(permissions.action, 'manage')
+    ))
 
-  const adminRoleRows = await db
-    .select({ id: roles.id })
-    .from(roles)
-    .where(eq(roles.name, 'admin'))
-
-  const adminRoleIds = adminRoleRows.map(row => row.id)
-  const roleIds = [...new Set([...permissionRoleIds, ...adminRoleIds])]
+  const roleIds = [...new Set([
+    ...permissionRoleRows.map(row => row.roleId),
+    ...sentinelRoleRows.map(row => row.roleId)
+  ])]
 
   if (!roleIds.length) {
     return []

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
+import { EDITOR_ROLES } from '#shared/constants/roles'
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
+  requiredRoles: EDITOR_ROLES
 })
 
 await navigateTo('/notifications/preferences', { replace: true })

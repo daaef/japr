@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { journals, manuscriptVersions } from '#server/db/schema'
 import { getUserRoles } from '#server/utils/session'
-import { isEditorialProfileRole, isReviewerRole } from '#server/utils/permissions'
+import { isEditorRole, isReviewerRole } from '#server/utils/permissions'
 import { getNextVersionNumber } from '#server/utils/versionNumbering'
 
 const dmp = new DiffMatchPatch()
@@ -25,7 +25,7 @@ async function loadJournalAndRoleNames(userId: string, journalId: string) {
 export async function assertVersionAccess(userId: string, journalId: string) {
   const { journal, roleNames } = await loadJournalAndRoleNames(userId, journalId)
 
-  if (roleNames.includes('admin') || roleNames.some(isEditorialProfileRole)) {
+  if (roleNames.includes('admin') || roleNames.some(isEditorRole)) {
     return journal
   }
 
@@ -54,7 +54,7 @@ export async function assertVersionAccess(userId: string, journalId: string) {
 export async function assertVersionWriteAccess(userId: string, journalId: string) {
   const { journal, roleNames } = await loadJournalAndRoleNames(userId, journalId)
 
-  if (roleNames.includes('admin') || roleNames.some(isEditorialProfileRole)) {
+  if (roleNames.includes('admin') || roleNames.some(isEditorRole)) {
     return journal
   }
 

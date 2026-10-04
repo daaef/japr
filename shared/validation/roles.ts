@@ -12,5 +12,5 @@ export const roleUpdateSchema = z.object({
 })
 
 export const rolePermissionAssignSchema = z.object({
-  permissionIds: z.array(z.string().uuid()).min(1)
+  permissionIds: z.array(z.string().uuid())
 })

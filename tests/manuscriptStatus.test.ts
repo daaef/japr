@@ -48,9 +48,10 @@ test('status groups expose public, terminal, and review-stage states', () => {
 })
 
 test('canTransitionManuscriptStatus follows the allowed transition table', () => {
+  // desk_review is legacy — no transitions allowed from it anymore
   assert.equal(
     canTransitionManuscriptStatus(MANUSCRIPT_STATUS.DESK_REVIEW, MANUSCRIPT_STATUS.IN_PROGRESS),
-    true
+    false
   )
   assert.equal(
     canTransitionManuscriptStatus(MANUSCRIPT_STATUS.DECLINED, MANUSCRIPT_STATUS.CHANGES_REQUESTED),

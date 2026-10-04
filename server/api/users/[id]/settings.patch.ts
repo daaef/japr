@@ -8,7 +8,7 @@ import { users } from '#server/db/schema'
 
 import { requireSession, getUserRoles } from '#server/utils/session'
 
-import { isEditorialProfileRole, isReviewerRole } from '#server/utils/permissions'
+import { isEditorRole, isReviewerRole } from '#server/utils/permissions'
 
 import { userSettingsSchema } from '#shared/validation/users'
 
@@ -22,7 +22,7 @@ type SettingsBody = z.infer<typeof userSettingsSchema>
 
 function filterSettingsByRoles(body: SettingsBody, roleNames: string[]): SettingsBody {
 
-  const canEditEditorFields = roleNames.some(role => isEditorialProfileRole(role))
+  const canEditEditorFields = roleNames.some(role => isEditorRole(role))
 
   const canEditReviewerFields = roleNames.some(role => isReviewerRole(role))
 

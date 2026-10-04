@@ -6,7 +6,7 @@ import { journals } from '#server/db/schema'
 import { notifyEditorsOfReviewerSuggestions } from '#server/utils/editorNotifications'
 import { logAdminAction } from '#server/utils/adminAudit'
 import { assertManuscriptStatus, assertReviewerStatus } from '#server/utils/journalWorkflow'
-import { requireReviewer } from '#server/utils/permissions'
+import { requirePermission, requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
@@ -38,6 +38,7 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const session = await requireReviewer(event)
+  await requirePermission(event, 'review', 'feedback')
   const body = bodySchema.parse(await readBody(event))
 
   const journal = await getJournalById(body.journalId)

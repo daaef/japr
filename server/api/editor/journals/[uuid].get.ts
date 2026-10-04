@@ -1,10 +1,10 @@
 import { getRouterParam } from 'h3'
 import { getJournalDetails } from '#server/utils/submissions'
-import { requireEditorOrCopyDesk } from '#server/utils/permissions'
+import { requireEditor } from '#server/utils/permissions'
 import { getReviewConsensus, hasReviewQuorum } from '#server/utils/journalWorkflow'
 
 export default defineEventHandler(async (event) => {
-  await requireEditorOrCopyDesk(event)
+  await requireEditor(event)
   const uuid = getRouterParam(event, 'uuid')
 
   if (!uuid) {

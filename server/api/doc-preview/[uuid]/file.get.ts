@@ -5,7 +5,7 @@ import { reviewers } from '#server/db/schema'
 import { getStoredFile } from '#server/utils/files'
 import { getCurrentUserContext } from '#server/utils/session'
 import { getJournalById } from '#server/utils/submissions'
-import { isEditorialProfileRole } from '#server/utils/permissions'
+import { isEditorRole } from '#server/utils/permissions'
 import { resolveManuscriptPreviewFile } from '#server/utils/manuscriptPreviewFile'
 
 export default defineEventHandler(async (event) => {
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
   const userId = context.session.user.id
   const isOwner = journal.userId === userId
-  const isEditor = context.roles.some(role => isEditorialProfileRole(role))
+  const isEditor = context.roles.some(role => isEditorRole(role))
   let isAssignedReviewer = false
 
   if (!isOwner && !isEditor) {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
+import { EDITOR_ROLES } from '#shared/constants/roles'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
   layout: 'copy-desk',
   middleware: ['auth', 'role'],
-  requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
+  requiredRoles: EDITOR_ROLES
 })
 
 const publishingId = ref<string | null>(null)
