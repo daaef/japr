@@ -328,40 +328,40 @@ function describeValidationError(error: unknown): string | null {
 }
 
 const createSubmission = handleSubmit(async (values) => {
-  if (!agreePolicy.value) {
-    errorMessage.value = 'Please confirm that you have not published this article elsewhere.'
-    return
-  }
-
-  if (!reviewPolicyAccepted.value && !reviewPolicyAcceptedLocally.value) {
-    errorMessage.value = 'Please accept the JAPR Review Policy before submitting your manuscript.'
-    showReviewPolicyModal.value = true
-    return
-  }
-
-  if (availableSubCategories.value.length > 0 && !values.subCategoryId) {
-    errorMessage.value = 'Please select a sub-category.'
-    return
-  }
-
-  if (!uploadedFile.value && selectedFile.value) {
-    await uploadFile()
-    if (!uploadedFile.value) {
-      // uploadFile() already set errorMessage with the real server reason; don't mask it.
-      return
-    }
-  }
-
-  if (!uploadedFile.value) {
-    errorMessage.value = 'Please upload your manuscript file.'
-    return
-  }
-
   loading.value = true
   showLoadingOverlay.value = true
   errorMessage.value = ''
 
   try {
+    if (!agreePolicy.value) {
+      errorMessage.value = 'Please confirm that you have not published this article elsewhere.'
+      return
+    }
+
+    if (!reviewPolicyAccepted.value && !reviewPolicyAcceptedLocally.value) {
+      errorMessage.value = 'Please accept the JAPR Review Policy before submitting your manuscript.'
+      showReviewPolicyModal.value = true
+      return
+    }
+
+    if (availableSubCategories.value.length > 0 && !values.subCategoryId) {
+      errorMessage.value = 'Please select a sub-category.'
+      return
+    }
+
+    if (!uploadedFile.value && selectedFile.value) {
+      await uploadFile()
+      if (!uploadedFile.value) {
+        // uploadFile() already set errorMessage with the real server reason; don't mask it.
+        return
+      }
+    }
+
+    if (!uploadedFile.value) {
+      errorMessage.value = 'Please upload your manuscript file.'
+      return
+    }
+
     const response = await $fetch<{ journal: { id: string } }>('/api/journals', {
       method: 'POST',
       body: {

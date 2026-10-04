@@ -11,16 +11,28 @@ function queryStringArray(value: unknown) {
 }
 
 export const journalCreateSchema = z.object({
-  title: z.string().trim().min(5).max(255),
-  author: z.string().trim().min(3).max(255),
-  description: z.string().trim().min(20).max(4000),
-  abstract: z.string().trim().min(50).max(12000),
-  country: z.string().trim().min(2).max(120),
-  institution: z.string().trim().max(255).optional().nullable(),
-  journalLanguage: z.enum(['American English', 'British English', 'French']),
-  categoryId: z.string().uuid().optional().nullable(),
-  subCategoryId: z.string().uuid().optional().nullable(),
-  subSubCategoryId: z.string().uuid().optional().nullable(),
+  title: z.string().trim()
+    .min(5, 'Title must be at least 5 characters.')
+    .max(255, 'Title must be no more than 255 characters.'),
+  author: z.string().trim()
+    .min(3, 'Author name must be at least 3 characters.')
+    .max(255, 'Author name must be no more than 255 characters.'),
+  description: z.string().trim()
+    .min(20, 'Description must be at least 20 characters.')
+    .max(4000, 'Description must be no more than 4,000 characters.'),
+  abstract: z.string().trim()
+    .min(50, 'Abstract must be at least 50 characters (roughly 1\u20132 sentences).')
+    .max(12000, 'Abstract must be no more than 12,000 characters.'),
+  country: z.string().trim()
+    .min(2, 'Please select or enter your country.')
+    .max(120, 'Country name must be no more than 120 characters.'),
+  institution: z.string().trim().max(255, 'Institution must be no more than 255 characters.').optional().nullable(),
+  journalLanguage: z.enum(['American English', 'British English', 'French'], {
+    message: 'Please select a language.'
+  }),
+  categoryId: z.string().uuid('Please select a category.').optional().nullable(),
+  subCategoryId: z.string().uuid('Invalid subcategory selection.').optional().nullable(),
+  subSubCategoryId: z.string().uuid('Invalid sub-subcategory selection.').optional().nullable(),
   metaTitle: z.string().trim().max(255).optional().nullable(),
   metaKeywords: z.string().trim().max(255).optional().nullable(),
   metaDescription: z.string().trim().max(255).optional().nullable(),
