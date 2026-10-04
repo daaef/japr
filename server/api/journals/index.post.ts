@@ -107,6 +107,7 @@ export default defineEventHandler(async (event) => {
       title: createdJournal.title,
       abstract: createdJournal.abstract ?? '',
       content: createdJournal.description,
+      journalUrl: createdJournal.journalUrl,
       createdBy: session.user.id,
       status: 'submitted'
     })

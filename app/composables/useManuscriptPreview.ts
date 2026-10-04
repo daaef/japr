@@ -12,6 +12,7 @@ export function useManuscriptPreview(
   options?: {
     enabled?: MaybeRefOrGetter<boolean>
     hasFile?: MaybeRefOrGetter<boolean>
+    versionId?: MaybeRefOrGetter<string | undefined | null>
   }
 ) {
   const previewTitle = ref('')
@@ -39,6 +40,7 @@ export function useManuscriptPreview(
     const id = toValue(journalId)
     const enabled = options?.enabled === undefined ? true : toValue(options.enabled)
     const hasFile = options?.hasFile === undefined ? true : toValue(options.hasFile)
+    const versionId = options?.versionId ? toValue(options.versionId) : undefined
 
     if (!enabled || !id) {
       return
@@ -52,7 +54,10 @@ export function useManuscriptPreview(
     previewPending.value = true
 
     try {
-      const meta = await $fetch<PreviewMeta>(`/api/doc-preview/${id}`)
+      const previewUrl = versionId
+        ? `/api/doc-preview/${id}/versions/${versionId}`
+        : `/api/doc-preview/${id}`
+      const meta = await $fetch<PreviewMeta>(previewUrl)
 
       previewTitle.value = meta.title
 
@@ -77,7 +82,12 @@ export function useManuscriptPreview(
   }
 
   watch(
-    () => [toValue(journalId), toValue(options?.enabled), toValue(options?.hasFile)],
+    () => [
+      toValue(journalId),
+      options?.enabled ? toValue(options.enabled) : undefined,
+      options?.hasFile ? toValue(options.hasFile) : undefined,
+      options?.versionId ? toValue(options.versionId) : undefined
+    ],
     () => {
       loadPreview()
     },

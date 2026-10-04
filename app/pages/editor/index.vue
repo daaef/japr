@@ -46,7 +46,6 @@ const isSeniorEditor = computed(() =>
 
 const canPublish = computed(() => can('journal', 'publish'))
 const canCopyEdit = computed(() => can('journal', 'copy_edit'))
-const canAssignReviewers = computed(() => can('reviewer', 'assign'))
 
 const displayName = computed(() => currentUser.value.user?.name.split(/\s+/)[0] ?? 'there')
 
@@ -225,19 +224,53 @@ const summary = computed(() => summaryData.value.summary)
       </div>
 
       <div
-        v-if="canAssignReviewers && (summary.pendingQueue > 0 || summary.changesRequested > 0)"
+        v-if="can('journal', 'approve') && summary.pendingQueue > 0"
         class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-warning-200 bg-warning-50 px-6 py-5.5"
       >
         <div>
           <h4 class="mb-1 text-[15px] font-bold text-highlighted">
-            Desk Review Queue
+            Documents Pending Review
           </h4>
           <p class="text-sm text-warning-900">
-            {{ summary.pendingQueue + summary.changesRequested }} manuscript(s) need initial or revised desk review.
+            {{ summary.pendingQueue }} manuscript(s) are awaiting desk review.
           </p>
         </div>
         <UButton to="/editor/submissions" color="warning" class="shrink-0">
           Review Submissions
+        </UButton>
+      </div>
+
+      <div
+        v-if="can('reviewer', 'assign') && summary.inProgress > 0"
+        class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-info-200 bg-info-50 px-6 py-5.5"
+      >
+        <div>
+          <h4 class="mb-1 text-[15px] font-bold text-highlighted">
+            Manuscripts Waiting for Reviewer Assignment
+          </h4>
+          <p class="text-sm text-info-900">
+            {{ summary.inProgress }} manuscript(s) have been sent to peer review and need reviewers assigned.
+          </p>
+        </div>
+        <UButton to="/editor/in-progress" color="info" class="shrink-0">
+          Assign Reviewers
+        </UButton>
+      </div>
+
+      <div
+        v-if="can('reviewer', 'assign') && summary.underPeerReview > 0"
+        class="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-primary-200 bg-primary-50 px-6 py-5.5"
+      >
+        <div>
+          <h4 class="mb-1 text-[15px] font-bold text-highlighted">
+            Manuscripts Under Peer Review
+          </h4>
+          <p class="text-sm text-primary-900">
+            {{ summary.underPeerReview }} manuscript(s) are currently under peer review.
+          </p>
+        </div>
+        <UButton to="/editor/under-peer-review" color="primary" class="shrink-0">
+          View Reviews
         </UButton>
       </div>
 

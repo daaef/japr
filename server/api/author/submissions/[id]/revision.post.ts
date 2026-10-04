@@ -82,12 +82,15 @@ export default defineEventHandler(async (event) => {
       await markFileAttached(body.journalUrl, journal.id, tx)
     }
 
+    const versionJournalUrl = body.journalUrl ?? journal.journalUrl ?? null
+
     await tx.insert(manuscriptVersions).values({
       journalId: journal.id,
       versionNumber: getNextVersionNumber(versions),
       title: body.title ?? journal.title,
       abstract: body.abstract ?? journal.abstract ?? '',
       content: body.content,
+      journalUrl: versionJournalUrl,
       changesSummary: body.changesSummary,
       createdBy: session.user.id,
       parentVersionId: versions.at(-1)?.id,

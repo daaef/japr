@@ -2,6 +2,7 @@ import { eq, inArray } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { roles, userRoles, users } from '#server/db/schema'
 import { sendAllReviewsCompleteEmail, sendChangeResolvedEmail, sendEmail, sendReviewResponseEmail, sendRevisionUploadedEmail } from '#server/utils/email'
+import { getUsersWithPermission } from '#server/utils/permissions'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
 import { EDITOR_ROLES } from '#shared/constants/roles'
@@ -65,6 +66,44 @@ export async function notifyEditorsOfReviewResponse(
         journal.title,
         action
       )
+    ).catch(() => undefined)
+  ))
+}
+
+export async function notifyAssignersOfReviewStart(journalId: string) {
+  const journal = await db.query.journals.findFirst({
+    where: (table, { eq }) => eq(table.id, journalId)
+  })
+
+  if (!journal) {
+    return
+  }
+
+  const assigners = await getUsersWithPermission('reviewer', 'assign')
+
+  if (!assigners.length) {
+    return
+  }
+
+  await createNotifications(assigners.map(user => ({
+    userId: user.id,
+    type: 'review-start',
+    data: {
+      title: 'Ready for reviewer assignment',
+      message: `"${journal.title}" has been sent to peer review and is ready for reviewer assignment.`,
+      journalId: journal.id,
+      action_url: `/editor/journals/${journal.id}`
+    }
+  })))
+
+  await Promise.all(assigners.map(user =>
+    sendIfEmailAllowed(user.id, 'manuscript_status', () =>
+      sendEmail({
+        to: user.email,
+        subject: `Ready for reviewer assignment: ${journal.title}`,
+        html: `<p>Hello ${escapeHtml(user.fullname)},</p>
+          <p>The manuscript <strong>${escapeHtml(journal.title)}</strong> has been sent to peer review and is ready for reviewer assignment.</p>`
+      })
     ).catch(() => undefined)
   ))
 }

@@ -17,6 +17,7 @@ export const manuscriptVersions = pgTable('manuscript_versions', {
   title: text('title').notNull(),
   abstract: text('abstract').notNull(),
   content: text('content').notNull(),
+  journalUrl: text('journal_url'),
   changesSummary: text('changes_summary'),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
   parentVersionId: uuid('parent_version_id'),

@@ -15,7 +15,19 @@ export default defineEventHandler(async (event) => {
   await assertVersionAccess(session.user.id, journalId)
 
   const version = await db.query.manuscriptVersions.findFirst({
-    where: (table, { and, eq }) => and(eq(table.journalId, journalId), eq(table.id, versionId))
+    where: (table, { and, eq }) => and(eq(table.journalId, journalId), eq(table.id, versionId)),
+    columns: {
+      id: true,
+      journalId: true,
+      versionNumber: true,
+      title: true,
+      abstract: true,
+      content: true,
+      journalUrl: true,
+      changesSummary: true,
+      status: true,
+      createdAt: true
+    }
   })
 
   if (!version) {

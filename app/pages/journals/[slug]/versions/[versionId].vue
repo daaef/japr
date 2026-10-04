@@ -17,6 +17,7 @@ const { data, pending, error, refresh } = await useFetch<{
     title: string
     abstract: string | null
     content: string
+    journalUrl: string | null
     changesSummary: string | null
     status: string
     createdAt: string
@@ -28,6 +29,8 @@ const { data, pending, error, refresh } = await useFetch<{
     watch: [journalId, versionId]
   }
 )
+
+const previewOpen = ref(false)
 </script>
 
 <template>
@@ -44,6 +47,22 @@ const { data, pending, error, refresh } = await useFetch<{
         </UButton>
         <UButton :to="`/journals/${slug}/versions/compare`" color="primary">
           Compare versions
+        </UButton>
+        <UButton
+          v-if="data?.version.journalUrl"
+          color="info"
+          variant="outline"
+          @click="previewOpen = true"
+        >
+          Preview manuscript file
+        </UButton>
+        <UButton
+          v-if="data?.version.journalUrl"
+          :to="`/api/journals/${journalId}/versions/${versionId}/download`"
+          color="success"
+          variant="outline"
+        >
+          Download this version
         </UButton>
       </div>
     </UCard>
@@ -71,5 +90,13 @@ const { data, pending, error, refresh } = await useFetch<{
         {{ data.version.content }}
       </div>
     </UCard>
+
+    <DocumentPreview
+      v-if="journalData?.journal.id && data?.version.journalUrl"
+      v-model:open="previewOpen"
+      :uuid="journalData.journal.id"
+      :title="data.version.title"
+      :version-id="versionId"
+    />
   </div>
 </template>

@@ -2,6 +2,7 @@
 const props = defineProps<{
   uuid: string
   title: string
+  versionId?: string
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
@@ -15,7 +16,7 @@ const {
   reloadPreview
 } = useManuscriptPreview(
   computed(() => props.uuid),
-  { enabled: open }
+  { enabled: open, versionId: computed(() => props.versionId) }
 )
 
 watch(open, (value) => {

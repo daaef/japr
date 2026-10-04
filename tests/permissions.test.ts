@@ -126,3 +126,18 @@ test('derivePermissionActions gives managing_editor and editor_in_chief disjoint
   assert.equal(managingEditorActions.includes('journal:request_revisions'), true)
   assert.equal(editorInChiefActions.includes('journal:request_revisions'), true)
 })
+
+test('send-to-review notification and dashboard alerts rely on expected disjoint permissions', () => {
+  const managingEditorActions = derivePermissionActions(rowsForRole('managing_editor'))
+  const editorInChiefActions = derivePermissionActions(rowsForRole('editor_in_chief'))
+
+  // The "documents pending review" alert is EIC-only because only the EIC can click
+  // "Send to review" (journal:approve).
+  assert.equal(editorInChiefActions.includes('journal:approve'), true)
+  assert.equal(managingEditorActions.includes('journal:approve'), false)
+
+  // The "waiting for assignment" and "under peer review" alerts are ME-only because
+  // reviewer assignment is the ME's operational duty (reviewer:assign).
+  assert.equal(managingEditorActions.includes('reviewer:assign'), true)
+  assert.equal(editorInChiefActions.includes('reviewer:assign'), false)
+})

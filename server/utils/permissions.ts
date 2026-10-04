@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { db } from '#server/db/client'
 import { permissions, rolePermissions, roles, userRoles } from '#server/db/schema'
@@ -148,4 +148,44 @@ export async function requireReviewer(event: H3Event) {
 
 export async function requireAuthor(event: H3Event) {
   return requireAnyRole(event, [...AUTHOR_ROLES])
+}
+
+/**
+ * Returns every active user who holds the given resource:action permission, either
+ * directly through role permissions or implicitly via the `admin` role. Useful for
+ * workflow notifications that should reach everyone who can act on an event.
+ */
+export async function getUsersWithPermission(resource: string, action: string) {
+  const permissionRoleRows = await db
+    .select({ roleId: rolePermissions.roleId })
+    .from(permissions)
+    .innerJoin(rolePermissions, eq(rolePermissions.permissionId, permissions.id))
+    .where(and(
+      eq(permissions.resource, resource),
+      eq(permissions.action, action)
+    ))
+
+  const permissionRoleIds = permissionRoleRows.map(row => row.roleId)
+
+  const adminRoleRows = await db
+    .select({ id: roles.id })
+    .from(roles)
+    .where(eq(roles.name, 'admin'))
+
+  const adminRoleIds = adminRoleRows.map(row => row.id)
+  const roleIds = [...new Set([...permissionRoleIds, ...adminRoleIds])]
+
+  if (!roleIds.length) {
+    return []
+  }
+
+  return db
+    .selectDistinct({
+      id: users.id,
+      email: users.email,
+      fullname: users.fullname
+    })
+    .from(userRoles)
+    .innerJoin(users, eq(userRoles.userId, users.id))
+    .where(inArray(userRoles.roleId, roleIds))
 }

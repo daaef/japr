@@ -27,7 +27,10 @@ const REQUIRED_COLUMNS: Array<{ table: string, column: string, migration: string
   // 0016_review_rounds — every reviewer query in the review workflow filters on these two;
   // without them syncJournalReviewStatus and the approve quorum gate 500 on every call.
   { table: 'journals', column: 'current_review_round', migration: '0016_review_rounds' },
-  { table: 'reviewers', column: 'round_number', migration: '0016_review_rounds' }
+  { table: 'reviewers', column: 'round_number', migration: '0016_review_rounds' },
+  // 0017_version_file_urls — version detail / preview / download endpoints read this to
+  // show the file that belonged to a specific version rather than the current journal file.
+  { table: 'manuscript_versions', column: 'journal_url', migration: '0017_version_file_urls' }
 ]
 
 const REQUIRED_ENUM_VALUES: Array<{ enumName: string, value: string, migration: string }> = [

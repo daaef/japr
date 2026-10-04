@@ -106,6 +106,7 @@ export async function revertToVersion(journalId: string, versionId: string, user
     title: source.title,
     abstract: source.abstract,
     content: source.content,
+    journalUrl: source.journalUrl,
     changesSummary: `Reverted from version ${source.versionNumber}`,
     createdBy: userId,
     parentVersionId: source.id,
@@ -116,6 +117,7 @@ export async function revertToVersion(journalId: string, versionId: string, user
     title: source.title,
     abstract: source.abstract,
     description: source.content,
+    journalUrl: source.journalUrl ?? undefined,
     updatedAt: new Date()
   }).where(eq(journals.id, journalId))
 
