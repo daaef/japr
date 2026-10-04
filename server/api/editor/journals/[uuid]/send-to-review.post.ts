@@ -3,6 +3,7 @@ import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { notifyAuthorOfManuscriptStatus } from '#server/utils/manuscriptStatusNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -32,6 +33,14 @@ export default defineEventHandler(async (event) => {
   }).where(eq(journals.id, journal.id))
 
   await notifyAuthorOfManuscriptStatus(journal.id, MANUSCRIPT_STATUS.IN_PROGRESS)
+
+  await logAdminAction(event, {
+    action: 'manuscript_sent_to_review',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Sent "${journal.title}" to peer review`,
+    metadata: { status: MANUSCRIPT_STATUS.IN_PROGRESS }
+  })
 
   return { ok: true }
 })

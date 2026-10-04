@@ -35,7 +35,8 @@ export async function notifyAuthorOfManuscriptStatus(journalId: string, status: 
       title: 'Manuscript status updated',
       journalId: journal.id,
       status,
-      message
+      message,
+      action_url: `/author/submissions/${journal.id}`
     }
   })
 
@@ -81,7 +82,8 @@ export async function notifyReviewersOfFinalDecision(journalId: string, status: 
       title: 'Final decision recorded',
       journalId: journal.id,
       status,
-      message
+      message,
+      action_url: `/reviewer/journals/${journal.id}/review`
     }
   })))
 

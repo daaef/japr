@@ -3,6 +3,7 @@ import { EDITOR_ROLES_WITH_COPY_DESK } from '#shared/constants/roles'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
+  layout: 'copy-desk',
   middleware: ['auth', 'role'],
   requiredRoles: EDITOR_ROLES_WITH_COPY_DESK
 })
@@ -22,6 +23,7 @@ async function markPublished(journalId: string, refresh: () => Promise<void>) {
     await $fetch(`/api/editor/journals/${journalId}/mark-published`, { method: 'POST' })
     // Published manuscripts leave the approved/copy-desk queue.
     await refresh()
+    await refreshNuxtData('editor-dashboard-summary')
   } catch (error) {
     errorMessage.value = extractApiErrorMessage(error, 'Unable to publish this manuscript.')
   } finally {

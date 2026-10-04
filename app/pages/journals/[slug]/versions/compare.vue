@@ -103,6 +103,7 @@ async function runCompare() {
       </h2>
       <!-- Safe only because the server's diff_prettyHtml HTML-escapes the diffed text
            before wrapping it in <ins>/<del> — see compareVersionTexts in versions.ts. -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <div
         class="prose mt-4 max-w-none text-sm"
         v-html="compareResult.html"

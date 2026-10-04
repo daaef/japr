@@ -4,7 +4,7 @@
  * in the same flow don't repeat the login dance.
  */
 
-import { type Page, expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync, mkdirSync } from 'node:fs'

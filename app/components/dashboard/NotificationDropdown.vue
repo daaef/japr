@@ -16,7 +16,7 @@ const loading = ref(false)
 const errorMessage = ref('')
 const items = ref<DropdownNotification[]>([])
 
-const { unreadCount, refreshUnreadCount } = useNotifications()
+const { unreadCount, refreshUnreadCount } = await useNotifications()
 
 // Legacy Phosphor icon-font names stored on historical notification rows;
 // only these three values are ever written (grepped every notification

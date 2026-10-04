@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -73,6 +74,14 @@ export default defineEventHandler(async (event) => {
   // syncJournalReviewStatus (fires once, only on a real transition). Here we
   // just notify the editors that this reviewer declined.
   await notifyEditorsOfReviewResponse(journal.id, session.user.id, 'declined')
+
+  await logAdminAction(event, {
+    action: 'review_declined',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Reviewer declined invitation for "${journal.title}" with comment`,
+    metadata: { journalId: journal.id, roundNumber: reviewer.roundNumber }
+  })
 
   return { ok: true, approvalStatus }
 })

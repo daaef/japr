@@ -5,8 +5,6 @@ import type { Page } from '@playwright/test'
 import {
   test,
   expect,
-  env,
-  loginAs,
   navigateTo,
   expectPath,
   expectVisible,

@@ -47,7 +47,20 @@ const { data: recentData } = await useFetch<{
 const homepageStats = computed(() => statsData.value.stats)
 const recentJournals = computed(() => recentData.value?.journals ?? [])
 const search = ref('')
-const submitHref = computed(() => currentUser.value?.authenticated ? '/author/submit' : '/auth/login')
+
+const canSubmitManuscript = computed(() => {
+  if (!currentUser.value?.authenticated) {
+    return true
+  }
+  return currentUser.value.roles.includes('author') || currentUser.value.roles.includes('admin')
+})
+
+const submitHref = computed(() => {
+  if (currentUser.value?.authenticated && canSubmitManuscript.value) {
+    return '/author/submit'
+  }
+  return '/auth/login'
+})
 
 const editorialBoardTeaser = [editorInChief, managingEditor, deskEditor, associateEditors[0]!]
 
@@ -58,6 +71,23 @@ const accessDeniedPath = computed(() => {
 
   const from = route.query.from
   return typeof from === 'string' ? from : ''
+})
+
+const toast = useToast()
+onMounted(() => {
+  const path = accessDeniedPath.value
+  if (!path) {
+    return
+  }
+
+  toast.add({
+    title: 'Access denied',
+    description: `You do not have permission to access ${path}. Please switch to an account with the required dashboard role.`,
+    color: 'error',
+    icon: 'i-lucide-circle-alert'
+  })
+
+  router.replace({ query: {} })
 })
 
 function submitSearch(event: Event) {
@@ -84,20 +114,6 @@ function displayStat(value: number) {
 
 <template>
   <div>
-    <UAlert
-      v-if="accessDeniedPath"
-      color="error"
-      variant="subtle"
-      icon="i-lucide-circle-alert"
-      class="fixed left-1/2 top-24 z-2100 w-[min(92vw,640px)] -translate-x-1/2 shadow-lg"
-    >
-      <template #description>
-        You do not have permission to access
-        <span class="font-semibold">{{ accessDeniedPath }}</span>.
-        Please switch to an account with the required dashboard role.
-      </template>
-    </UAlert>
-
     <!-- hero -->
     <section class="mx-auto w-full max-w-7xl px-4 pt-14 sm:px-6 lg:px-8">
       <div class="grid items-center gap-10 overflow-hidden rounded-[28px] bg-primary-900 lg:grid-cols-[1.05fr_0.95fr]">
@@ -172,7 +188,7 @@ function displayStat(value: number) {
           class="flex flex-col gap-3.5 rounded-2xl border border-default p-7"
         >
           <h3 class="font-serif text-xl leading-snug font-semibold">
-            <NuxtLink :to="`/journals/${journal.slug}`" class="text-highlighted hover:text-primary-700">
+            <NuxtLink :to="`/journals/${journal.slug}?from=home`" class="text-highlighted hover:text-primary-700">
               {{ journal.title }}
             </NuxtLink>
           </h3>
@@ -180,8 +196,8 @@ function displayStat(value: number) {
             {{ journal.abstract || 'No abstract provided.' }}
           </p>
           <div class="mt-1 flex items-center justify-between border-t border-taupe-100 pt-3.5">
-            <span class="text-xs text-dimmed">{{ journal.author }} · {{ new Date(journal.createdAt).toLocaleDateString() }}</span>
-            <NuxtLink :to="`/journals/${journal.slug}`" class="text-xs font-bold text-primary-600 hover:text-primary-700">
+            <span class="text-xs text-dimmed">{{ journal.author }} · {{ formatDate(journal.createdAt) }}</span>
+            <NuxtLink :to="`/journals/${journal.slug}?from=home`" class="text-xs font-bold text-primary-600 hover:text-primary-700">
               Read →
             </NuxtLink>
           </div>
@@ -351,7 +367,13 @@ function displayStat(value: number) {
             Submit your manuscript for peer review — decisions typically within 8–10 weeks.
           </p>
         </div>
-        <UButton :to="submitHref" color="primary" size="lg" class="shrink-0">
+        <UButton
+          v-if="canSubmitManuscript"
+          :to="submitHref"
+          color="primary"
+          size="lg"
+          class="shrink-0"
+        >
           Submit Manuscript
         </UButton>
       </div>

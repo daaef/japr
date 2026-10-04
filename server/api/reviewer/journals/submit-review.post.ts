@@ -3,6 +3,7 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsAllReviewsComplete } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -66,6 +67,19 @@ export default defineEventHandler(async (event) => {
   if (allComplete || approvalStatus === MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE) {
     await notifyEditorsAllReviewsComplete(reviewer.journalId)
   }
+
+  await logAdminAction(event, {
+    action: 'review_submitted',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Review submitted for journal ${reviewer.journalId}`,
+    metadata: {
+      journalId: reviewer.journalId,
+      roundNumber: reviewer.roundNumber,
+      recommendation: body.recommendation,
+      rating: body.rating
+    }
+  })
 
   // The author hears about review progress through the centralized
   // manuscript-status-changed notification emitted by syncJournalReviewStatus,

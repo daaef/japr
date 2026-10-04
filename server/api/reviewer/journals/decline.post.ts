@@ -3,6 +3,7 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { assertReviewerStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { findReviewerInvitation } from '#server/utils/reviewerInvitation'
 import { requireSession } from '#server/utils/session'
@@ -41,6 +42,14 @@ export default defineEventHandler(async (event) => {
 
   await syncJournalReviewStatus(reviewer.journalId)
   await notifyEditorsOfReviewResponse(reviewer.journalId, session.user.id, 'declined')
+
+  await logAdminAction(event, {
+    action: 'review_declined',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Reviewer declined invitation for journal ${reviewer.journalId}`,
+    metadata: { journalId: reviewer.journalId, roundNumber: reviewer.roundNumber }
+  })
 
   return { ok: true }
 })

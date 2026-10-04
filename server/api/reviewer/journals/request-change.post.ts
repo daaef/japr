@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { notifyEditorsOfReviewerSuggestions } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { assertManuscriptStatus, assertReviewerStatus } from '#server/utils/journalWorkflow'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
@@ -16,10 +17,19 @@ import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 const MAX_CHANGE_REQUESTS = 50
 
 const changeSchema = z.object({
-  field: z.enum(['title', 'abstract', 'description']),
+  field: z.enum(['title', 'abstract', 'description', 'manuscript_content']),
   suggestedChange: z.string().trim().min(1).max(10000),
+  page: z.number().int().min(1).optional(),
+  line: z.number().int().min(1).optional(),
+  originalExcerpt: z.string().trim().max(10000).optional(),
   comment: z.string().trim().max(2000).optional()
-})
+}).refine(
+  (data) => {
+    if (data.field !== 'manuscript_content') return true
+    return data.page != null || data.line != null || Boolean(data.originalExcerpt?.trim())
+  },
+  { message: 'Page, line, or original excerpt is required for manuscript content changes' }
+)
 
 const bodySchema = z.object({
   journalId: z.string().uuid(),
@@ -77,13 +87,19 @@ export default defineEventHandler(async (event) => {
   }
 
   for (const change of body.changes) {
-    const currentValue = String(journal[change.field] ?? '')
+    const currentValue = change.field === 'manuscript_content'
+      ? null
+      : String(journal[change.field] ?? '')
     existing.push({
       field: change.field,
       current_value: currentValue,
       suggested_change: change.suggestedChange,
       comment: change.comment ?? null,
+      page: change.page ?? null,
+      line: change.line ?? null,
+      original_excerpt: change.originalExcerpt ?? null,
       reviewer_id: session.user.id,
+      round_number: journal.currentReviewRound,
       status: 'pending',
       timestamp
     })
@@ -102,6 +118,18 @@ export default defineEventHandler(async (event) => {
   // the editor formally requests revisions (request-revisions.post.ts). Editors instead
   // get an in-app heads-up that reviewer suggestions have landed.
   await notifyEditorsOfReviewerSuggestions(journal.id, session.user.id)
+
+  await logAdminAction(event, {
+    action: 'review_change_requested',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Reviewer suggested ${body.changes.length} change(s) for "${journal.title}"`,
+    metadata: {
+      journalId: journal.id,
+      roundNumber: reviewer.roundNumber,
+      changeCount: body.changes.length
+    }
+  })
 
   return { ok: true }
 })

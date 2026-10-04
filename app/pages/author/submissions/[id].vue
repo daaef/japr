@@ -71,6 +71,9 @@ const { data: feedbackData, refresh: refreshFeedback } = await useFetch<{
     comment?: string | null
     status?: string
     timestamp?: string
+    page?: number | null
+    line?: number | null
+    original_excerpt?: string | null
   }>
   reviewerFeedback: Array<{
     id: string
@@ -188,6 +191,10 @@ const pendingChangeRequests = computed(() =>
   feedbackData.value.changeRequests.filter(item => item.status === 'pending' && item.field)
 )
 
+const fieldChangeRequests = computed(() =>
+  pendingChangeRequests.value.filter(item => item.field !== 'manuscript_content')
+)
+
 async function submitChangeRequestUpdates() {
   actionLoading.value = true
   errorMessage.value = ''
@@ -292,7 +299,7 @@ const showRevisionForm = computed(() =>
           Requested changes
         </h2>
         <p class="mt-2 text-sm text-muted">
-          Apply the suggested updates below to resolve editor change requests.
+          Apply the suggested updates below to resolve editor change requests. For corrections inside the document file, upload a revised manuscript under <strong>Submit a revision</strong> and describe the changes in the revision summary.
         </p>
 
         <div class="mt-6 grid gap-4">
@@ -302,8 +309,20 @@ const showRevisionForm = computed(() =>
             class="rounded-2xl border border-warning-200 bg-warning-50 p-5"
           >
             <p class="font-semibold capitalize text-toned">
-              {{ request.field }}
+              {{ request.field === 'manuscript_content' ? 'Manuscript content' : request.field }}
             </p>
+            <div
+              v-if="request.field === 'manuscript_content'"
+              class="mt-2 text-sm text-muted"
+            >
+              <p v-if="request.page">
+                Page: {{ request.page }}<span v-if="request.line">, line {{ request.line }}</span>
+              </p>
+              <p v-else-if="request.line">Line: {{ request.line }}</p>
+              <p v-if="request.original_excerpt" class="mt-1">
+                Original excerpt: <span class="italic">{{ request.original_excerpt }}</span>
+              </p>
+            </div>
             <p
               v-if="request.comment"
               class="mt-2 text-sm text-muted"
@@ -314,7 +333,7 @@ const showRevisionForm = computed(() =>
               Suggested: {{ request.suggested_change }}
             </p>
             <UInput
-              v-if="request.field"
+              v-if="request.field && request.field !== 'manuscript_content'"
               v-model="changeRequestUpdates[request.field]"
               type="text"
               class="mt-3 w-full"
@@ -323,7 +342,7 @@ const showRevisionForm = computed(() =>
           </div>
         </div>
 
-        <UButton color="primary" class="mt-6" :disabled="actionLoading" @click="submitChangeRequestUpdates">
+        <UButton v-if="fieldChangeRequests.length" color="primary" class="mt-6" :disabled="actionLoading" @click="submitChangeRequestUpdates">
           Submit change updates
         </UButton>
       </UCard>

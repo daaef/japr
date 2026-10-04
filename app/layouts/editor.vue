@@ -46,6 +46,7 @@ const defaultEditorSummary = (): EditorDashboardSummary => ({
 })
 
 const { data: dashboardSummary } = await useFetch<{ summary: EditorDashboardSummary }>('/api/editor/dashboard/summary', {
+  key: 'editor-dashboard-summary',
   default: () => ({ summary: defaultEditorSummary() })
 })
 
@@ -140,175 +141,181 @@ const notificationsGroup = useSidebarGroup(['/editor/notifications'])
             </NuxtLink>
           </li>
 
-          <li>
-            <button
-              type="button"
-              class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
-              :class="linkClassDark(journalsGroup.isGroupActive)"
-              :aria-expanded="journalsGroup.open"
-              @click="journalsGroup.toggle"
-            >
-              <UIcon
-                name="i-lucide-graduation-cap"
-                class="text-xl"
-              />
-              <span>Journals</span>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="ms-auto shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-90': journalsGroup.open }"
-              />
-            </button>
-            <ul
-              v-show="journalsGroup.open"
-              class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
-            >
-              <li>
-                <NuxtLink
-                  to="/editor/submissions"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/submissions')"
-                >
-                  <span>Pending Review</span>
-                  <span
-                    v-if="summary.pendingQueue"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+            <li>
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
+                :class="linkClassDark(journalsGroup.isGroupActive)"
+                :aria-expanded="journalsGroup.open"
+                @click="journalsGroup.toggle"
+              >
+                <UIcon
+                  name="i-lucide-graduation-cap"
+                  class="text-xl"
+                />
+                <span>Journals</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="ms-auto shrink-0 transition-transform duration-200"
+                  :class="{ 'rotate-90': journalsGroup.open }"
+                />
+              </button>
+              <ul
+                v-show="journalsGroup.open"
+                class="ms-6 mt-3 flex flex-col gap-3 border-s border-white/10 ps-4"
+              >
+                <li>
+                  <NuxtLink
+                    to="/editor/submissions"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/submissions')"
                   >
-                    {{ summary.pendingQueue }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/under-peer-review"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/under-peer-review')"
-                >
-                  <span>Under Peer Review</span>
-                  <span
-                    v-if="summary.underPeerReview"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Pending Review</span>
+                    <span
+                      v-if="summary.pendingQueue"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.pendingQueue }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/under-peer-review"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/under-peer-review')"
                   >
-                    {{ summary.underPeerReview }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/in-progress"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/in-progress')"
-                >
-                  <span>In Progress</span>
-                  <span
-                    v-if="summary.inProgress"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Under Peer Review</span>
+                    <span
+                      v-if="summary.underPeerReview"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.underPeerReview }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/in-progress"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/in-progress')"
                   >
-                    {{ summary.inProgress }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/reviews"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/reviews')"
-                >
-                  <span>Reviewed</span>
-                  <span
-                    v-if="summary.reviewed"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>In Progress</span>
+                    <span
+                      v-if="summary.inProgress"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.inProgress }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/reviews"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/reviews')"
                   >
-                    {{ summary.reviewed }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li v-if="showReadyForNotice">
-                <NuxtLink
-                  to="/editor/ready-for-notice"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/ready-for-notice')"
-                >
-                  <span>Ready for Notice</span>
-                  <span
-                    v-if="summary.readyForNotice"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Reviewed</span>
+                    <span
+                      v-if="summary.reviewed"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.reviewed }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li v-if="showReadyForNotice">
+                  <NuxtLink
+                    to="/editor/ready-for-notice"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/ready-for-notice')"
                   >
-                    {{ summary.readyForNotice }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/approved"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/approved')"
-                >
-                  <span>Approved</span>
-                  <span
-                    v-if="summary.approved"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Ready for Notice</span>
+                    <span
+                      v-if="summary.readyForNotice"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.readyForNotice }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/approved"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/approved')"
                   >
-                    {{ summary.approved }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/published"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/published')"
-                >
-                  <span>Published</span>
-                  <span
-                    v-if="summary.published"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Approved</span>
+                    <span
+                      v-if="summary.approved"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.approved }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/published"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/published')"
                   >
-                    {{ summary.published }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/revision-requested"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/revision-requested')"
-                >
-                  <span>Revision Requested</span>
-                  <span
-                    v-if="summary.changesRequested"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Published</span>
+                    <span
+                      v-if="summary.published"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.published }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/revision-requested"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/revision-requested')"
                   >
-                    {{ summary.changesRequested }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/declined"
-                  class="flex items-center justify-between gap-2 text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/declined')"
-                >
-                  <span>Declined</span>
-                  <span
-                    v-if="summary.declined"
-                    class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    <span>Revision Requested</span>
+                    <span
+                      v-if="summary.changesRequested"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.changesRequested }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/declined"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/declined')"
                   >
-                    {{ summary.declined }}
-                  </span>
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink
-                  to="/editor/copy-desk"
-                  class="block text-sm"
-                  :class="dashboardSubLinkClassDark('/editor/copy-desk')"
-                >
-                  Copy Desk
-                </NuxtLink>
-              </li>
-            </ul>
-          </li>
+                    <span>Declined</span>
+                    <span
+                      v-if="summary.declined"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.declined }}
+                    </span>
+                  </NuxtLink>
+                </li>
+                <li>
+                  <NuxtLink
+                    to="/editor/copy-desk"
+                    class="flex items-center justify-between gap-2 text-sm"
+                    :class="dashboardSubLinkClassDark('/editor/copy-desk')"
+                  >
+                    <span>Copy Desk</span>
+                    <span
+                      v-if="summary.copyDesk"
+                      class="rounded-full bg-white/12 px-2 py-0.5 text-[10.5px] font-bold text-brick-200"
+                    >
+                      {{ summary.copyDesk }}
+                    </span>
+                  </NuxtLink>
+                </li>
+              </ul>
+            </li>
 
           <li class="border-t border-white/10 pt-5">
             <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Settings</span>

@@ -8,6 +8,7 @@ import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -77,12 +78,21 @@ export default defineEventHandler(async (event) => {
     data: {
       title: 'Manuscript declined',
       journalId: journal.id,
-      message: body.reason
+      message: body.reason,
+      action_url: `/author/submissions/${journal.id}`
     }
   })
 
   // Reviewers who completed a review never learned the outcome (F13d).
   await notifyReviewersOfFinalDecision(journal.id, MANUSCRIPT_STATUS.DECLINED)
+
+  await logAdminAction(event, {
+    action: 'notice_sent',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Decline notice sent for "${journal.title}"`,
+    metadata: { noticeType: 'decline', status: MANUSCRIPT_STATUS.DECLINED }
+  })
 
   return { ok: true }
 })

@@ -3,6 +3,7 @@ import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { notifyAuthorOfManuscriptStatus } from '#server/utils/manuscriptStatusNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requireEditorOrCopyDesk } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -44,6 +45,14 @@ export default defineEventHandler(async (event) => {
   }).where(eq(journals.id, journal.id))
 
   await notifyAuthorOfManuscriptStatus(journal.id, MANUSCRIPT_STATUS.PUBLISHED)
+
+  await logAdminAction(event, {
+    action: 'manuscript_published',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Published manuscript "${journal.title}"`,
+    metadata: { status: MANUSCRIPT_STATUS.PUBLISHED }
+  })
 
   return { ok: true }
 })

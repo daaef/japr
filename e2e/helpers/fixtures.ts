@@ -5,25 +5,9 @@
  * - Common navigation utilities
  */
 
-import { test as base, type Page } from '@playwright/test'
+import { test as base } from '@playwright/test'
 import { env } from './env'
-import { login, hasSavedState, savedStatePath } from './auth'
-
-type Account = { email: string, password: string }
-
-/** Create a page that is logged in as the given account. */
-async function authenticatedPage(
-  browser: ReturnType<typeof base['step']> extends never ? never : never,
-  contextFactory: () => Promise<{ page: Page, context: any }>,
-  account: Account,
-  label: string
-): Promise<Page> {
-  // This is handled per-test via the login helper; the fixture just provides
-  // a convenience wrapper.
-  const { page } = await contextFactory()
-  await login(page, account.email, account.password, label)
-  return page
-}
+import { login } from './auth'
 
 /**
  * Shared test state that persists across tests within a single spec file.

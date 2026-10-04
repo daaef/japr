@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review System Checklist — JAPR</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 { margin: 0 0 0.5rem; font-size: 1.75rem; }
+    h2 {
+      margin: 2rem 0 1rem;
+      font-size: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .intro {
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section h3 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr:hover { background: var(--accent-light); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .check {
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+
+    .done td { text-decoration: line-through; opacity: 0.6; }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .tag-success { background: #dcfce7; color: var(--success); }
+    .tag-failure { background: #fee2e2; color: var(--danger); }
+    .tag-expected { background: #dbeafe; color: var(--accent); }
+
+    .col-task { width: 28%; }
+    .col-change { width: 22%; }
+    .col-expected { width: 28%; }
+    .col-failure { width: 22%; }
+    .col-check { width: 2.5rem; text-align: center; }
+
+    .summary {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      min-width: 140px;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-card span { color: var(--muted); font-size: 0.9rem; }
+
+    @media (max-width: 800px) {
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; }
+      tbody td {
+        position: relative;
+        padding-left: 40%;
+        border-bottom: none;
+      }
+      tbody td::before {
+        position: absolute;
+        left: 0.75rem;
+        top: 0.75rem;
+        width: 35%;
+        font-weight: 600;
+        color: var(--muted);
+        content: attr(data-label);
+      }
+      .col-check { padding-left: 0.75rem !important; text-align: left; }
+      .col-check::before { content: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Review System Checklist</h1>
+    <p class="intro">
+      Manual QA checklist for the JAPR peer-review workflow. Check each row as you verify it.
+    </p>
+
+    <div class="summary">
+      <div class="summary-card">
+        <strong id="total-count">0</strong>
+        <span>Total checks</span>
+      </div>
+      <div class="summary-card">
+        <strong id="done-count">0</strong>
+        <span>Passed</span>
+      </div>
+      <div class="summary-card">
+        <strong id="remaining-count">0</strong>
+        <span>Remaining</span>
+      </div>
+    </div>
+
+    <h2>Core workflow</h2>
+    <div class="section">
+      <h3>Author submits a manuscript</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Author creates a new submission</td>
+            <td data-label="Change">Fill title, abstract, description, upload manuscript file</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Submission appears in author's dashboard with status <code>desk_review</code></td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Submission missing, error on save, file not listed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Editor sends manuscript to peer review</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Editor assigns up to 3 reviewers</td>
+            <td data-label="Change">Click <strong>Assign reviewers</strong> and select users</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Reviewers receive notification with link; status becomes <code>in_progress</code></td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Notification missing, reviewers not listed, status unchanged</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer accepts invitation</td>
+            <td data-label="Change">Reviewer clicks <strong>Accept</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Reviewer status becomes <code>in-progress</code>; editor receives notification</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Reviewer cannot accept, status stuck on <code>pending</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Normal review flow</h2>
+    <div class="section">
+      <h3>2 reviewers reviewed, 1 remaining</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Two reviewers submit reviews</td>
+            <td data-label="Change">Reviewers fill review form and click <strong>Submit review</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Status stays <code>under_peer_review</code>; editor sees completed reviews in <strong>Peer review bundle</strong></td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Status jumps to notice state prematurely, third reviewer not shown</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Editor waits for remaining reviewer</td>
+            <td data-label="Change">No action taken</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Manuscript remains visible in editor queue; no final-decision buttons appear</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Approval/decline buttons shown before 3 reviews in</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>All 3 reviewers complete reviews</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Third reviewer submits review</td>
+            <td data-label="Change">Final review submitted</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Status becomes <code>ready_for_managing_editor_notice</code>; consensus hint appears</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Status stays <code>under_peer_review</code> or becomes <code>reviewed</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Manuscript accepted</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Consensus is accept</td>
+            <td data-label="Change">All 3 reviews recommend accept</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> <strong>Send approval notice</strong> button is shown</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Button hidden, incorrect consensus label</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Managing editor sends approval notice</td>
+            <td data-label="Change">Enter optional comment and click <strong>Send approval notice</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Status becomes <code>approved</code> or <code>approved_with_comment</code>; author/reviewer notifications link to manuscript</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Status unchanged, notifications missing link or not sent</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Revision scenarios</h2>
+    <div class="section">
+      <h3>Revision requested by editor</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Editor requests revisions</td>
+            <td data-label="Change">Click <strong>Request revisions</strong>, enter revision letter</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Status becomes <code>changes_requested</code>; author notification links to submission</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Button missing when consensus suggests revision, status not updated</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Author sees requested changes</td>
+            <td data-label="Change">Author opens submission page</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Editorial note shown; reviewer field-level requests have input fields; document-level requests shown as guidance</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Requests missing, no input for title/abstract/description, document-level not visible</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Author resolves field-level requests</td>
+            <td data-label="Change">Fill inputs and click <strong>Submit change updates</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Submitted fields marked resolved; editor notified; unresolved fields remain pending</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Updates not saved, all requests marked resolved prematurely, status jumps unexpectedly</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Author uploads revised file</td>
+            <td data-label="Change">Click <strong>Upload revision file</strong>, then <strong>Submit a revision</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> New version created; review round increments; status returns to <code>pending</code>; editor notified</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> File not attached, version missing, round did not increment, editor not notified</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Minor revision vs. major revision</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer selects minor revision</td>
+            <td data-label="Change">Recommendation set to <code>minor_revision</code></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Recommendation stored; consensus shows revision if any reviewer requested it</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Recommendation not saved, consensus ignores revision</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Editor's revision letter states scope</td>
+            <td data-label="Change">Editor describes required changes in revision request</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Author sees the letter as an editorial note and acts accordingly</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Letter missing from author view, not stored on manuscript</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Edge cases</h2>
+    <div class="section">
+      <h3>Reviewer declines invitation</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer declines</td>
+            <td data-label="Change">Click <strong>Decline</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Editor receives notification; replacement reviewer can be assigned</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Reviewer shown as still pending, editor cannot assign replacement</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Deadline extension request</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">In-progress reviewer requests extension</td>
+            <td data-label="Change">Enter reason and click <strong>Request extension</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Editor sees request in <strong>Pending extension requests</strong> card</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Request not listed, editor not notified</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Editor approves extension</td>
+            <td data-label="Change">Click <strong>Approve extension</strong></td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Reviewer deadline moves forward by 7 days; reviewer receives notification with link</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Deadline unchanged, reviewer not notified</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Quorum not met (reviewed status)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">All assigned reviewers responded but fewer than 3 completed</td>
+            <td data-label="Change">2 completed + 1 declined</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Status becomes <code>reviewed</code>; editor sees approve/request-revisions/decline options; no consensus hint</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Status becomes notice state or request-revisions button missing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Inconclusive consensus</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">3 completed reviews split accept/reject</td>
+            <td data-label="Change">No revision recommendation among completed reviews</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Consensus shows <strong>Inconclusive</strong>; managing editor chooses approve or decline</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Consensus shows wrong label or no decision buttons</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Multiple review rounds</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Author uploads second revision</td>
+            <td data-label="Change">Submit a revision after a prior round</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> New review round starts; old reviews no longer count toward quorum; old change requests hidden</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Old reviews still satisfy quorum, stale change requests still shown</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Reviewer change requests</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer requests title/abstract/description change</td>
+            <td data-label="Change">Select field, enter suggested change, submit</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Request appears in editor page and author page with editable input</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Request not stored, no input shown to author</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer requests document-level change</td>
+            <td data-label="Change">Select <strong>Manuscript content</strong>, enter page/line/excerpt/suggestion</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Request appears as read-only guidance to author; author uploads revised file</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Page/line not saved, author sees input field instead of guidance</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer tries to request change after submitting review</td>
+            <td data-label="Change">Review already submitted; reviewer returns to change-request form</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Form is hidden; only previously submitted pending requests are visible</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Form still accepts input and later returns an API error</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>Confidential comments</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer adds confidential comments</td>
+            <td data-label="Change">Enter text in <strong>Confidential comments</strong> field and submit review</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Comments visible to editors only; author and co-reviewers cannot see them</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Confidential comments leak to author or other reviewers</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Notification checks</h2>
+    <div class="section">
+      <h3>Every notification links to the right page</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-task">Task</th>
+            <th class="col-change">Action / Change</th>
+            <th class="col-expected">Expected Result</th>
+            <th class="col-failure">Failure Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Reviewer notification</td>
+            <td data-label="Change">Any reviewer-facing notification (assignment, extension approval, final decision)</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Link opens <code>/reviewer/journals/{id}/review</code> with relevant data visible</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Link missing, wrong destination, or page empty</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Author notification</td>
+            <td data-label="Change">Any author-facing notification (status change, revisions requested, decision)</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Link opens <code>/author/submissions/{id}</code> with relevant data visible</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Link missing, wrong destination, or page empty</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" class="check" /></td>
+            <td data-label="Task">Editor notification</td>
+            <td data-label="Change">Any editor-facing notification (review accepted/declined, review submitted, revision uploaded)</td>
+            <td data-label="Expected"><span class="tag tag-expected">Expected</span> Link opens <code>/editor/journals/{id}</code> with relevant data visible</td>
+            <td data-label="Failure"><span class="tag tag-failure">Failure</span> Link missing, wrong destination, or page empty</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const checks = document.querySelectorAll('.check');
+      const totalEl = document.getElementById('total-count');
+      const doneEl = document.getElementById('done-count');
+      const remainingEl = document.getElementById('remaining-count');
+
+      function updateSummary() {
+        const total = checks.length;
+        const done = Array.from(checks).filter(c => c.checked).length;
+        totalEl.textContent = total;
+        doneEl.textContent = done;
+        remainingEl.textContent = total - done;
+      }
+
+      checks.forEach(check => {
+        check.addEventListener('change', () => {
+          const row = check.closest('tr');
+          if (check.checked) row.classList.add('done');
+          else row.classList.remove('done');
+          updateSummary();
+        });
+      });
+
+      updateSummary();
+    </script>
+  </div>
+</body>
+</html>

@@ -7,6 +7,7 @@ import { sendReviewInvitationEmail } from '#server/utils/email'
 import { assertManuscriptStatus, syncJournalReviewStatus } from '#server/utils/journalWorkflow'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requirePermission } from '#server/utils/permissions'
 import { getDefaultReviewDeadline } from '#server/utils/reviewerDeadlines'
 import { getJournalById } from '#server/utils/submissions'
@@ -195,6 +196,7 @@ export default defineEventHandler(async (event) => {
       journalId: journal.id,
       message: `You have been assigned to review ${journal.title}.`,
       token: user.token,
+      action_url: `/reviewer/journals/${journal.id}/review`,
       acceptUrl: `${baseUrl}/api/reviewer/journals/accept?token=${user.token}`,
       declineUrl: `${baseUrl}/api/reviewer/journals/decline?token=${user.token}`
     }
@@ -211,6 +213,18 @@ export default defineEventHandler(async (event) => {
       `${baseUrl}/api/reviewer/journals/decline?token=${user.token}`
     )
   )))
+
+  await logAdminAction(event, {
+    action: 'reviewer_assigned',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Assigned ${invitationTargets.length} reviewer(s) to "${journal.title}"`,
+    metadata: {
+      invited: invitationTargets.length,
+      skipped: skipped.length,
+      round
+    }
+  })
 
   return { ok: true, invited: invitationTargets.map(user => user.id), skipped }
 })

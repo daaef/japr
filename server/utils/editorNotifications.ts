@@ -51,7 +51,8 @@ export async function notifyEditorsOfReviewResponse(
     data: {
       title: `Reviewer ${action} invitation`,
       message: `${reviewerUser.fullname} ${action} the review for ${journal.title}.`,
-      journalId: journal.id
+      journalId: journal.id,
+      action_url: `/editor/journals/${journal.id}`
     }
   })))
 
@@ -90,7 +91,8 @@ export async function notifyEditorsAllReviewsComplete(journalId: string) {
     data: {
       title: 'All reviews complete',
       message: `All reviews are in for ${journal.title}.`,
-      journalId: journal.id
+      journalId: journal.id,
+      action_url: `/editor/journals/${journal.id}`
     }
   })))
 
@@ -172,7 +174,8 @@ export async function notifyEditorsRevisionUploaded(journalId: string) {
     data: {
       title: 'Revision uploaded',
       message: `A revision was uploaded for ${journal.title}.`,
-      journalId: journal.id
+      journalId: journal.id,
+      action_url: `/editor/journals/${journal.id}`
     }
   })))
 
@@ -205,7 +208,8 @@ export async function notifyEditorsChangesResolved(journalId: string) {
     data: {
       title: 'Author update submitted',
       message: `The author updated ${journal.title} in response to change requests.`,
-      journalId: journal.id
+      journalId: journal.id,
+      action_url: `/editor/journals/${journal.id}`
     }
   })))
 

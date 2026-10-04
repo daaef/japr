@@ -6,6 +6,7 @@ import { journals } from '#server/db/schema'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 
 const approveForPublicationSchema = z.object({
@@ -50,6 +51,14 @@ export default defineEventHandler(async (event) => {
   // them again here, and a third time when mark-published actually publishes it, was the
   // "up to 3 approval notifications" the review flagged. copyEditStatus is internal
   // bookkeeping the author has no visibility into and no action to take on.
+
+  await logAdminAction(event, {
+    action: 'manuscript_approved_for_publication',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Approved "${journal.title}" for copy-desk publication`,
+    metadata: { copyEditStatus: 'ready_for_publication', comment: body.comment }
+  })
 
   return { ok: true }
 })

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsReviewExtensionRequested } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requireReviewer } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 
@@ -44,6 +45,18 @@ export default defineEventHandler(async (event) => {
   }).where(eq(reviewers.id, reviewer.id))
 
   await notifyEditorsReviewExtensionRequested(journal.id, session.user.id, body.reason)
+
+  await logAdminAction(event, {
+    action: 'extension_requested',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Reviewer requested deadline extension for "${journal.title}"`,
+    metadata: {
+      journalId: journal.id,
+      roundNumber: reviewer.roundNumber,
+      reason: body.reason
+    }
+  })
 
   return { ok: true }
 })

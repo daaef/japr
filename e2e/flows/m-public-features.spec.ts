@@ -1,4 +1,4 @@
-import { test, expect, navigateTo, expectPath, uniqueId } from '../helpers'
+import { test, expect, type navigateTo, expectPath, uniqueId } from '../helpers'
 
 let publishedJournalPath: string | undefined
 

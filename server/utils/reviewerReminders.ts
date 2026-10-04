@@ -66,7 +66,8 @@ export async function sendReviewerDeadlineReminders(): Promise<{ remindedCount: 
         journalTitle: journal.title,
         message: isOverdue
           ? `Your review of ${journal.title} was due and has not been submitted.`
-          : `Your review of ${journal.title} is due soon.`
+          : `Your review of ${journal.title} is due soon.`,
+        action_url: `/reviewer/journals/${journal.id}/review`
       }
     })
 

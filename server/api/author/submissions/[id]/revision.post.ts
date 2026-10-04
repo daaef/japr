@@ -7,6 +7,7 @@ import { notifyEditorsRevisionUploaded } from '#server/utils/editorNotifications
 import { markFileAttached, verifyPendingUpload } from '#server/utils/fileOwnership'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { createNotification } from '#server/utils/notifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requireAuthor } from '#server/utils/permissions'
 import { getNextVersionNumber } from '#server/utils/versionNumbering'
 import { getJournalById } from '#server/utils/submissions'
@@ -100,11 +101,20 @@ export default defineEventHandler(async (event) => {
     data: {
       title: 'Revision uploaded',
       journalId: journal.id,
-      message: `Revision submitted for ${journal.title}.`
+      message: `Revision submitted for ${journal.title}.`,
+      action_url: `/author/submissions/${journal.id}`
     }
   })
 
   await notifyEditorsRevisionUploaded(journal.id)
+
+  await logAdminAction(event, {
+    action: 'manuscript_revision_submitted',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Revision submitted for "${journal.title}"`,
+    metadata: { newRound: journal.currentReviewRound + 1 }
+  })
 
   return { ok: true }
 })

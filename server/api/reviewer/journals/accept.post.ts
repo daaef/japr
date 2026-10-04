@@ -3,6 +3,7 @@ import { readValidatedBody } from 'h3'
 import { db } from '#server/db/client'
 import { reviewers } from '#server/db/schema'
 import { notifyEditorsOfReviewResponse } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { assertReviewerStatus } from '#server/utils/journalWorkflow'
 import { findReviewerInvitation } from '#server/utils/reviewerInvitation'
 import { requireSession } from '#server/utils/session'
@@ -45,6 +46,14 @@ export default defineEventHandler(async (event) => {
     .where(and(eq(reviewers.id, reviewer.id), eq(reviewers.userId, session.user.id)))
 
   await notifyEditorsOfReviewResponse(reviewer.journalId, session.user.id, 'accepted')
+
+  await logAdminAction(event, {
+    action: 'review_accepted',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Reviewer accepted invitation for journal ${reviewer.journalId}`,
+    metadata: { journalId: reviewer.journalId, roundNumber: reviewer.roundNumber }
+  })
 
   return { ok: true }
 })

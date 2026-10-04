@@ -18,7 +18,12 @@ const HIGH_RISK_ACTIONS = new Set([
   'permission_grant',
   'permission_revoke',
   'system_config',
-  'cleanup'
+  'cleanup',
+  'manuscript_published',
+  'manuscript_declined',
+  'manuscript_desk_declined',
+  'manuscript_revisions_requested',
+  'review_change_requested'
 ])
 
 const MEDIUM_RISK_ACTIONS = new Set([
@@ -27,7 +32,21 @@ const MEDIUM_RISK_ACTIONS = new Set([
   'status_change',
   'import',
   'export',
-  'email_sent'
+  'email_sent',
+  'manuscript_created',
+  'manuscript_updated',
+  'manuscript_revision_submitted',
+  'manuscript_approved',
+  'manuscript_approved_for_publication',
+  'manuscript_sent_to_review',
+  'reviewer_assigned',
+  'reviewer_unassigned',
+  'review_accepted',
+  'review_declined',
+  'review_submitted',
+  'extension_approved',
+  'extension_requested',
+  'notice_sent'
 ])
 
 export function getAuditRiskLevel(action: string): AdminAuditRiskLevel {

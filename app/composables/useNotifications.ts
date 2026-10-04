@@ -1,7 +1,8 @@
-export function useNotifications() {
-  const unreadCount = ref(0)
+export async function useNotifications() {
   const connected = ref(false)
+  const unreadCount = ref(0)
   const { data: currentUser } = useCurrentUser()
+
   const pollIntervalMs = 30000
   let eventSource: EventSource | null = null
   let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -119,6 +120,7 @@ export function useNotifications() {
     stopPolling()
   }
 
+  // Register lifecycle hooks before the first await so Vue keeps the active component instance.
   onMounted(() => {
     refreshUnreadCount()
     connectStream()
@@ -127,6 +129,25 @@ export function useNotifications() {
   onBeforeUnmount(() => {
     disconnectStream()
   })
+
+  // Fetch the initial unread count so the badge is rendered consistently during SSR hydration.
+  // Await happens after hook registration to avoid the "onMounted called with no active instance"
+  // warning from an async setup composable.
+  const { data: initialUnread } = await useFetch<{ unreadCount: number }>('/api/notifications/unread-count', {
+    key: 'notifications-unread-count',
+    default: () => ({ unreadCount: 0 })
+  })
+
+  unreadCount.value = initialUnread.value?.unreadCount ?? 0
+
+  watch(
+    () => initialUnread.value?.unreadCount,
+    (count) => {
+      if (count !== undefined) {
+        unreadCount.value = count
+      }
+    }
+  )
 
   return {
     unreadCount: readonly(unreadCount),

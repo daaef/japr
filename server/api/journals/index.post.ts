@@ -9,6 +9,7 @@ import { journalCreateSchema } from '#shared/validation/journals'
 import { sendSubmissionReceivedEmail, sendManuscriptSubmissionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { createNotifications } from '#server/utils/notifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 import { EDITOR_ROLES } from '#shared/constants/roles'
 import { eq, inArray } from 'drizzle-orm'
@@ -180,6 +181,14 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('Failed to notify editors:', error)
   }
+
+  await logAdminAction(event, {
+    action: 'manuscript_created',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Manuscript "${journal.title}" submitted by ${session.user.email}`,
+    metadata: { status: MANUSCRIPT_STATUS.DESK_REVIEW }
+  })
 
   return { journal }
 })

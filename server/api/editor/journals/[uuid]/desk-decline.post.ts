@@ -8,6 +8,7 @@ import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -60,13 +61,22 @@ export default defineEventHandler(async (event) => {
     data: {
       title: 'Manuscript declined',
       journalId: journal.id,
-      message: body.reason
+      message: body.reason,
+      action_url: `/author/submissions/${journal.id}`
     }
   })
 
   // No-op here in practice (desk rejection happens before reviewers are ever assigned),
   // kept for consistency with the other decision endpoints (F13d).
   await notifyReviewersOfFinalDecision(journal.id, MANUSCRIPT_STATUS.DECLINED)
+
+  await logAdminAction(event, {
+    action: 'manuscript_desk_declined',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Desk-declined manuscript "${journal.title}"`,
+    metadata: { status: MANUSCRIPT_STATUS.DECLINED }
+  })
 
   return { ok: true }
 })

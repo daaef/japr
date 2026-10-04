@@ -28,11 +28,6 @@ interface MailtrapMessage {
   text_body_size: number
 }
 
-interface MailtrapMessageDetail extends MailtrapMessage {
-  html_body: string
-  text_body: string
-}
-
 /** List recent messages in the inbox. */
 async function listMessages(limit = 30): Promise<MailtrapMessage[]> {
   const res = await fetch(`${inboxUrl()}/messages?page=1&per_page=${limit}`, { headers: headers() })

@@ -10,6 +10,7 @@ import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { sendDecisionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 
 const bodySchema = z.object({
@@ -74,12 +75,21 @@ export default defineEventHandler(async (event) => {
     data: {
       title: 'Manuscript declined',
       journalId: journal.id,
-      message: body.reason
+      message: body.reason,
+      action_url: `/author/submissions/${journal.id}`
     }
   })
 
   // Reviewers who completed a review never learned the outcome (F13d).
   await notifyReviewersOfFinalDecision(journal.id, MANUSCRIPT_STATUS.DECLINED)
+
+  await logAdminAction(event, {
+    action: 'manuscript_declined',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Declined manuscript "${journal.title}"`,
+    metadata: { status: MANUSCRIPT_STATUS.DECLINED }
+  })
 
   return { ok: true }
 })

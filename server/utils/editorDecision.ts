@@ -6,7 +6,7 @@ import { assertManuscriptStatus, REVIEW_QUORUM } from '#server/utils/journalWork
 import { notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
 import { createNotification } from '#server/utils/notifications'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
-import { getJournalById } from '#server/utils/submissions'
+import type { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS, type ManuscriptStatus } from '#shared/constants/manuscriptStatus'
 import { REVIEWER_STATUS } from '#shared/constants/reviewerStatus'
 
@@ -109,7 +109,8 @@ export async function approveManuscript(input: ApproveManuscriptInput): Promise<
     data: {
       title: 'Manuscript approved',
       journalId: journal.id,
-      message: `${journal.title} has been approved for publication.`
+      message: `${journal.title} has been approved for publication.`,
+      action_url: `/author/submissions/${journal.id}`
     }
   })
 

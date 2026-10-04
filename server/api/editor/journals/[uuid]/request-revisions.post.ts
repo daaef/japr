@@ -8,6 +8,7 @@ import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { sendDecisionEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { assertManuscriptStatus } from '#server/utils/journalWorkflow'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
 
@@ -84,8 +85,17 @@ export default defineEventHandler(async (event) => {
     data: {
       title: 'Revisions requested',
       journalId: journal.id,
-      message: body.details
+      message: body.details,
+      action_url: `/author/submissions/${journal.id}`
     }
+  })
+
+  await logAdminAction(event, {
+    action: 'manuscript_revisions_requested',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Requested revisions for "${journal.title}"`,
+    metadata: { status: MANUSCRIPT_STATUS.CHANGES_REQUESTED }
   })
 
   return { ok: true }

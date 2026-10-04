@@ -48,6 +48,38 @@ const { data: commentsData, refresh: refreshComments } = await useFetch<{
 )
 
 const previewOpen = ref(false)
+const previewShown = ref(false)
+
+watch(previewOpen, (open) => {
+  if (open) {
+    previewShown.value = true
+  }
+})
+
+// Determine where the user came from so the back button returns them sensibly.
+// The value is carried in the query string by the pages that link here.
+const fromSource = computed(() => {
+  const value = route.query.from
+  if (typeof value !== 'string') {
+    return 'journals'
+  }
+  const allowed = ['admin', 'editor', 'journals', 'home']
+  return allowed.includes(value) ? value : 'journals'
+})
+
+const backLink = computed(() => {
+  switch (fromSource.value) {
+    case 'admin':
+      return { to: '/admin', label: 'Back to Admin Dashboard' }
+    case 'editor':
+      return { to: '/editor', label: 'Back to Editor Dashboard' }
+    case 'home':
+      return { to: '/', label: 'Back to Home' }
+    default:
+      return { to: '/journals', label: 'Back to Journals' }
+  }
+})
+
 const commentText = ref('')
 const message = ref('')
 
@@ -123,8 +155,8 @@ useHead({
       <p class="mt-2 text-sm text-muted">
         The article you requested could not be loaded.
       </p>
-      <UButton to="/journals" color="neutral" variant="subtle" class="mt-6">
-        Back to Journals
+      <UButton :to="backLink.to" color="neutral" variant="subtle" class="mt-6">
+        {{ backLink.label }}
       </UButton>
     </UCard>
 
@@ -139,8 +171,8 @@ useHead({
             <span>{{ data.journal.categoryName }}</span>
           </template>
         </div>
-        <UButton to="/journals" color="neutral" variant="subtle" size="sm">
-          Back to Journals
+        <UButton :to="backLink.to" color="neutral" variant="subtle" size="sm">
+          {{ backLink.label }}
         </UButton>
       </div>
 
@@ -173,7 +205,7 @@ useHead({
 
             <p class="mt-5 text-sm text-dimmed">
               <template v-if="data.journal.publishedAt">
-                Published {{ new Date(data.journal.publishedAt).toLocaleDateString() }}
+                Published {{ formatDate(data.journal.publishedAt) }}
               </template>
               <template v-else>
                 {{ data.journal.approvalStatus.replace(/-/g, ' ') }}
@@ -359,7 +391,7 @@ useHead({
       </p>
 
       <DocumentPreview
-        v-if="data.journal.id"
+        v-if="(previewOpen || previewShown) && data.journal.id"
         v-model:open="previewOpen"
         :uuid="data.journal.id"
         :title="data.journal.title"

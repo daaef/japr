@@ -19,7 +19,7 @@ test('shared authenticated pages resolve the correct workspace layout', () => {
   assert.equal(resolveRoleLayout(['admin']), 'admin')
   assert.equal(resolveRoleLayout(['editor_in_chief']), 'editor')
   assert.equal(resolveRoleLayout(['managing_editor']), 'editor')
-  assert.equal(resolveRoleLayout(['copy_desk_editor']), 'editor')
+  assert.equal(resolveRoleLayout(['copy_desk_editor']), 'copy-desk')
   assert.equal(resolveRoleLayout(['associate_editor']), 'reviewer')
   assert.equal(resolveRoleLayout(['external_reviewer']), 'reviewer')
   assert.equal(resolveRoleLayout(['desk_editor']), 'reviewer')

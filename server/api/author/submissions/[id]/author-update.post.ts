@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { journals } from '#server/db/schema'
 import { notifyEditorsChangesResolved } from '#server/utils/editorNotifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requireSession } from '#server/utils/session'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -69,6 +70,14 @@ export default defineEventHandler(async (event) => {
   // The actor here is the author; the people who need to hear about it are the editors
   // who raised the change requests, not the author telling themselves (F13a).
   await notifyEditorsChangesResolved(journal.id)
+
+  await logAdminAction(event, {
+    action: 'manuscript_updated',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Author updated submission "${journal.title}"`,
+    metadata: { allResolved }
+  })
 
   return { ok: true, journalId: journal.id }
 })

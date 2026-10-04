@@ -239,12 +239,12 @@ async function deactivateJournal() {
 
             <p class="mt-5 text-sm text-dimmed">
               <template v-if="detailData.journal.publishedAt">
-                Published {{ new Date(detailData.journal.publishedAt).toLocaleDateString() }}
+                Published {{ formatDate(detailData.journal.publishedAt) }}
               </template>
               <template v-else>
                 {{ detailData.journal.approvalStatus.replace(/_/g, ' ') }}
               </template>
-              <span class="text-muted">· Updated {{ new Date(detailData.journal.updatedAt).toLocaleDateString() }}</span>
+              <span class="text-muted">· Updated {{ formatDate(detailData.journal.updatedAt) }}</span>
             </p>
           </div>
 
@@ -351,7 +351,7 @@ async function deactivateJournal() {
                     {{ version.changesSummary }}
                   </p>
                   <p class="mt-1 text-xs text-dimmed">
-                    {{ new Date(version.createdAt).toLocaleDateString() }} · {{ version.status }}
+                    {{ formatDate(version.createdAt) }} · {{ version.status }}
                   </p>
                 </div>
               </div>
@@ -383,7 +383,7 @@ async function deactivateJournal() {
                       {{ comment.comment }}
                     </p>
                     <p class="mt-1 text-xs text-dimmed">
-                      {{ new Date(comment.createdAt).toLocaleDateString() }}
+                      {{ formatDate(comment.createdAt) }}
                     </p>
                   </div>
                 </article>
@@ -413,7 +413,7 @@ async function deactivateJournal() {
             </h3>
             <div class="space-y-2.5">
               <UButton
-                :to="`/journals/${detailData.journal.slug}`"
+                :to="`/journals/${detailData.journal.slug}?from=admin`"
                 color="primary"
                 variant="solid"
                 block
@@ -507,7 +507,7 @@ async function deactivateJournal() {
                   Created
                 </p>
                 <p class="text-muted">
-                  {{ new Date(detailData.journal.createdAt).toLocaleDateString() }}
+                  {{ formatDate(detailData.journal.createdAt) }}
                 </p>
               </div>
               <div v-if="detailData.journal.publishedAt">
@@ -515,7 +515,7 @@ async function deactivateJournal() {
                   Published
                 </p>
                 <p class="text-muted">
-                  {{ new Date(detailData.journal.publishedAt).toLocaleDateString() }}
+                  {{ formatDate(detailData.journal.publishedAt) }}
                 </p>
               </div>
             </div>

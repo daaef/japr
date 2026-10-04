@@ -26,6 +26,13 @@ function hasAnyRole(checks: string[]) {
   return checks.some(role => roles.value.includes(role))
 }
 
+const canSubmitManuscript = computed(() => {
+  if (!authenticated.value) {
+    return true
+  }
+  return hasRole('author') || hasRole('admin')
+})
+
 function navClass(active: boolean, base = 'text-taupe-700 font-medium') {
   return active ? 'text-primary-500 font-bold' : base
 }
@@ -96,6 +103,7 @@ const mobileMenuOpen = ref(false)
 
             <template v-if="authenticated">
               <NuxtLink
+                v-if="canSubmitManuscript"
                 class="font-bold lg:hidden text-taupe-700 hover:text-primary-700 focus:outline-none focus:text-primary-700"
                 to="/author/submit"
               >
@@ -190,6 +198,7 @@ const mobileMenuOpen = ref(false)
         </NuxtLink>
         <template v-if="authenticated">
           <NuxtLink
+            v-if="canSubmitManuscript"
             class="py-2 hidden px-6 lg:inline-flex items-center gap-x-2 whitespace-nowrap text-sm font-medium rounded-[15px] border border-transparent bg-primary-500 text-white hover:bg-primary-700 focus:outline-none focus:bg-primary-800 disabled:opacity-50 disabled:pointer-events-none"
             to="/author/submit"
           >

@@ -1,6 +1,7 @@
 import { readBody } from 'h3'
 import { z } from 'zod'
 import { approveManuscript } from '#server/utils/editorDecision'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requirePermission } from '#server/utils/permissions'
 import { getJournalById } from '#server/utils/submissions'
 import { MANUSCRIPT_STATUS } from '#shared/constants/manuscriptStatus'
@@ -34,6 +35,14 @@ export default defineEventHandler(async (event) => {
     allowedStatuses: [MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE],
     action: 'approving for publication',
     defaultComment: 'Manuscript approved.'
+  })
+
+  await logAdminAction(event, {
+    action: 'manuscript_approved',
+    resourceType: 'journal',
+    resourceId: journal.id,
+    description: `Approved manuscript "${journal.title}" for publication notice`,
+    metadata: { comment: body.comment }
   })
 
   return { ok: true }

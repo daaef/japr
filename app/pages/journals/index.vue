@@ -246,6 +246,7 @@ const categoryCount = computed(() => categoryData.value?.categories.length ?? 0)
             v-for="journal in data.journals"
             :key="journal.id"
             :journal="journal"
+            :to="`/journals/${journal.slug}?from=journals`"
           />
           <p
             v-if="data.journals.length === 0"

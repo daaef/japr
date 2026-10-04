@@ -19,9 +19,24 @@ const { data, pending, refresh } = await useFetch<{
     abstract: string | null
     description: string
     approvalStatus: string
+    currentReviewRound: number
+    changeRequests: Array<{
+      field?: string
+      current_value?: string | null
+      suggested_change?: string
+      comment?: string | null
+      page?: number | null
+      line?: number | null
+      original_excerpt?: string | null
+      reviewer_id?: string
+      round_number?: number | null
+      status?: string
+      timestamp?: string
+    }>
   }
   reviewer: {
     id: string
+    userId: string
     status: string
     isAccepted: boolean
     review: string | null
@@ -55,10 +70,25 @@ const { data, pending, refresh } = await useFetch<{
       title: '',
       abstract: null,
       description: '',
-      approvalStatus: 'pending'
+      approvalStatus: 'pending',
+      currentReviewRound: 1,
+      changeRequests: [] as Array<{
+        field?: string
+        current_value?: string | null
+        suggested_change?: string
+        comment?: string | null
+        page?: number | null
+        line?: number | null
+        original_excerpt?: string | null
+        reviewer_id?: string
+        round_number?: number | null
+        status?: string
+        timestamp?: string
+      }>
     },
     reviewer: {
       id: '',
+      userId: '',
       status: 'pending',
       isAccepted: false,
       review: null,
@@ -111,6 +141,16 @@ const canRespondToInvitation = computed(() =>
   data.value.reviewer.status === 'pending' && data.value.reviewer.isAccepted !== true
 )
 const hasSubmittedReview = computed(() => data.value.reviewer.status === REVIEWER_STATUS.REVIEWED)
+const canRequestChanges = computed(() => data.value.reviewer.status === REVIEWER_STATUS.IN_PROGRESS)
+
+const myChangeRequests = computed(() => {
+  const requests = Array.isArray(data.value.journal.changeRequests) ? data.value.journal.changeRequests : []
+  return requests.filter((request) =>
+    request.reviewer_id === data.value.reviewer.userId
+    && request.status === 'pending'
+    && (request.round_number == null || request.round_number === data.value.journal.currentReviewRound)
+  )
+})
 
 const criteriaLabels: Record<keyof NonNullable<typeof data.value.reviewer.criteriaRatings>, string> = {
   originality: 'Originality',
@@ -213,16 +253,22 @@ async function declineWithComment() {
 }
 
 const changeForm = reactive({
-  field: 'title' as 'title' | 'abstract' | 'description',
+  field: 'title' as 'title' | 'abstract' | 'description' | 'manuscript_content',
   suggestedChange: '',
-  comment: ''
+  comment: '',
+  page: '',
+  line: '',
+  originalExcerpt: ''
 })
 
 const changeFieldItems = [
   { label: 'Title', value: 'title' as const },
   { label: 'Abstract', value: 'abstract' as const },
-  { label: 'Description', value: 'description' as const }
+  { label: 'Description', value: 'description' as const },
+  { label: 'Manuscript content', value: 'manuscript_content' as const }
 ]
+
+const isManuscriptContentField = computed(() => changeForm.field === 'manuscript_content')
 
 const recommendationItems = [
   { label: 'Accept', value: 'accept' },
@@ -244,14 +290,21 @@ async function requestChange() {
         changes: [{
           field: changeForm.field,
           suggestedChange: changeForm.suggestedChange,
-          comment: changeForm.comment || undefined
+          comment: changeForm.comment || undefined,
+          page: changeForm.page ? Number(changeForm.page) : undefined,
+          line: changeForm.line ? Number(changeForm.line) : undefined,
+          originalExcerpt: changeForm.originalExcerpt || undefined
         }]
       }
     })
 
+    await refresh()
     changeForm.suggestedChange = ''
     changeForm.comment = ''
-    actionMessage.value = 'Change request sent to the author.'
+    changeForm.page = ''
+    changeForm.line = ''
+    changeForm.originalExcerpt = ''
+    actionMessage.value = 'Change request recorded. Editors will review your suggestion.'
   } catch (error) {
     actionError.value = extractApiErrorMessage(error, 'Unable to request changes.')
   } finally {
@@ -543,19 +596,63 @@ async function submitReview() {
         </div>
       </UCard>
 
-      <UCard>
+      <UCard v-if="canRequestChanges || myChangeRequests.length">
         <template #header>
           <h2 class="text-lg font-semibold text-highlighted">Request manuscript changes</h2>
         </template>
-        <form class="flex flex-col gap-4" @submit.prevent="requestChange">
+
+        <div v-if="myChangeRequests.length" class="mb-6 space-y-3">
+          <h3 class="text-sm font-semibold text-highlighted">Your pending change requests</h3>
+          <div
+            v-for="(request, index) in myChangeRequests"
+            :key="`my-request-${index}`"
+            class="rounded-2xl border border-default bg-elevated p-4"
+          >
+            <p class="text-sm font-semibold capitalize text-toned">
+              {{ request.field === 'manuscript_content' ? 'Manuscript content' : request.field }}
+            </p>
+            <div v-if="request.field === 'manuscript_content'" class="mt-2 text-sm text-muted">
+              <p v-if="request.page">
+                Page: {{ request.page }}<span v-if="request.line">, line {{ request.line }}</span>
+              </p>
+              <p v-else-if="request.line">Line: {{ request.line }}</p>
+              <p v-if="request.original_excerpt" class="mt-1">
+                Original: <span class="italic">{{ request.original_excerpt }}</span>
+              </p>
+            </div>
+            <p class="mt-2 text-sm text-muted">
+              Suggested: {{ request.suggested_change }}
+            </p>
+            <p v-if="request.comment" class="mt-2 text-sm text-muted">
+              Comment: {{ request.comment }}
+            </p>
+          </div>
+        </div>
+
+        <form v-if="canRequestChanges" class="flex flex-col gap-4" @submit.prevent="requestChange">
           <div class="grid gap-4 sm:grid-cols-12">
             <UFormField label="Field" class="sm:col-span-4">
               <USelect v-model="changeForm.field" :items="changeFieldItems" class="w-full" />
             </UFormField>
-            <UFormField label="Suggested change" class="sm:col-span-8">
+            <UFormField :label="isManuscriptContentField ? 'Suggested correction' : 'Suggested change'" class="sm:col-span-8">
               <UInput v-model="changeForm.suggestedChange" required class="w-full" />
             </UFormField>
           </div>
+
+          <template v-if="isManuscriptContentField">
+            <div class="grid gap-4 sm:grid-cols-12">
+              <UFormField label="Page" class="sm:col-span-4">
+                <UInput v-model="changeForm.page" type="number" min="1" placeholder="Optional" class="w-full" />
+              </UFormField>
+              <UFormField label="Line" class="sm:col-span-4">
+                <UInput v-model="changeForm.line" type="number" min="1" placeholder="Optional" class="w-full" />
+              </UFormField>
+            </div>
+            <UFormField label="Original excerpt">
+              <UTextarea v-model="changeForm.originalExcerpt" :rows="2" maxlength="10000" class="w-full" />
+            </UFormField>
+          </template>
+
           <UFormField label="Comment to author">
             <UTextarea v-model="changeForm.comment" :rows="3" maxlength="2000" class="w-full" />
           </UFormField>
@@ -564,7 +661,7 @@ async function submitReview() {
               type="submit"
               color="primary"
               variant="outline"
-              :disabled="actionLoading || !changeForm.suggestedChange.trim()"
+              :disabled="actionLoading || !changeForm.suggestedChange.trim() || (isManuscriptContentField && !changeForm.page.trim() && !changeForm.line.trim() && !changeForm.originalExcerpt.trim())"
             >
               Request change
             </UButton>

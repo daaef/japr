@@ -91,6 +91,7 @@ const [
       abstract: string | null
       description: string
       approvalStatus: string
+      currentReviewRound: number
       author: string | null
       country: string | null
       institution: string | null
@@ -101,6 +102,19 @@ const [
       updatedAt: string
       copyEditStatus: string | null
       editorDecisionComment: string | null
+      changeRequests: Array<{
+        field?: string
+        current_value?: string | null
+        suggested_change?: string
+        comment?: string | null
+        page?: number | null
+        line?: number | null
+        original_excerpt?: string | null
+        reviewer_id?: string
+        round_number?: number | null
+        status?: string
+        timestamp?: string
+      }>
     }
     category: { name: string } | null
     subCategory: { name: string } | null
@@ -142,6 +156,7 @@ const [
         abstract: null,
         description: '',
         approvalStatus: 'pending',
+        currentReviewRound: 1,
         author: null,
         country: null,
         institution: null,
@@ -151,7 +166,8 @@ const [
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         copyEditStatus: null,
-        editorDecisionComment: null
+        editorDecisionComment: null,
+        changeRequests: []
       },
       category: null,
       subCategory: null,
@@ -224,6 +240,7 @@ const { loading: actionLoading, message: actionMessage, error: actionError, run:
 
 async function refreshAll() {
   await Promise.all([refreshDetail(), refreshSuggestions(), refreshReviews()])
+  await refreshNuxtData('editor-dashboard-summary')
 }
 
 function assignReviewers() {
@@ -258,6 +275,14 @@ const showPublicationAction = computed(() =>
 )
 const pendingExtensionRequests = computed(() =>
   detailData.value.reviewers.filter(reviewer => reviewer.deadlineExtensionRequested)
+)
+
+const pendingReviewerChangeRequests = computed(() =>
+  (detailData.value.journal.changeRequests ?? []).filter(
+    (request) =>
+      request.status === 'pending'
+      && (request.round_number == null || request.round_number === detailData.value.journal.currentReviewRound)
+  )
 )
 
 // Mirrors the v-if on every section below — status alone no longer decides visibility, so
@@ -714,6 +739,23 @@ function declineManuscript() {
           >
             Send decline notice
           </PermissionGatedAction>
+
+          <div class="mt-5 border-t border-primary-200 pt-5">
+            <UFormField v-if="canRequestRevisions" label="Revision request">
+              <UTextarea v-model="revisionDetails" :rows="4" class="w-full" />
+            </UFormField>
+            <PermissionGatedAction
+              :allowed="canRequestRevisions"
+              tooltip="You don't have permission to request revisions."
+              color="primary"
+              variant="outline"
+              class="mt-3 rounded-full"
+              :disabled="actionLoading"
+              @click="requestRevisions"
+            >
+              Request revisions
+            </PermissionGatedAction>
+          </div>
         </div>
 
         <template v-if="showReviewedActions">
@@ -922,6 +964,46 @@ function declineManuscript() {
         </div>
       </UCard>
     </div>
+
+    <UCard v-if="pendingReviewerChangeRequests.length">
+      <template #header>
+        <h4 class="text-base font-semibold text-highlighted">
+          Reviewer change requests
+        </h4>
+      </template>
+      <div class="grid gap-4">
+        <div
+          v-for="(request, index) in pendingReviewerChangeRequests"
+          :key="`reviewer-change-${index}`"
+          class="rounded-2xl border border-warning-200 bg-warning-50 p-4"
+        >
+          <p class="font-semibold capitalize text-toned">
+            {{ request.field === 'manuscript_content' ? 'Manuscript content' : request.field }}
+          </p>
+          <div
+            v-if="request.field === 'manuscript_content'"
+            class="mt-2 text-sm text-muted"
+          >
+            <p v-if="request.page">
+              Page: {{ request.page }}<span v-if="request.line">, line {{ request.line }}</span>
+            </p>
+            <p v-else-if="request.line">Line: {{ request.line }}</p>
+            <p v-if="request.original_excerpt" class="mt-1">
+              Original excerpt: <span class="italic">{{ request.original_excerpt }}</span>
+            </p>
+          </div>
+          <p class="mt-2 text-sm text-muted">
+            Current: {{ request.current_value || '—' }}
+          </p>
+          <p class="text-sm text-muted">
+            Suggested: {{ request.suggested_change }}
+          </p>
+          <p v-if="request.comment" class="mt-2 text-sm text-muted">
+            Comment: {{ request.comment }}
+          </p>
+        </div>
+      </div>
+    </UCard>
 
     <UCard>
       <template #header>

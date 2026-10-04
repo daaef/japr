@@ -1,4 +1,4 @@
-import { test, expect, navigateTo, expectPath } from '../helpers'
+import { test, expect, type navigateTo, expectPath } from '../helpers'
 
 async function expectHealthyPage(page: Parameters<typeof navigateTo>[0], path: string) {
   const response = await page.goto(path)

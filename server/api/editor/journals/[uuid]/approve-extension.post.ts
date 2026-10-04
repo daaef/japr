@@ -7,6 +7,7 @@ import { sendJournalStatusChangeEmail } from '#server/utils/email'
 import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { assertReviewerStatus } from '#server/utils/journalWorkflow'
 import { createNotification } from '#server/utils/notifications'
+import { logAdminAction } from '#server/utils/adminAudit'
 import { requirePermission } from '#server/utils/permissions'
 import { buildApprovedExtension, getDefaultReviewDeadline } from '#server/utils/reviewerDeadlines'
 import { getJournalById } from '#server/utils/submissions'
@@ -76,7 +77,8 @@ export default defineEventHandler(async (event) => {
       data: {
         title: 'Extension approved',
         journalId: journal.id,
-        message
+        message,
+        action_url: `/reviewer/journals/${journal.id}/review`
       }
     })
 
@@ -84,6 +86,18 @@ export default defineEventHandler(async (event) => {
       sendJournalStatusChangeEmail(reviewerUser.email, reviewerUser.fullname, journal.title, message)
     ).catch(() => undefined)
   }
+
+  await logAdminAction(event, {
+    action: 'extension_approved',
+    resourceType: 'reviewer',
+    resourceId: reviewer.id,
+    description: `Review deadline extended by ${body.extensionDays} day(s) for "${journal.title}"`,
+    metadata: {
+      journalId: journal.id,
+      reviewerId: reviewer.id,
+      extensionDays: body.extensionDays
+    }
+  })
 
   return { ok: true }
 })

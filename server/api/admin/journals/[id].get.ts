@@ -4,11 +4,10 @@ import { requireAdmin } from '#server/utils/permissions'
 import { getReviewConsensus, hasReviewQuorum } from '#server/utils/journalWorkflow'
 
 function omitKeys<T extends Record<string, unknown>>(obj: T, keys: (keyof T)[]): Partial<T> {
-  const result = { ...obj }
-  for (const key of keys) {
-    delete result[key]
-  }
-  return result
+  const keySet = new Set(keys)
+  return Object.fromEntries(
+    Object.entries(obj).filter(([key]) => !keySet.has(key as keyof T))
+  ) as Partial<T>
 }
 
 export default defineEventHandler(async (event) => {

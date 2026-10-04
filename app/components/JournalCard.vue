@@ -34,7 +34,7 @@ const journalLink = computed(() => props.to || `/journals/${props.journal.slug}`
       </NuxtLink>
     </h2>
     <p class="mt-1.5 text-xs text-dimmed">
-      {{ journal.author }} · {{ new Date(journal.createdAt).toLocaleDateString() }}
+      {{ journal.author }} · {{ formatDate(journal.createdAt) }}
     </p>
     <p class="mt-3 text-sm leading-relaxed text-toned line-clamp-3">
       {{ journal.abstract || 'No abstract provided.' }}
