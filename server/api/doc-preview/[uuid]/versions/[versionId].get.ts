@@ -7,15 +7,17 @@ import { getCurrentUserContext } from '#server/utils/session'
 import { isEditorRole } from '#server/utils/permissions'
 import {
   convertDocToHtml,
+  convertDocxBufferToHtml,
   injectWatermark,
   injectProtection,
   sanitizePreviewHtml,
   wrapHtmlDocument,
   getPreviewType
 } from '#server/services/docPreview'
-import { isBlobStorage, resolveStoredFilePath } from '#server/utils/files'
+import { getStoredFileBuffer, isBlobStorage, resolveStoredFilePath } from '#server/utils/files'
 import {
   assertManuscriptFileExists,
+  getManuscriptFileExtension,
   resolveManuscriptPreviewFile
 } from '#server/utils/manuscriptPreviewFile'
 
@@ -100,11 +102,38 @@ export default defineEventHandler(async (event) => {
   }
 
   if (previewType === 'doc') {
+    // Blob storage runs on Vercel where Pandoc/LibreOffice are unavailable. Mammoth converts
+    // .docx (modern zipped-XML format) in pure JS; legacy binary .doc still has no
+    // preview path there — same download-only fallback as before for that one case.
     if (isBlobStorage()) {
-      throw createError({
-        statusCode: 415,
-        statusMessage: 'In-browser preview is unavailable for DOC/DOCX on this deployment. Please download the manuscript to view it.'
-      })
+      if (getManuscriptFileExtension(resolved.storageKey) !== '.docx') {
+        throw createError({
+          statusCode: 415,
+          statusMessage: 'In-browser preview is unavailable for legacy .doc files on this deployment. Please download the manuscript to view it.'
+        })
+      }
+
+      try {
+        const buffer = await getStoredFileBuffer(resolved.storageKey)
+        let html = await convertDocxBufferToHtml(buffer)
+
+        html = sanitizePreviewHtml(html)
+        html = injectWatermark(html, userEmail || 'viewer')
+        html = injectProtection(html)
+        html = wrapHtmlDocument(html, version.title)
+
+        return {
+          type: 'html',
+          html,
+          title: version.title
+        }
+      } catch (error) {
+        console.error('Document preview error:', error)
+        throw createError({
+          statusCode: 500,
+          statusMessage: 'Failed to generate document preview'
+        })
+      }
     }
 
     try {

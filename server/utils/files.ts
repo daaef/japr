@@ -1,4 +1,4 @@
-import { mkdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { createReadStream, existsSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { extname, isAbsolute, join, relative, resolve } from 'node:path'
@@ -146,4 +146,26 @@ export async function getStoredFile(storageKey: string): Promise<{ stream: Reada
   const filePath = resolveStoredFilePath(storageKey)
   const stats = await stat(filePath)
   return { stream: createReadStream(filePath), size: stats.size, contentType }
+}
+
+/**
+ * Read a stored file fully into memory — for a conversion step (e.g. mammoth) that needs
+ * a Buffer up front rather than a stream. Same storage-driver branching as getStoredFile.
+ */
+export async function getStoredFileBuffer(storageKey: string): Promise<Buffer> {
+  if (isBlobStorage()) {
+    const url = await resolveBlobUrl(storageKey)
+    if (!url) {
+      throw createError({ statusCode: 404, statusMessage: 'File not found in storage.' })
+    }
+
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw createError({ statusCode: 502, statusMessage: 'Failed to read file from storage.' })
+    }
+
+    return Buffer.from(await response.arrayBuffer())
+  }
+
+  return readFile(resolveStoredFilePath(storageKey))
 }

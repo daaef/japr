@@ -1,9 +1,10 @@
 import { mkdtemp, writeFile, rm } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, extname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { readMultipartFormData } from 'h3'
 import {
   convertDocToHtml,
+  convertDocxBufferToHtml,
   getPreviewType,
   injectProtection,
   injectWatermark,
@@ -60,13 +61,29 @@ export default defineEventHandler(async (event) => {
     }
 
     if (previewType === 'doc') {
-      // Pandoc is unavailable on Vercel (blob/PDF-first). Degrade with a clear
-      // message instead of a 500; PDF files still preview directly above.
+      // Pandoc/LibreOffice are unavailable on Vercel. Mammoth converts .docx (modern
+      // zipped-XML format) in pure JS from the bytes already in hand; legacy binary .doc
+      // still has no preview path there.
       if (isBlobStorage()) {
+        if (extname(fileField.filename).toLowerCase() !== '.docx') {
+          return {
+            success: false,
+            type: 'doc',
+            message: 'Preview is unavailable for legacy .doc files here. Upload a PDF or .docx to preview, or submit and download to view.'
+          }
+        }
+
+        let html = await convertDocxBufferToHtml(Buffer.from(fileField.data))
+        html = sanitizePreviewHtml(html)
+        html = injectWatermark(html, session.user.email || 'viewer')
+        html = injectProtection(html)
+        html = wrapHtmlDocument(html, fileField.filename)
+
         return {
-          success: false,
-          type: 'doc',
-          message: 'Preview is unavailable for DOC/DOCX here. Upload a PDF to preview, or submit and download to view.'
+          success: true,
+          type: 'html',
+          html,
+          message: 'Preview generated successfully'
         }
       }
 

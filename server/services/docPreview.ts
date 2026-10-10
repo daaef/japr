@@ -1,8 +1,19 @@
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 import { extname } from 'node:path'
+import mammoth from 'mammoth'
 
 const execAsync = promisify(exec)
+
+/**
+ * Convert .docx to HTML in pure JS (no native binary) — the only preview path available on
+ * Vercel, which has neither Pandoc nor LibreOffice. Mammoth only understands the modern
+ * zipped-XML .docx format; legacy binary .doc still has no in-browser preview there.
+ */
+export async function convertDocxBufferToHtml(buffer: Buffer): Promise<string> {
+  const result = await mammoth.convertToHtml({ buffer })
+  return result.value
+}
 
 /**
  * Convert DOC/DOCX to HTML using Pandoc
