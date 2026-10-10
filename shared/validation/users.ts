@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+export function wordCount(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length
+}
+
 export const userCreateSchema = z.object({
   fullname: z.string().trim().min(2).max(120),
   username: z.string().trim().min(3).max(60),
@@ -16,9 +20,18 @@ export const userUpdateSchema = z.object({
   email: z.email().optional(),
   country: z.string().trim().max(120).optional().nullable(),
   institution: z.string().trim().max(160).optional().nullable(),
-  biography: z.string().trim().max(5000).optional().nullable(),
-  specialization: z.string().trim().max(255).optional().nullable(),
-  publications: z.string().trim().max(5000).optional().nullable(),
+  biography: z.string().trim().max(5000)
+    .refine(value => wordCount(value) <= 500, { message: 'Biography must be 500 words or fewer' })
+    .optional()
+    .nullable(),
+  specialization: z.string().trim().max(255)
+    .refine(value => wordCount(value) <= 10, { message: 'Specialization must be 10 words or fewer' })
+    .optional()
+    .nullable(),
+  publications: z.string().trim().max(5000)
+    .refine(value => wordCount(value) <= 500, { message: 'Publications must be 500 words or fewer' })
+    .optional()
+    .nullable(),
   academicDegree: z.string().trim().max(120).optional().nullable(),
   regionalExpertise: z.array(z.string()).optional().nullable(),
   researchInterests: z.array(z.string()).optional().nullable(),

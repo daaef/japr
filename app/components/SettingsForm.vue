@@ -2,6 +2,7 @@
 import { authClient } from '~~/lib/auth-client'
 import { PREFERRED_REVIEW_TYPE_OPTIONS } from '#shared/constants/preferredReviewTypes'
 import { RESEARCH_INTEREST_OPTIONS } from '#shared/constants/researchInterests'
+import { wordCount } from '#shared/validation/users'
 import type { userSettingsSchema } from '#shared/validation/users'
 import type { z } from 'zod'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
@@ -21,6 +22,16 @@ const showAcademicProfile = computed(() =>
   props.role === 'editor' || props.role === 'reviewer' || props.role === 'admin'
 )
 
+const ROLE_LABELS: Record<SettingsRole, string> = {
+  author: 'Author',
+  editor: 'Editor',
+  reviewer: 'Reviewer',
+  admin: 'Admin'
+}
+
+const BIOGRAPHY_WORD_LIMIT = 500
+const PUBLICATIONS_WORD_LIMIT = 500
+
 const form = reactive({
   fullname: '',
   username: '',
@@ -37,6 +48,9 @@ const form = reactive({
   availableForReview: true,
   maxReviewsPerMonth: 5
 })
+
+const biographyWordCount = computed(() => wordCount(form.biography))
+const publicationsWordCount = computed(() => wordCount(form.publications))
 
 const passwordForm = reactive({
   currentPassword: '',
@@ -407,102 +421,138 @@ async function changePassword() {
 
   <div
     v-else
-    class="grid gap-4"
+    class="space-y-6"
   >
-    <UCard>
-      <template #header>
-        <h4 class="text-[15px] font-bold text-highlighted">
-          Account Information
-        </h4>
-      </template>
+    <div class="flex items-center gap-2 text-sm text-muted">
+      Signed in as
+      <UBadge
+        color="secondary"
+        variant="subtle"
+        :label="ROLE_LABELS[role]"
+      />
+    </div>
 
-      <form
-        class="grid gap-4"
-        style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
-        @submit.prevent="saveSettings"
-      >
-        <UFormField
-          label="Full name"
-          name="fullname"
-        >
-          <UInput
-            v-model="form.fullname"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField
-          label="Username"
-          name="username"
-        >
-          <UInput
-            v-model="form.username"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField
-          label="Email"
-          name="email"
-          class="md:col-span-2"
-        >
-          <UInput
-            v-model="form.email"
-            type="email"
-            autocomplete="email"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField
-          label="Country"
-          name="country"
-        >
-          <CountrySelect
-            id="settings-country"
-            v-model="form.country"
-            :variant="countrySelectVariant"
-          />
-        </UFormField>
-        <UFormField
-          label="Institution"
-          name="institution"
-        >
-          <UInput
-            v-model="form.institution"
-            class="w-full"
-          />
-        </UFormField>
+    <form
+      class="space-y-6"
+      @submit.prevent="saveSettings"
+    >
+      <UCard>
+        <template #header>
+          <div class="flex items-center gap-3">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-primary-100 text-primary-600">
+              <UIcon name="i-lucide-user" class="size-4" />
+            </div>
+            <div>
+              <h4 class="text-[15px] font-bold text-highlighted">
+                Account Information
+              </h4>
+              <p class="text-xs text-dimmed">
+                Your name, contact details, and login.
+              </p>
+            </div>
+          </div>
+        </template>
 
-        <template v-if="role === 'author'">
+        <div
+          class="grid gap-4"
+          style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
+        >
           <UFormField
-            name="interests"
-            class="md:col-span-2"
+            label="Full name"
+            name="fullname"
           >
-            <template #label>
-              Interests
-              <NuxtLink
-                to="/author/interests"
-                class="text-primary font-bold ms-2"
-              >
-                Edit
-              </NuxtLink>
-            </template>
             <UInput
-              :model-value="authorInterestLabels"
-              type="text"
-              disabled
+              v-model="form.fullname"
               class="w-full"
             />
           </UFormField>
+          <UFormField
+            label="Username"
+            name="username"
+          >
+            <UInput
+              v-model="form.username"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Email"
+            name="email"
+            class="md:col-span-2"
+          >
+            <UInput
+              v-model="form.email"
+              type="email"
+              autocomplete="email"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Country"
+            name="country"
+          >
+            <CountrySelect
+              id="settings-country"
+              v-model="form.country"
+              :variant="countrySelectVariant"
+            />
+          </UFormField>
+          <UFormField
+            label="Institution"
+            name="institution"
+          >
+            <UInput
+              v-model="form.institution"
+              class="w-full"
+            />
+          </UFormField>
+
+          <template v-if="role === 'author'">
+            <UFormField
+              name="interests"
+              class="md:col-span-2"
+            >
+              <template #label>
+                Interests
+                <NuxtLink
+                  to="/author/interests"
+                  class="text-primary font-bold ms-2"
+                >
+                  Edit
+                </NuxtLink>
+              </template>
+              <UInput
+                :model-value="authorInterestLabels"
+                type="text"
+                disabled
+                class="w-full"
+              />
+            </UFormField>
+          </template>
+        </div>
+      </UCard>
+
+      <UCard v-if="showAcademicProfile">
+        <template #header>
+          <div class="flex items-center gap-3">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-warning-100 text-warning-600">
+              <UIcon name="i-lucide-graduation-cap" class="size-4" />
+            </div>
+            <div>
+              <h4 class="text-[15px] font-bold text-highlighted">
+                Academic Profile
+              </h4>
+              <p class="text-xs text-dimmed">
+                Shown to authors and used for reviewer expertise matching.
+              </p>
+            </div>
+          </div>
         </template>
 
-        <template v-if="showAcademicProfile">
-          <div class="md:col-span-2 mt-2 border-t border-default pt-5">
-            <h4 class="text-[15px] font-bold text-highlighted">
-              Academic Profile
-            </h4>
-            <p class="mt-1 text-xs text-dimmed">
-              Shown to authors and used for reviewer expertise matching.
-            </p>
-          </div>
+        <div
+          class="grid gap-4"
+          style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
+        >
           <UFormField
             label="Regional expertise"
             name="regionalExpertise"
@@ -534,17 +584,19 @@ async function changePassword() {
           <UFormField
             label="Biography"
             name="biography"
+            :help="`${biographyWordCount} / ${BIOGRAPHY_WORD_LIMIT} words`"
             class="md:col-span-2"
           >
             <UTextarea
               v-model="form.biography"
-              :rows="4"
+              :rows="8"
               class="w-full"
             />
           </UFormField>
           <UFormField
             label="Specialization"
             name="specialization"
+            help="10 words or fewer."
           >
             <UInput
               v-model="form.specialization"
@@ -563,17 +615,39 @@ async function changePassword() {
           <UFormField
             label="Publications"
             name="publications"
+            :help="`${publicationsWordCount} / ${PUBLICATIONS_WORD_LIMIT} words`"
             class="md:col-span-2"
           >
             <UTextarea
               v-model="form.publications"
-              :rows="4"
+              :rows="8"
               class="w-full"
             />
           </UFormField>
+        </div>
+      </UCard>
+
+      <UCard v-if="role === 'reviewer'">
+        <template #header>
+          <div class="flex items-center gap-3">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-info-100 text-info-600">
+              <UIcon name="i-lucide-sliders-horizontal" class="size-4" />
+            </div>
+            <div>
+              <h4 class="text-[15px] font-bold text-highlighted">
+                Reviewer Preferences
+              </h4>
+              <p class="text-xs text-dimmed">
+                Controls how manuscripts get assigned to you.
+              </p>
+            </div>
+          </div>
         </template>
 
-        <template v-if="role === 'reviewer'">
+        <div
+          class="grid gap-4"
+          style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
+        >
           <UFormField
             label="Preferred review types"
             name="preferredReviewTypes"
@@ -604,25 +678,24 @@ async function changePassword() {
             label="Available for review"
             class="md:col-span-2"
           />
-        </template>
-
-        <div class="md:col-span-2">
-          <UButton
-            type="submit"
-            color="primary"
-            :loading="loading"
-          >
-            {{ loading ? 'Saving...' : 'Save settings' }}
-          </UButton>
         </div>
-      </form>
+      </UCard>
+
+      <div class="flex items-center justify-end">
+        <UButton
+          type="submit"
+          color="primary"
+          :loading="loading"
+        >
+          {{ loading ? 'Saving...' : 'Save settings' }}
+        </UButton>
+      </div>
 
       <UAlert
         v-if="message"
         color="success"
         variant="subtle"
         icon="i-lucide-circle-check"
-        class="mt-3"
         :title="message"
       />
       <UAlert
@@ -630,16 +703,25 @@ async function changePassword() {
         color="error"
         variant="subtle"
         icon="i-lucide-circle-alert"
-        class="mt-3"
         :title="errorMessage"
       />
-    </UCard>
+    </form>
 
     <UCard>
       <template #header>
-        <h4 class="text-[15px] font-bold text-highlighted">
-          Change Password
-        </h4>
+        <div class="flex items-center gap-3">
+          <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-secondary-100 text-secondary-600">
+            <UIcon name="i-lucide-lock" class="size-4" />
+          </div>
+          <div>
+            <h4 class="text-[15px] font-bold text-highlighted">
+              Change Password
+            </h4>
+            <p class="text-xs text-dimmed">
+              Leave blank if you don't want to change it.
+            </p>
+          </div>
+        </div>
       </template>
 
       <form
@@ -681,7 +763,7 @@ async function changePassword() {
             class="w-full"
           />
         </UFormField>
-        <div class="md:col-span-2">
+        <div class="md:col-span-2 flex items-center justify-end">
           <UButton
             type="submit"
             color="primary"
