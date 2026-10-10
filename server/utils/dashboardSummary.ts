@@ -226,7 +226,7 @@ export function buildAdminDashboardSummary(input: AdminDashboardInput, now = new
   })), now)
 
   const reviewerRoleUserIds = new Set(input.userRoles
-    .filter(role => ['associate_editor', 'external_reviewer', 'desk_editor'].includes(role.roleName))
+    .filter(role => ['associate_editor', 'external_reviewer'].includes(role.roleName))
     .map(role => role.userId))
 
   const roleCounts = new Map<string, number>()

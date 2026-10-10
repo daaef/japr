@@ -1,5 +1,9 @@
 # Plan: Promote desk_editor (submissions visibility + backup reviewer assignment)
 
+> **Superseded 2026-10-10 — not implemented.** See `docs/tasks/20261010_collapse-desk-editor-role/`.
+> The stakeholder confirmed `desk_editor` and `copy_desk_editor` are meant to be the same role,
+> so `desk_editor` is retired rather than promoted.
+
 ## Step 1 — Grant the permission (needed under either option below)
 
 **File:** `shared/constants/permissions.ts`, the `desk_editor` entry (lines 118-128)

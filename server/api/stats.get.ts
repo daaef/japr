@@ -11,8 +11,7 @@ export default defineEventHandler(async () => {
 
   const reviewerRoles = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, [
     'associate_editor',
-    'external_reviewer',
-    'desk_editor'
+    'external_reviewer'
   ]))
 
   const reviewerCount = reviewerRoles.length

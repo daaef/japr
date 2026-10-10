@@ -24,7 +24,6 @@ const defaultUsers: Array<{ role: RoleKey, username: string, email: string, full
   { role: 'managing_editor', username: 'managing_editor', email: 'managing@example.com', fullname: 'Managing Editor', password: 'password' },
   { role: 'author', username: 'author', email: 'author@example.com', fullname: 'Author User', password: 'password' },
   { role: 'associate_editor', username: 'associate_editor', email: 'associate@example.com', fullname: 'Associate Editor', password: 'password' },
-  { role: 'desk_editor', username: 'desk_editor', email: 'desk@example.com', fullname: 'Desk Editor', password: 'password' },
   { role: 'external_reviewer', username: 'external_reviewer', email: 'external@example.com', fullname: 'External Reviewer', password: 'password' },
   { role: 'copy_desk_editor', username: 'copy_desk_editor', email: 'copydesk@example.com', fullname: 'Copy Desk Editor', password: 'password' }
 ]

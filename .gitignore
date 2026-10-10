@@ -36,3 +36,6 @@ works.
 # Playwright E2E
 e2e-report/
 e2e-results/
+
+# Local-only test fixtures (binary sample files supplied per-developer, not committed)
+tests/fixtures/

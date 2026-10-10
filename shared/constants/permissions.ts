@@ -115,18 +115,6 @@ export const systemRoles: SystemRoleDefinition[] = [
     ]
   },
   {
-    name: 'desk_editor',
-    description: 'Editorial desk',
-    isSystem: true,
-    permissions: [
-      'manage-review-process',
-      'coordinate-reviews',
-      'review-manuscript',
-      'provide-feedback',
-      'read-public-journals'
-    ]
-  },
-  {
     name: 'copy_desk_editor',
     description: 'Deputy editor — full editorial workflow plus copy desk production',
     isSystem: true,

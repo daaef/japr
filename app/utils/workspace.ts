@@ -9,7 +9,7 @@ export function resolveRoleLayout(roles: string[]): RoleLayout {
     return 'editor'
   }
 
-  if (roles.includes('associate_editor') || roles.includes('external_reviewer') || roles.includes('desk_editor')) {
+  if (roles.includes('associate_editor') || roles.includes('external_reviewer')) {
     return 'reviewer'
   }
 
@@ -29,7 +29,7 @@ export function resolveWorkspacePath(roles: string[], options?: { hasInterests?:
     return '/editor'
   }
 
-  if (roles.includes('associate_editor') || roles.includes('external_reviewer') || roles.includes('desk_editor')) {
+  if (roles.includes('associate_editor') || roles.includes('external_reviewer')) {
     return '/reviewer'
   }
 

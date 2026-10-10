@@ -6,7 +6,6 @@ const elevatedRoles = [
   'managing_editor',
   'associate_editor',
   'external_reviewer',
-  'desk_editor',
   'copy_desk_editor'
 ]
 

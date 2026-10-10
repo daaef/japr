@@ -13,7 +13,7 @@ const isReviewerRole = (roleName: string) => (reviewerRoleKeys as readonly strin
 
 test('shared role keys are the single source for editor/reviewer groupings', () => {
   assert.deepEqual([...editorRoleKeys], ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor'])
-  assert.deepEqual([...reviewerRoleKeys], ['associate_editor', 'external_reviewer', 'desk_editor'])
+  assert.deepEqual([...reviewerRoleKeys], ['associate_editor', 'external_reviewer'])
 })
 
 test('shared authenticated pages resolve the correct workspace layout', () => {
@@ -23,7 +23,6 @@ test('shared authenticated pages resolve the correct workspace layout', () => {
   assert.equal(resolveRoleLayout(['copy_desk_editor']), 'editor')
   assert.equal(resolveRoleLayout(['associate_editor']), 'reviewer')
   assert.equal(resolveRoleLayout(['external_reviewer']), 'reviewer')
-  assert.equal(resolveRoleLayout(['desk_editor']), 'reviewer')
   assert.equal(resolveRoleLayout(['author']), 'author')
   assert.equal(resolveRoleLayout([]), 'public')
 })

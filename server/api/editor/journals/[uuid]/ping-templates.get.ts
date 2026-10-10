@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
     .where(inArray(userRoles.roleId, matchingRoleIds))
 
   // For reviewer-targeted templates, narrow to reviewers assigned to THIS manuscript.
-  const reviewerRoles = new Set(['associate_editor', 'external_reviewer', 'desk_editor'])
+  const reviewerRoles = new Set(['associate_editor', 'external_reviewer'])
   const assignedReviewerRows = await db
     .select({ userId: reviewers.userId })
     .from(reviewers)

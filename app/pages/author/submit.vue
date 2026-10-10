@@ -472,8 +472,8 @@ const createSubmission = handleSubmit(async (values) => {
             v-model="selectedFile"
             icon="i-lucide-upload"
             label="Upload Manuscript"
-            description="PDF, DOC, or DOCX files up to 10MB"
-            accept=".pdf,.doc,.docx"
+            description="PDF or DOCX files up to 10MB"
+            accept=".pdf,.docx"
           />
           <div v-if="fileNameMessage" class="mt-3">
             <UBadge :color="fileNameStatus" variant="subtle">

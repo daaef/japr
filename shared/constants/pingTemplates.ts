@@ -36,7 +36,7 @@ export const pingTemplates: PingTemplate[] = [
   {
     id: 'remind-reviewer-deadline',
     label: 'Review deadline reminder',
-    targetRoles: ['associate_editor', 'external_reviewer', 'desk_editor'],
+    targetRoles: ['associate_editor', 'external_reviewer'],
     applicableStatuses: ['under_peer_review', 'in-progress'],
     render: (ctx) => ({
       title: 'Review deadline reminder',
@@ -66,7 +66,7 @@ export const pingTemplates: PingTemplate[] = [
   {
     id: 'general-attention',
     label: 'Needs your attention',
-    targetRoles: ['admin', 'editor_in_chief', 'managing_editor', 'associate_editor', 'external_reviewer', 'author', 'desk_editor', 'copy_desk_editor'],
+    targetRoles: ['admin', 'editor_in_chief', 'managing_editor', 'associate_editor', 'external_reviewer', 'author', 'copy_desk_editor'],
     applicableStatuses: [],
     render: (ctx) => ({
       title: 'Needs your attention',

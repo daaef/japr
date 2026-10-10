@@ -621,19 +621,6 @@ async function changePassword() {
             />
           </UFormField>
           <UFormField
-            label="Biography"
-            name="biography"
-            :help="`${biographyWordCount} / ${BIOGRAPHY_WORD_LIMIT} words`"
-            :error="fieldErrors.biography"
-            class="md:col-span-2"
-          >
-            <UTextarea
-              v-model="form.biography"
-              :rows="8"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
             label="Specialization"
             name="specialization"
             help="10 words or fewer."
@@ -643,7 +630,7 @@ async function changePassword() {
               v-model="form.specialization"
               class="w-full"
             />
-          </UFormField>
+          </UFormField> 
           <UFormField
             label="Academic degree"
             name="academicDegree"
@@ -651,6 +638,19 @@ async function changePassword() {
           >
             <UInput
               v-model="form.academicDegree"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="Biography"
+            name="biography"
+            :help="`${biographyWordCount} / ${BIOGRAPHY_WORD_LIMIT} words`"
+            :error="fieldErrors.biography"
+            class="md:col-span-2"
+          >
+            <UTextarea
+              v-model="form.biography"
+              :rows="8"
               class="w-full"
             />
           </UFormField>

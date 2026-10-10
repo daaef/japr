@@ -32,7 +32,7 @@ async function handleAccept() {
     await refreshUser()
 
     const roles = currentUser.value.roles || []
-    if (roles.some(role => ['associate_editor', 'external_reviewer', 'desk_editor'].includes(role))) {
+    if (roles.some(role => ['associate_editor', 'external_reviewer'].includes(role))) {
       await router.push('/reviewer')
       return
     }

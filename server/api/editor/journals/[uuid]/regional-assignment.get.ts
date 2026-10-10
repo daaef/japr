@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const reviewerRoles = await db.query.roles.findMany({
-    where: (table, { inArray }) => inArray(table.name, ['associate_editor', 'external_reviewer', 'desk_editor'])
+    where: (table, { inArray }) => inArray(table.name, ['associate_editor', 'external_reviewer'])
   })
 
   const reviewerRoleIds = reviewerRoles.map(role => role.id)

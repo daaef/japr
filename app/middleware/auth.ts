@@ -12,7 +12,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // Already accepted the review policy — don't show the acceptance page again.
   if (to.path === '/review-policy' && me.value.user?.reviewPolicyAccepted) {
-    if (me.value.roles.some(role => ['associate_editor', 'external_reviewer', 'desk_editor'].includes(role))) {
+    if (me.value.roles.some(role => ['associate_editor', 'external_reviewer'].includes(role))) {
       return navigateTo('/reviewer')
     }
     return navigateTo('/author/submit')

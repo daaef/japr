@@ -124,7 +124,7 @@ const mobileMenuOpen = ref(false)
                 Dashboard
               </NuxtLink>
               <NuxtLink
-                v-if="hasAnyRole(['associate_editor', 'desk_editor', 'external_reviewer'])"
+                v-if="hasAnyRole(['associate_editor', 'external_reviewer'])"
                 class="font-bold lg:hidden text-gray-900 hover:text-gray-400 focus:outline-none focus:text-gray-400"
                 to="/reviewer"
               >
@@ -256,7 +256,7 @@ const mobileMenuOpen = ref(false)
                   Profile
                 </NuxtLink>
                 <NuxtLink
-                  v-if="hasAnyRole(['associate_editor', 'desk_editor', 'external_reviewer'])"
+                  v-if="hasAnyRole(['associate_editor', 'external_reviewer'])"
                   class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm hover:bg-elevated focus:outline-none focus:bg-elevated"
                   :class="navClass(route.path.startsWith('/reviewer'), 'text-taupe-700 font-medium')"
                   to="/reviewer"

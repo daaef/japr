@@ -1,5 +1,11 @@
 # Problem: desk_editor can't receive submissions or back up reviewer assignment
 
+> **Superseded 2026-10-10.** The stakeholder has since confirmed, after this doc's "important
+> correction" section below was raised with them directly, that `desk_editor` and
+> `copy_desk_editor` ARE meant to be the same role — the opposite of this doc's conclusion. See
+> `docs/tasks/20261010_collapse-desk-editor-role/`. This doc is kept for its investigation, not
+> as the active plan.
+
 ## Symptoms (from 2026-10-09 stakeholder meeting)
 
 1. **"Desk editor receives all submissions to ensure nothing falls through cracks."** Today

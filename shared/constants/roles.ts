@@ -5,14 +5,13 @@ export const roleKeys = [
   'associate_editor',
   'external_reviewer',
   'author',
-  'desk_editor',
   'copy_desk_editor'
 ] as const
 
 export type RoleKey = (typeof roleKeys)[number]
 
 export const editorRoleKeys = ['admin', 'editor_in_chief', 'managing_editor', 'copy_desk_editor'] as const
-export const reviewerRoleKeys = ['associate_editor', 'external_reviewer', 'desk_editor'] as const
+export const reviewerRoleKeys = ['associate_editor', 'external_reviewer'] as const
 
 // `requiredRoles` allow-lists for definePageMeta, grouped to match the six distinct
 // literal arrays that were previously duplicated inline across ~50 pages.

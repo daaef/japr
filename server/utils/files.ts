@@ -17,7 +17,7 @@ export function getUploadDir() {
 }
 
 export function getAllowedMimeTypes() {
-  const configured = process.env.ALLOWED_MIME_TYPES ?? 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  const configured = process.env.ALLOWED_MIME_TYPES ?? 'application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   return configured.split(',').map(entry => entry.trim()).filter(Boolean)
 }
 
