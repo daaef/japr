@@ -2,10 +2,9 @@
 import { authClient } from '~~/lib/auth-client'
 import { PREFERRED_REVIEW_TYPE_OPTIONS } from '#shared/constants/preferredReviewTypes'
 import { RESEARCH_INTEREST_OPTIONS } from '#shared/constants/researchInterests'
-import { wordCount } from '#shared/validation/users'
-import type { userSettingsSchema } from '#shared/validation/users'
+import { userSettingsSchema, wordCount } from '#shared/validation/users'
 import type { z } from 'zod'
-import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
+import { extractApiErrorMessage, extractApiErrorMessages } from '~/utils/extractApiErrorMessage'
 
 type SettingsRole = 'author' | 'editor' | 'reviewer' | 'admin'
 type SettingsPayload = z.infer<typeof userSettingsSchema>
@@ -116,6 +115,8 @@ watch(() => currentUser.value.user, (user) => {
 
 const message = ref('')
 const errorMessage = ref('')
+const errorTitle = ref('')
+const errorMessages = ref<string[]>([])
 const passwordMessage = ref('')
 const passwordError = ref('')
 const loading = ref(false)
@@ -165,6 +166,25 @@ function buildSettingsPayload(): SettingsPayload {
   return payload
 }
 
+// Re-parses on every keystroke using the exact schema the server enforces, so an inline
+// error can never say something different from what the PATCH would actually reject.
+const fieldErrors = computed<Partial<Record<keyof SettingsPayload, string>>>(() => {
+  const result = userSettingsSchema.safeParse(buildSettingsPayload())
+
+  if (result.success) {
+    return {}
+  }
+
+  const errors: Partial<Record<keyof SettingsPayload, string>> = {}
+  for (const issue of result.error.issues) {
+    const key = issue.path[0] as keyof SettingsPayload | undefined
+    if (key && !(key in errors)) {
+      errors[key] = issue.message
+    }
+  }
+  return errors
+})
+
 async function saveSettings() {
   if (!userId.value) {
     return
@@ -173,6 +193,16 @@ async function saveSettings() {
   loading.value = true
   message.value = ''
   errorMessage.value = ''
+  errorTitle.value = ''
+  errorMessages.value = []
+
+  if (Object.keys(fieldErrors.value).length > 0) {
+    loading.value = false
+    errorMessage.value = 'Fix the highlighted fields before saving.'
+    errorTitle.value = 'Fix the highlighted fields before saving'
+    errorMessages.value = Object.values(fieldErrors.value)
+    return
+  }
 
   try {
     await $fetch(`/api/users/${userId.value}/settings`, {
@@ -183,6 +213,8 @@ async function saveSettings() {
     message.value = props.authorPublicLayout ? 'Account updated.' : 'Settings saved.'
   } catch (error) {
     errorMessage.value = extractApiErrorMessage(error, 'Unable to save settings.')
+    errorTitle.value = 'Unable to save settings'
+    errorMessages.value = extractApiErrorMessages(error, 'Unable to save settings.')
   } finally {
     loading.value = false
   }
@@ -436,7 +468,7 @@ async function changePassword() {
       class="space-y-6"
       @submit.prevent="saveSettings"
     >
-      <UCard>
+      <UCard class="shadow-sm">
         <template #header>
           <div class="flex items-center gap-3">
             <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-primary-100 text-primary-600">
@@ -460,6 +492,7 @@ async function changePassword() {
           <UFormField
             label="Full name"
             name="fullname"
+            :error="fieldErrors.fullname"
           >
             <UInput
               v-model="form.fullname"
@@ -469,6 +502,7 @@ async function changePassword() {
           <UFormField
             label="Username"
             name="username"
+            :error="fieldErrors.username"
           >
             <UInput
               v-model="form.username"
@@ -490,6 +524,7 @@ async function changePassword() {
           <UFormField
             label="Country"
             name="country"
+            :error="fieldErrors.country"
           >
             <CountrySelect
               id="settings-country"
@@ -500,6 +535,7 @@ async function changePassword() {
           <UFormField
             label="Institution"
             name="institution"
+            :error="fieldErrors.institution"
           >
             <UInput
               v-model="form.institution"
@@ -532,7 +568,10 @@ async function changePassword() {
         </div>
       </UCard>
 
-      <UCard v-if="showAcademicProfile">
+      <UCard
+        v-if="showAcademicProfile"
+        class="shadow-sm"
+      >
         <template #header>
           <div class="flex items-center gap-3">
             <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-warning-100 text-warning-600">
@@ -585,6 +624,7 @@ async function changePassword() {
             label="Biography"
             name="biography"
             :help="`${biographyWordCount} / ${BIOGRAPHY_WORD_LIMIT} words`"
+            :error="fieldErrors.biography"
             class="md:col-span-2"
           >
             <UTextarea
@@ -597,6 +637,7 @@ async function changePassword() {
             label="Specialization"
             name="specialization"
             help="10 words or fewer."
+            :error="fieldErrors.specialization"
           >
             <UInput
               v-model="form.specialization"
@@ -606,6 +647,7 @@ async function changePassword() {
           <UFormField
             label="Academic degree"
             name="academicDegree"
+            :error="fieldErrors.academicDegree"
           >
             <UInput
               v-model="form.academicDegree"
@@ -616,6 +658,7 @@ async function changePassword() {
             label="Publications"
             name="publications"
             :help="`${publicationsWordCount} / ${PUBLICATIONS_WORD_LIMIT} words`"
+            :error="fieldErrors.publications"
             class="md:col-span-2"
           >
             <UTextarea
@@ -627,7 +670,10 @@ async function changePassword() {
         </div>
       </UCard>
 
-      <UCard v-if="role === 'reviewer'">
+      <UCard
+        v-if="role === 'reviewer'"
+        class="shadow-sm"
+      >
         <template #header>
           <div class="flex items-center gap-3">
             <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-info-100 text-info-600">
@@ -699,15 +745,26 @@ async function changePassword() {
         :title="message"
       />
       <UAlert
-        v-if="errorMessage"
+        v-if="errorMessages.length"
         color="error"
         variant="subtle"
         icon="i-lucide-circle-alert"
-        :title="errorMessage"
-      />
+        :title="errorTitle"
+      >
+        <template #description>
+          <ul class="list-disc space-y-0.5 pl-4">
+            <li
+              v-for="item in errorMessages"
+              :key="item"
+            >
+              {{ item }}
+            </li>
+          </ul>
+        </template>
+      </UAlert>
     </form>
 
-    <UCard>
+    <UCard class="shadow-sm">
       <template #header>
         <div class="flex items-center gap-3">
           <div class="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-secondary-100 text-secondary-600">
