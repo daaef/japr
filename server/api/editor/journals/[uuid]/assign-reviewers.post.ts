@@ -214,6 +214,24 @@ export default defineEventHandler(async (event) => {
     )
   )))
 
+  // Author previously heard nothing when reviewers were actually assigned to their
+  // manuscript (assignment alone rarely changes approvalStatus, so the generic
+  // status-changed notice from syncJournalReviewStatus above usually doesn't fire).
+  // Only fire when an invitation genuinely went out, not on a re-assign call where
+  // everyone was skipped.
+  if (invitationTargets.length > 0) {
+    await createNotifications([{
+      userId: journal.userId,
+      type: 'reviewers-assigned',
+      data: {
+        title: 'Reviewers assigned',
+        journalId: journal.id,
+        message: `${invitationTargets.length} reviewer${invitationTargets.length === 1 ? '' : 's'} assigned to "${journal.title}".`,
+        action_url: `/author/submissions/${journal.id}`
+      }
+    }])
+  }
+
   await logAdminAction(event, {
     action: 'reviewer_assigned',
     resourceType: 'journal',

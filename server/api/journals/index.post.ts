@@ -129,6 +129,23 @@ export default defineEventHandler(async (event) => {
     console.error('Failed to send submission confirmation email:', error)
   }
 
+  // Author only got an email for their own submission (no dashboard row) — add one so
+  // it shows up in their notification list the same way every later status change does.
+  try {
+    await createNotifications([{
+      userId: session.user.id,
+      type: 'manuscript-submitted',
+      data: {
+        title: 'Manuscript received',
+        journalId: journal.id,
+        message: `"${journal.title}" has been received and is pending initial review.`,
+        action_url: `/author/submissions/${journal.id}`
+      }
+    }])
+  } catch (error) {
+    console.error('Failed to create submission confirmation notification:', error)
+  }
+
   // Notify editors about new submission
   try {
     // Get all editor role IDs
