@@ -1,9 +1,14 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '#server/db/client'
-import { journals } from '#server/db/schema'
-import { notifyAuthorOfManuscriptStatus } from '#server/utils/manuscriptStatusNotifications'
+import { adminAuditLogs, journals, roles, userRoles, users } from '#server/db/schema'
+import { getAuditRiskLevel } from '#server/utils/adminAuditCore'
+import { sendDecisionEmail } from '#server/utils/email'
+import { notifyAuthorOfManuscriptStatus, notifyReviewersOfFinalDecision } from '#server/utils/manuscriptStatusNotifications'
+import { createNotification, createNotifications } from '#server/utils/notifications'
+import { sendIfEmailAllowed } from '#server/utils/notificationPreferences'
 import { MANUSCRIPT_STATUS, REVIEW_STAGE_STATUSES, canTransitionManuscriptStatus, isManuscriptStatus, type ManuscriptStatus } from '#shared/constants/manuscriptStatus'
 import { REVIEWER_STATUS, isReviewerStatus, type ReviewerStatus } from '#shared/constants/reviewerStatus'
+import { EDITOR_ROLES } from '#shared/constants/roles'
 
 export type WorkflowStatus =
   | typeof MANUSCRIPT_STATUS.IN_PROGRESS
@@ -88,6 +93,137 @@ export function getReviewConsensus(
   return { completed, ready, suggestion }
 }
 
+export type EarlyConsensusOutcome = 'accept' | 'reject' | null
+
+/**
+ * Resolves the moment 2+ of the CURRENT round's completed reviews agree on accept or
+ * reject — independent of REVIEW_QUORUM (3), and regardless of whether the remaining
+ * reviewer has responded yet. A split, or two reviewers agreeing on a revision
+ * recommendation, is not an early consensus and still waits for the full quorum
+ * (stakeholder decision, 2026-10-11 — only approve/reject were asked to auto-resolve).
+ */
+export function getEarlyConsensus(reviewers: ReviewerConsensusInput[]): EarlyConsensusOutcome {
+  const completed = reviewers.filter(item => item.status === REVIEWER_STATUS.REVIEWED)
+  const acceptCount = completed.filter(item => (item.recommendation ?? '').toLowerCase() === 'accept').length
+  const rejectCount = completed.filter(item => (item.recommendation ?? '').toLowerCase() === 'reject').length
+
+  if (acceptCount >= 2) {
+    return 'accept'
+  }
+  if (rejectCount >= 2) {
+    return 'reject'
+  }
+  return null
+}
+
+/**
+ * Automatically finalizes a manuscript the moment 2 reviewers in the current round agree,
+ * without waiting for the 3rd. Mirrors the side effects of a human editor's approve/decline
+ * (server/utils/editorDecision.ts, server/api/editor/journals/[uuid]/decline.post.ts) —
+ * decision email, author notification, reviewer final-decision notification — but is
+ * attributed to no human actor: logged under a distinct audit action
+ * (manuscript_auto_approved/manuscript_auto_declined) with a null user id, and does not
+ * write a journalComments row (that table requires a real, human user id).
+ */
+async function finalizeByReviewerConsensus(journalId: string, outcome: 'accept' | 'reject'): Promise<ManuscriptStatus> {
+  const finalStatus = outcome === 'accept' ? MANUSCRIPT_STATUS.APPROVED : MANUSCRIPT_STATUS.DECLINED
+  const reason = outcome === 'accept'
+    ? 'Automatically approved — 2 of 3 reviewers recommended acceptance.'
+    : 'Automatically declined — 2 of 3 reviewers recommended rejection.'
+
+  await db
+    .update(journals)
+    .set({
+      approvalStatus: finalStatus,
+      editorDecisionComment: reason,
+      editorDecisionDate: new Date(),
+      ...(outcome === 'accept' ? { approvedAt: new Date(), managingEditorNoticeSentAt: new Date() } : {}),
+      updatedAt: new Date()
+    })
+    .where(eq(journals.id, journalId))
+
+  const journal = await db.query.journals.findFirst({
+    where: (table, { eq: eqFn }) => eqFn(table.id, journalId)
+  })
+
+  if (journal) {
+    const author = await db.query.users.findFirst({
+      where: eq(users.id, journal.userId),
+      columns: { email: true, fullname: true }
+    })
+
+    if (author) {
+      try {
+        await sendIfEmailAllowed(journal.userId, 'manuscript_status', () =>
+          sendDecisionEmail(author.email, author.fullname, journal.title, finalStatus, reason)
+        )
+      } catch (error) {
+        console.error('Failed to send auto-decision email:', error)
+      }
+    }
+
+    await createNotification({
+      userId: journal.userId,
+      type: outcome === 'accept' ? 'journal-approved' : 'journal-declined',
+      data: {
+        title: outcome === 'accept' ? 'Manuscript approved' : 'Manuscript declined',
+        journalId: journal.id,
+        message: outcome === 'accept'
+          ? `${journal.title} has been approved for publication.`
+          : reason,
+        action_url: `/author/submissions/${journal.id}`
+      }
+    })
+  }
+
+  // Reviewers who completed a review never learned the outcome otherwise (F13d).
+  await notifyReviewersOfFinalDecision(journalId, finalStatus)
+
+  // The manual path's "all reviews are in" notification (notifyEditorsAllReviewsComplete)
+  // never fires here — allComplete is false with the 3rd reviewer still pending, and the
+  // status isn't READY_FOR_MANAGING_EDITOR_NOTICE. Without this, editors would have zero
+  // visibility that a manuscript they own was just auto-resolved.
+  if (journal) {
+    try {
+      const editorRoleRows = await db.select({ id: roles.id }).from(roles).where(inArray(roles.name, [...EDITOR_ROLES]))
+      const editorRoleIds = editorRoleRows.map(role => role.id)
+
+      if (editorRoleIds.length > 0) {
+        const editorUsers = await db.select({ id: users.id })
+          .from(userRoles)
+          .innerJoin(users, eq(userRoles.userId, users.id))
+          .where(inArray(userRoles.roleId, editorRoleIds))
+
+        await createNotifications(editorUsers.map(editor => ({
+          userId: editor.id,
+          type: outcome === 'accept' ? 'journal-approved' : 'journal-declined',
+          data: {
+            title: outcome === 'accept' ? 'Manuscript auto-approved' : 'Manuscript auto-declined',
+            journalId: journal.id,
+            message: `"${journal.title}" was automatically ${outcome === 'accept' ? 'approved' : 'declined'} — 2 of 3 reviewers agreed, no editor action was taken.`,
+            action_url: `/editor/journals/${journal.id}`
+          }
+        })))
+      }
+    } catch (error) {
+      console.error('Failed to notify editors of auto-decision:', error)
+    }
+  }
+
+  const auditAction = outcome === 'accept' ? 'manuscript_auto_approved' : 'manuscript_auto_declined'
+  await db.insert(adminAuditLogs).values({
+    userId: null,
+    action: auditAction,
+    resourceType: 'journal',
+    resourceId: journalId,
+    description: `Manuscript automatically ${outcome === 'accept' ? 'approved' : 'declined'} — 2 of 3 reviewers agreed`,
+    riskLevel: getAuditRiskLevel(auditAction),
+    metadata: { trigger: 'reviewer_consensus' }
+  })
+
+  return finalStatus
+}
+
 export function getReviewWorkflowStatus(reviewers: ReviewerWorkflowInput[]): WorkflowStatus {
   const completedReviews = getCompletedReviewCount(reviewers)
   const allResponded = reviewers.length > 0 && reviewers.every(reviewerResponseIsTerminal)
@@ -160,6 +296,17 @@ export async function syncJournalReviewStatus(journalId: string): Promise<Manusc
   }
 
   const journalReviewers = await getCurrentRoundReviewers(journalId, journal.currentReviewRound)
+
+  // 2 of the current round's reviewers agreeing resolves the manuscript immediately,
+  // ahead of the normal 3-reviewer quorum below (stakeholder decision, 2026-10-11).
+  const earlyConsensus = getEarlyConsensus(journalReviewers)
+  if (earlyConsensus) {
+    const targetStatus = earlyConsensus === 'accept' ? MANUSCRIPT_STATUS.APPROVED : MANUSCRIPT_STATUS.DECLINED
+
+    if (targetStatus !== journal.approvalStatus && canTransitionManuscriptStatus(journal.approvalStatus, targetStatus)) {
+      return finalizeByReviewerConsensus(journalId, earlyConsensus)
+    }
+  }
 
   const approvalStatus = getReviewWorkflowStatus(journalReviewers)
 

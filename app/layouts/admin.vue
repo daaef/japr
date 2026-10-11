@@ -148,6 +148,20 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
 
           <li>
             <NuxtLink
+              to="/admin/editorial-board"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/editorial-board')"
+            >
+              <UIcon
+                name="i-lucide-users"
+                class="text-xl"
+              />
+              <span>Editorial Board</span>
+            </NuxtLink>
+          </li>
+
+          <li>
+            <NuxtLink
               to="/admin/journals"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
               :class="dashboardLinkClassDark('/admin/journals')"

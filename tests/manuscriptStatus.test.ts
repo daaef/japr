@@ -81,3 +81,11 @@ test('canTransitionManuscriptStatus allows the auto-engine transitions syncJourn
   // Still disallowed: the auto-engine never produces these, and it must stay that way.
   assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.REVIEWED, MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE), false)
 })
+
+test('under_peer_review can jump straight to approved/declined on 2-of-3 reviewer consensus', () => {
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.UNDER_PEER_REVIEW, MANUSCRIPT_STATUS.APPROVED), true)
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.UNDER_PEER_REVIEW, MANUSCRIPT_STATUS.DECLINED), true)
+  // approved_with_comment is a manual-only outcome (an editor adds a comment on approval) —
+  // the auto-engine never produces it, so it stays disallowed from this status.
+  assert.equal(canTransitionManuscriptStatus(MANUSCRIPT_STATUS.UNDER_PEER_REVIEW, MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT), false)
+})

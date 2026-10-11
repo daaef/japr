@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ADMIN_ROLES } from '#shared/constants/roles'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
   middleware: ['auth', 'role'],
-  requiredRoles: ADMIN_ROLES
+  requiredRoles: ['admin', 'copy_desk_editor']
 })
 
 usePageHeading().value = 'Users'

@@ -132,13 +132,18 @@ export async function seedSystemData(database: Database, options?: {
     }
   }
 
+  const africanRegionNames = new Set(['Central Africa', 'East Africa', 'North Africa', 'Southern Africa', 'West Africa'])
+
   for (const [regionName, countryNames] of Object.entries(regionSeeds)) {
     let region = await database.query.regions.findFirst({
       where: (table, { eq }) => eq(table.name, regionName)
     })
 
     if (!region) {
-      const inserted = await database.insert(regions).values({ name: regionName }).returning()
+      const inserted = await database.insert(regions).values({
+        name: regionName,
+        isAfrican: africanRegionNames.has(regionName)
+      }).returning()
       region = inserted[0]!
     }
 

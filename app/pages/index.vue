@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PublicDashboardStats } from '#shared/types/dashboard'
-import { associateEditors, deskEditor, editorInChief, managingEditor } from '#shared/content/editorial-board'
+import type { EditorialBoardMember } from '#shared/types/editorialBoard'
 import { getInitials } from '~/utils/initials'
 
 definePageMeta({
@@ -62,7 +62,12 @@ const submitHref = computed(() => {
   return '/auth/login'
 })
 
-const editorialBoardTeaser = [editorInChief, managingEditor, deskEditor, associateEditors[0]!]
+// Already returned ordered by sortOrder (see /api/editorial-board) — the first 4 in
+// board order, not any hardcoded role names, so this stays correct as the board changes.
+const { data: editorialBoardData } = await useFetch<{ members: EditorialBoardMember[] }>('/api/editorial-board', {
+  default: () => ({ members: [] })
+})
+const editorialBoardTeaser = computed(() => editorialBoardData.value.members.slice(0, 4))
 
 const accessDeniedPath = computed(() => {
   if (route.query.accessDenied !== '1') {
@@ -340,7 +345,7 @@ function displayStat(value: number) {
       <div class="grid gap-5" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
         <div
           v-for="member in editorialBoardTeaser"
-          :key="member.name"
+          :key="member.id"
           class="rounded-2xl border border-default p-7 text-center"
         >
           <div class="mx-auto mb-3.5 flex size-14 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600">

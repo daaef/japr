@@ -1,8 +1,14 @@
+import { getQuery } from 'h3'
 import { db } from '#server/db/client'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const query = getQuery(event)
+  const africaOnly = query.scope === 'africa'
+
   const [regionRows, countryRows] = await Promise.all([
-    db.query.regions.findMany(),
+    africaOnly
+      ? db.query.regions.findMany({ where: (table, { eq: eqFn }) => eqFn(table.isAfrican, true) })
+      : db.query.regions.findMany(),
     db.query.countries.findMany()
   ])
 

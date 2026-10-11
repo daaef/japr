@@ -42,7 +42,8 @@ export const permissionDefinitions: PermissionDefinition[] = [
   { name: 'read-public-journals', resource: 'journal', action: 'read', scope: 'public', description: 'Read public journals.' },
   { name: 'read-notifications', resource: 'notification', action: 'read', scope: 'own', description: 'Read notifications.' },
   { name: 'read-categories', resource: 'category', action: 'read', scope: 'public', description: 'Read category tree.' },
-  { name: 'send-ping', resource: 'ping', action: 'send', scope: 'any', description: 'Send preset nudge messages to other users.' }
+  { name: 'send-ping', resource: 'ping', action: 'send', scope: 'any', description: 'Send preset nudge messages to other users.' },
+  { name: 'manage-editorial-board', resource: 'editorial_board', action: 'manage', scope: 'any', description: 'Manage the public editorial board listing.' }
 ]
 
 export const systemRoles: SystemRoleDefinition[] = [
@@ -134,7 +135,12 @@ export const systemRoles: SystemRoleDefinition[] = [
       'final-edit-manuscript',
       'prepare-for-publication',
       'read-public-journals',
-      'send-ping'
+      'send-ping',
+      // Admin backup duty, per the stakeholder's "desk editor can do this too"
+      'manage-editorial-board',
+      'create-users',
+      'edit-users',
+      'delete-users'
     ]
   }
 ]

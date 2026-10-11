@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { db } from '#server/db/client'
-import { permissions, rolePermissions, roles, userRoles } from '#server/db/schema'
+import { permissions, rolePermissions, roles, userRoles, users } from '#server/db/schema'
 import { getUserRoles, requireSession, type SessionRole } from './session'
 import { derivePermissionActions, type PermissionRow } from './permissionActions'
 import {

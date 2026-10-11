@@ -498,11 +498,12 @@ const createSubmission = handleSubmit(async (values) => {
             Classification
           </h3>
           <div class="grid gap-x-6 gap-y-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-            <UFormField label="Country" :error="errors.country">
+            <UFormField label="Manuscript country of origin" help="African countries only — this is the article's origin, not your own profile country." :error="errors.country">
               <CountrySelect
                 v-model="country"
                 v-bind="countryAttrs"
                 variant="public"
+                scope="africa"
               />
             </UFormField>
 

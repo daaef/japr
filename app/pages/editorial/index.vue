@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { associateEditors, deskEditor, editorInChief, managingEditor } from '#shared/content/editorial-board'
+import type { EditorialBoardMember } from '#shared/types/editorialBoard'
 
 definePageMeta({
   layout: 'public'
@@ -7,6 +7,31 @@ definePageMeta({
 
 useHead({
   title: 'Welcome to JAPR Homepage | Editorial Board'
+})
+
+const { data } = await useFetch<{ members: EditorialBoardMember[] }>('/api/editorial-board', {
+  default: () => ({ members: [] })
+})
+
+// Generic by design: any section an admin creates — existing or new — gets its own
+// heading here with its members underneath, each showing their own role, with no code
+// change required. Section order is derived from its lowest member sortOrder rather
+// than a separate field, since reordering a whole section this size is rare.
+const sections = computed(() => {
+  const bySection = new Map<string, EditorialBoardMember[]>()
+
+  for (const member of data.value.members) {
+    const group = bySection.get(member.section) ?? []
+    group.push(member)
+    bySection.set(member.section, group)
+  }
+
+  return [...bySection.entries()]
+    .map(([section, members]) => {
+      const sorted = [...members].sort((a, b) => a.sortOrder - b.sortOrder)
+      return { section, members: sorted, order: sorted[0]!.sortOrder }
+    })
+    .sort((a, b) => a.order - b.order)
 })
 </script>
 
@@ -22,21 +47,21 @@ useHead({
         </h1>
       </div>
 
-      <div class="mb-14 grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-        <EditorialBoardCard :member="editorInChief" />
-        <EditorialBoardCard :member="managingEditor" />
-        <EditorialBoardCard :member="deskEditor" />
-      </div>
-
-      <h2 class="mb-7 text-center text-xl font-bold text-highlighted">
-        Associate Editors
-      </h2>
-      <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-        <EditorialBoardCard
-          v-for="member in associateEditors"
-          :key="member.name"
-          :member="member"
-        />
+      <div
+        v-for="group in sections"
+        :key="group.section"
+        class="mb-14"
+      >
+        <h2 class="mb-7 text-center text-xl font-bold text-highlighted">
+          {{ group.section }}
+        </h2>
+        <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+          <EditorialBoardCard
+            v-for="member in group.members"
+            :key="member.id"
+            :member="member"
+          />
+        </div>
       </div>
     </section>
   </main>

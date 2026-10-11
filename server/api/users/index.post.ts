@@ -5,11 +5,11 @@ import { db } from '#server/db/client'
 import { accounts, userRoles, users } from '#server/db/schema'
 import { logAdminAction } from '#server/utils/adminAudit'
 import { sendAdminCreatedUserEmail } from '#server/utils/email'
-import { requireAdmin } from '#server/utils/permissions'
+import { requirePermission } from '#server/utils/permissions'
 import { userCreateSchema } from '#shared/validation/users'
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requirePermission(event, 'user', 'create')
   const body = await readValidatedBody(event, payload => userCreateSchema.parse(payload))
 
   const password = await hashPassword(body.password)

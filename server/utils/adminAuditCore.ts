@@ -21,6 +21,7 @@ const HIGH_RISK_ACTIONS = new Set([
   'cleanup',
   'manuscript_published',
   'manuscript_declined',
+  'manuscript_auto_declined',
   'manuscript_desk_declined',
   'manuscript_revisions_requested',
   'review_change_requested'
@@ -37,6 +38,7 @@ const MEDIUM_RISK_ACTIONS = new Set([
   'manuscript_updated',
   'manuscript_revision_submitted',
   'manuscript_approved',
+  'manuscript_auto_approved',
   'manuscript_approved_for_publication',
   'manuscript_sent_to_review',
   'reviewer_assigned',

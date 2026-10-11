@@ -3,10 +3,14 @@ const props = withDefaults(defineProps<{
   variant?: 'public' | 'dashboard' | 'auth'
   id?: string
   required?: boolean
+  /** 'africa' restricts the list to African countries only — used for a manuscript's
+   * country of origin, never for a person's own profile country. */
+  scope?: 'all' | 'africa'
 }>(), {
   variant: 'public',
   id: 'country',
-  required: false
+  required: false,
+  scope: 'all'
 })
 
 const model = defineModel<string>({ default: '' })
@@ -22,6 +26,7 @@ const { data } = await useFetch<{
     countries: Array<{ id: string, name: string }>
   }>
 }>('/api/countries', {
+  query: { scope: props.scope },
   default: () => ({ regions: [] })
 })
 

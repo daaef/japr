@@ -2,10 +2,10 @@ import { eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { users } from '#server/db/schema'
 import { logAdminAction } from '#server/utils/adminAudit'
-import { requireAdmin } from '#server/utils/permissions'
+import { requirePermission } from '#server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requirePermission(event, 'user', 'delete')
   const id = getRouterParam(event, 'id')
 
   if (!id) {

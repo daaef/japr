@@ -6,6 +6,7 @@ import { logAdminAction } from '#server/utils/adminAudit'
 import { projectJournalForViewer } from '#server/utils/journal-visibility'
 import { resolveJournalViewerRole } from '#server/utils/journal-viewer-role'
 import { checkUserPermission } from '#server/utils/permissions'
+import { isAfricanCountry } from '#server/utils/geography'
 import { requireSession } from '#server/utils/session'
 import { MANUSCRIPT_STATUS, TERMINAL_MANUSCRIPT_STATUSES } from '#shared/constants/manuscriptStatus'
 import { journalCreateSchema } from '#shared/validation/journals'
@@ -17,6 +18,13 @@ export default defineEventHandler(async (event) => {
 
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Missing journal id.' })
+  }
+
+  if (body.country !== undefined && !(await isAfricanCountry(body.country))) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Manuscript country must be an African country.'
+    })
   }
 
   const journal = await db.query.journals.findFirst({

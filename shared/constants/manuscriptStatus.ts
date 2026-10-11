@@ -88,7 +88,11 @@ export const ALLOWED_MANUSCRIPT_TRANSITIONS: Record<ManuscriptStatus, Manuscript
     // Reachable when the completed reviewer count stays under the notice threshold but
     // every remaining reviewer ends up declining — all responses are terminal (F11).
     MANUSCRIPT_STATUS.REVIEWED,
-    MANUSCRIPT_STATUS.CHANGES_REQUESTED
+    MANUSCRIPT_STATUS.CHANGES_REQUESTED,
+    // 2-of-3 reviewer consensus resolves the manuscript immediately, before the 3rd
+    // reviewer responds (stakeholder decision, 2026-10-11) — see getEarlyConsensus.
+    MANUSCRIPT_STATUS.APPROVED,
+    MANUSCRIPT_STATUS.DECLINED
   ],
   [MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE]: [
     MANUSCRIPT_STATUS.APPROVED,

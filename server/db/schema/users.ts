@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   uuid
 } from 'drizzle-orm/pg-core'
+import type { NotificationPreferences } from '#shared/validation/notifications'
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -49,18 +50,7 @@ export const users = pgTable('users', {
   reviewPolicyAccepted: boolean('review_policy_accepted').notNull().default(false),
   reviewPolicyAcceptedAt: timestamp('review_policy_accepted_at', { withTimezone: true }),
 
-  notificationPreferences: jsonb('notification_preferences').$type<{
-    email: {
-      manuscript_status: boolean
-      review_assignment: boolean
-      new_submissions: boolean
-    }
-    in_app: {
-      realtime: boolean
-      sound: boolean
-      desktop: boolean
-    }
-  }>(),
+  notificationPreferences: jsonb('notification_preferences').$type<NotificationPreferences>(),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()

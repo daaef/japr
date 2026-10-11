@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   REVIEW_QUORUM,
+  getEarlyConsensus,
   getReviewConsensus,
   getReviewWorkflowStatus,
   hasReviewQuorum
@@ -94,4 +95,34 @@ test('three completed reviews reach the managing-editor notice', () => {
     getReviewWorkflowStatus([reviewed('accept'), reviewed('accept'), reviewed('reject')]),
     MANUSCRIPT_STATUS.READY_FOR_MANAGING_EDITOR_NOTICE
   )
+})
+
+// --- getEarlyConsensus: 2-of-3 auto-resolve (stakeholder decision, 2026-10-11) ---
+
+test('2 accepts resolve to accept before the 3rd reviewer responds', () => {
+  assert.equal(getEarlyConsensus([reviewed('accept'), reviewed('accept'), pending()]), 'accept')
+})
+
+test('2 rejects resolve to reject before the 3rd reviewer responds', () => {
+  assert.equal(getEarlyConsensus([reviewed('reject'), reviewed('reject'), pending()]), 'reject')
+})
+
+test('an accept/reject split is not an early consensus — still waits for the 3rd', () => {
+  assert.equal(getEarlyConsensus([reviewed('accept'), reviewed('reject'), pending()]), null)
+})
+
+test('2 matching revision recommendations are not an early consensus (not in scope)', () => {
+  assert.equal(getEarlyConsensus([reviewed('minor_revision'), reviewed('minor_revision'), pending()]), null)
+})
+
+test('a decline does not count toward the 2 — only 1 real completed review is not enough', () => {
+  assert.equal(getEarlyConsensus([reviewed('accept'), declined(), pending()]), null)
+})
+
+test('2 accepts plus 1 reject still resolves to accept (count-based, not order-based)', () => {
+  assert.equal(getEarlyConsensus([reviewed('accept'), reviewed('accept'), reviewed('reject')]), 'accept')
+})
+
+test('all 3 agreeing still resolves via the same early-consensus path', () => {
+  assert.equal(getEarlyConsensus([reviewed('accept'), reviewed('accept'), reviewed('accept')]), 'accept')
 })

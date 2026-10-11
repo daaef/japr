@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EditorialBoardMember } from '#shared/content/editorial-board'
+import type { EditorialBoardMember } from '#shared/types/editorialBoard'
 import { getInitials } from '~/utils/initials'
 
 defineProps<{

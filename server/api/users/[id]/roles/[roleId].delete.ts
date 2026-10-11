@@ -2,10 +2,10 @@ import { and, eq } from 'drizzle-orm'
 import { db } from '#server/db/client'
 import { userRoles } from '#server/db/schema'
 import { logAdminAction } from '#server/utils/adminAudit'
-import { requireAdmin } from '#server/utils/permissions'
+import { requirePermission } from '#server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requirePermission(event, 'user', 'update')
   const id = getRouterParam(event, 'id')
   const roleId = getRouterParam(event, 'roleId')
 

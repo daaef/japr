@@ -148,6 +148,20 @@
       "when": 1785888000003,
       "tag": "0020_collapse_desk_editor_role",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785888000004,
+      "tag": "0021_africa_only_manuscript_country",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785888000005,
+      "tag": "0022_editorial_board_table",
+      "breakpoints": true
     }
   ]
 }

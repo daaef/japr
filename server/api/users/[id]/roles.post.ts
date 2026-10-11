@@ -3,14 +3,14 @@ import { z } from 'zod'
 import { db } from '#server/db/client'
 import { userRoles } from '#server/db/schema'
 import { logAdminAction } from '#server/utils/adminAudit'
-import { requireAdmin } from '#server/utils/permissions'
+import { requirePermission } from '#server/utils/permissions'
 
 const bodySchema = z.object({
   roleId: z.string().uuid()
 })
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
+  await requirePermission(event, 'user', 'update')
   const id = getRouterParam(event, 'id')
   const body = await readValidatedBody(event, payload => bodySchema.parse(payload))
 

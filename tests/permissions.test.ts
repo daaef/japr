@@ -184,6 +184,10 @@ test('copy_desk_editor has the union of EIC + managing editor editorial permissi
   assert.equal(copyDeskActions.includes('journal:prepare_publication'), true)
   // Ping
   assert.equal(copyDeskActions.includes('ping:send'), true)
+  // Admin backup duty (create/manage users when admin is unavailable)
+  assert.equal(copyDeskActions.includes('user:create'), true)
+  assert.equal(copyDeskActions.includes('user:update'), true)
+  assert.equal(copyDeskActions.includes('user:delete'), true)
 })
 
 test('send-ping permission is granted to editor roles but not reviewer/author roles', () => {

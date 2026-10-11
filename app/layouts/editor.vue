@@ -17,6 +17,13 @@ const showReadyForNotice = computed(() => {
   return roles.includes('managing_editor') || roles.includes('editor_in_chief')
 })
 
+// Admin backup duty (the stakeholder's "desk editor can do this too") — not every
+// editor-tier role, unlike most of this shared nav.
+const showAdminBackupLinks = computed(() => {
+  const roles = currentUser.value?.roles ?? []
+  return roles.includes('admin') || roles.includes('copy_desk_editor')
+})
+
 const defaultEditorSummary = (): EditorDashboardSummary => ({
   deskReview: 0,
   legacyPending: 0,
@@ -316,6 +323,37 @@ const notificationsGroup = useSidebarGroup(['/editor/notifications'])
                 </li>
               </ul>
             </li>
+
+          <li
+            v-if="showAdminBackupLinks"
+            class="border-t border-white/10 pt-5"
+          >
+            <NuxtLink
+              to="/admin/editorial-board"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/editorial-board')"
+            >
+              <UIcon
+                name="i-lucide-users"
+                class="text-xl"
+              />
+              <span>Editorial Board</span>
+            </NuxtLink>
+          </li>
+
+          <li v-if="showAdminBackupLinks">
+            <NuxtLink
+              to="/admin/users"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/users')"
+            >
+              <UIcon
+                name="i-lucide-user-plus"
+                class="text-xl"
+              />
+              <span>Users</span>
+            </NuxtLink>
+          </li>
 
           <li class="border-t border-white/10 pt-5">
             <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Settings</span>

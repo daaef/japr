@@ -3,6 +3,7 @@ import { db } from '#server/db/client'
 import { journals, manuscriptVersions, userInterests, userRoles, roles, users } from '#server/db/schema'
 import { checkUserPermission } from '#server/utils/permissions'
 import { markFileAttached, verifyPendingUpload } from '#server/utils/fileOwnership'
+import { isAfricanCountry } from '#server/utils/geography'
 import { requireSession } from '#server/utils/session'
 import { slugify } from '#server/utils/slug'
 import { journalCreateSchema } from '#shared/validation/journals'
@@ -39,6 +40,13 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 403,
       statusMessage: 'Select your research interests before submitting a manuscript.'
+    })
+  }
+
+  if (!(await isAfricanCountry(body.country))) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Manuscript country must be an African country.'
     })
   }
 
