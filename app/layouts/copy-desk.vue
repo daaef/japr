@@ -7,6 +7,15 @@ import { usePageHeading } from '~/composables/usePageHeading'
 const pageHeading = usePageHeading()
 const { data: currentUser, refresh } = useCurrentUser()
 const { dashboardLinkClassDark } = useDashboardNavigation()
+
+const canManageEditorialBoard = computed(() =>
+  currentUser.value?.permissions?.includes('editorial_board:manage')
+)
+const canManageUsers = computed(() =>
+  currentUser.value?.permissions?.includes('user:create')
+    || currentUser.value?.permissions?.includes('user:edit')
+    || currentUser.value?.permissions?.includes('user:delete')
+)
 const displayName = computed(() => {
   const name = currentUser.value?.user?.name?.trim() ?? ''
   return name.split(/\s+/)[0] ?? ''
@@ -110,9 +119,9 @@ function closeSidebar() {
         <ul class="flex flex-col gap-3">
           <li>
             <NuxtLink
-              to="/editor/copy-desk"
+              to="/copy-desk"
               class="flex items-center justify-between gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClassDark('/editor/copy-desk', true)"
+              :class="dashboardLinkClassDark('/copy-desk', true)"
             >
               <div class="flex items-center gap-2">
                 <UIcon
@@ -132,9 +141,51 @@ function closeSidebar() {
 
           <li>
             <NuxtLink
-              to="/editor/settings"
+              to="/copy-desk/users"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
-              :class="dashboardLinkClassDark('/editor/settings')"
+              :class="dashboardLinkClassDark('/copy-desk/users')"
+            >
+              <UIcon
+                name="i-lucide-users"
+                class="text-xl"
+              />
+              <span>Ping Users</span>
+            </NuxtLink>
+          </li>
+
+          <li v-if="canManageEditorialBoard">
+            <NuxtLink
+              to="/admin/editorial-board"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/editorial-board')"
+            >
+              <UIcon
+                name="i-lucide-users"
+                class="text-xl"
+              />
+              <span>Editorial Board</span>
+            </NuxtLink>
+          </li>
+
+          <li v-if="canManageUsers">
+            <NuxtLink
+              to="/admin/users"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/admin/users')"
+            >
+              <UIcon
+                name="i-lucide-user-plus"
+                class="text-xl"
+              />
+              <span>Manage Users</span>
+            </NuxtLink>
+          </li>
+
+          <li>
+            <NuxtLink
+              to="/copy-desk/settings"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
+              :class="dashboardLinkClassDark('/copy-desk/settings')"
             >
               <UIcon
                 name="i-lucide-settings"
@@ -186,7 +237,7 @@ function closeSidebar() {
           <DashboardProfileDropdown
             :display-name="displayName"
             :full-name="currentUser.user?.name"
-            settings-path="/editor/settings"
+            settings-path="/copy-desk/settings"
             @sign-out="signOut"
           />
         </div>

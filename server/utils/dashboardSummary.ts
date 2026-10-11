@@ -77,8 +77,16 @@ export function buildEditorDashboardSummary(rows: JournalStatusRow[]): EditorDas
     }
   }
 
-  const approved = byStatus[MANUSCRIPT_STATUS.APPROVED]
-    + byStatus[MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT]
+  const inCopyDesk = (row: typeof rows[number]) =>
+    row.copyEditStatus === 'ready_for_publication' || row.copyEditStatus === 'published'
+
+  const approved = rows.filter(row =>
+    (
+      row.approvalStatus === MANUSCRIPT_STATUS.APPROVED
+      || row.approvalStatus === MANUSCRIPT_STATUS.APPROVED_WITH_COMMENT
+    )
+    && !inCopyDesk(row)
+  ).length
 
   const copyDesk = rows.filter(row =>
     (

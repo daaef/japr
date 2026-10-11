@@ -2,6 +2,7 @@
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
 definePageMeta({
+  layout: 'editor',
   middleware: ['auth', 'role'],
   requiredRoles: ['admin', 'copy_desk_editor']
 })

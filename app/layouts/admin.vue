@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ADMIN_ROLES } from '#shared/constants/roles'
 import { authClient } from '~~/lib/auth-client'
 import { useDashboardNavigation } from '~/composables/useDashboardNavigation'
 import { usePageHeading } from '~/composables/usePageHeading'
@@ -37,6 +38,19 @@ function closeSidebar() {
 const categoriesGroup = useSidebarGroup(['/admin/categories'])
 const rolesGroup = useSidebarGroup(['/admin/roles', '/admin/permissions'])
 const notificationsGroup = useSidebarGroup(['/admin/notifications'])
+
+const permissions = computed(() => currentUser.value?.permissions ?? [])
+const isAdmin = computed(() =>
+  (currentUser.value?.roles ?? []).some(role => (ADMIN_ROLES as readonly string[]).includes(role))
+)
+const canManageEditorialBoard = computed(() =>
+  permissions.value.includes('editorial_board:manage')
+)
+const canManageUsers = computed(() =>
+  permissions.value.includes('user:create')
+    || permissions.value.includes('user:edit')
+    || permissions.value.includes('user:delete')
+)
 </script>
 
 <template>
@@ -81,7 +95,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
 
       <nav class="flex-1 overflow-y-auto px-4 pb-6">
         <ul class="flex flex-col gap-3">
-          <li>
+          <li v-if="isAdmin">
             <NuxtLink
               to="/admin"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
@@ -95,7 +109,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </NuxtLink>
           </li>
 
-          <li>
+          <li v-if="isAdmin">
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
@@ -146,7 +160,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </ul>
           </li>
 
-          <li>
+          <li v-if="canManageEditorialBoard">
             <NuxtLink
               to="/admin/editorial-board"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
@@ -160,7 +174,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </NuxtLink>
           </li>
 
-          <li>
+          <li v-if="isAdmin">
             <NuxtLink
               to="/admin/journals"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
@@ -174,7 +188,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </NuxtLink>
           </li>
 
-          <li>
+          <li v-if="isAdmin">
             <NuxtLink
               to="/admin/audit/dashboard"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
@@ -188,11 +202,14 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </NuxtLink>
           </li>
 
-          <li class="border-t border-white/10 pt-5">
+          <li
+            v-if="isAdmin"
+            class="border-t border-white/10 pt-5"
+          >
             <span class="block px-4 text-xs font-semibold uppercase tracking-wide text-marigold-300">Administration</span>
           </li>
 
-          <li>
+          <li v-if="isAdmin">
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
@@ -236,7 +253,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </ul>
           </li>
 
-          <li>
+          <li v-if="canManageUsers">
             <NuxtLink
               to="/admin/users"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
@@ -250,7 +267,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </NuxtLink>
           </li>
 
-          <li>
+          <li v-if="isAdmin">
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-start capitalize transition-colors"
@@ -294,7 +311,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </ul>
           </li>
 
-          <li>
+          <li v-if="isAdmin">
             <NuxtLink
               to="/admin/settings"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"
@@ -308,7 +325,7 @@ const notificationsGroup = useSidebarGroup(['/admin/notifications'])
             </NuxtLink>
           </li>
 
-          <li v-if="showDevMail">
+          <li v-if="showDevMail && isAdmin">
             <NuxtLink
               to="/mail"
               class="flex items-center gap-2 rounded-lg px-4 py-2 capitalize transition-colors"

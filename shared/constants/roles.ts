@@ -18,6 +18,7 @@ export const reviewerRoleKeys = ['associate_editor', 'external_reviewer'] as con
 export const ADMIN_ROLES = ['admin'] as const
 export const AUTHOR_ROLES = ['author', 'admin'] as const
 export const EDITOR_ROLES = editorRoleKeys
+export const COPY_DESK_ROLES = ['copy_desk_editor'] as const
 export const REVIEWER_ROLES = ['admin', ...reviewerRoleKeys] as const
 
 export function hasEditorRole(roles: readonly string[]): boolean {

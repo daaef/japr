@@ -151,6 +151,26 @@ body {
   color: rgb(28 25 23);
 }
 
+/* Make interactive elements show a pointer cursor instead of the default arrow */
+a,
+button,
+[role="button"],
+[type="submit"],
+[type="button"],
+[type="reset"],
+label[for],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+[type="submit"]:disabled,
+[type="button"]:disabled {
+  cursor: not-allowed;
+}
+
 /* Public site: neutralize Nuxt UI link defaults inside journal marketing shell */
 .journal-site header a,
 .journal-site #hero a:not(.btn):not([class*="bg-"]) {

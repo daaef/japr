@@ -218,7 +218,7 @@ const summary = computed(() => summaryData.value.summary)
             {{ summary.copyDesk }} manuscript(s) have been handed off and are ready to be marked published.
           </p>
         </div>
-        <UButton to="/editor/copy-desk" color="success" class="shrink-0">
+        <UButton to="/copy-desk" color="success" class="shrink-0">
           Publish
         </UButton>
       </div>
@@ -295,7 +295,7 @@ const summary = computed(() => summaryData.value.summary)
           </div>
           <span class="text-sm font-bold leading-snug text-highlighted">Review Outcomes</span>
         </NuxtLink>
-        <NuxtLink to="/editor/copy-desk" class="flex flex-col items-start gap-3.5 rounded-[14px] border border-default bg-default p-5 transition hover:shadow-md">
+        <NuxtLink to="/copy-desk" class="flex flex-col items-start gap-3.5 rounded-[14px] border border-default bg-default p-5 transition hover:shadow-md">
           <div class="flex size-9.5 items-center justify-center rounded-[10px] bg-primary-100 text-primary-600">
             <UIcon name="i-lucide-layout-grid" class="size-4.5" />
           </div>

@@ -17,12 +17,20 @@ const showReadyForNotice = computed(() => {
   return roles.includes('managing_editor') || roles.includes('editor_in_chief')
 })
 
-// Admin backup duty (the stakeholder's "desk editor can do this too") — not every
-// editor-tier role, unlike most of this shared nav.
-const showAdminBackupLinks = computed(() => {
-  const roles = currentUser.value?.roles ?? []
-  return roles.includes('admin') || roles.includes('copy_desk_editor')
-})
+// Admin backup duty (the stakeholder's "desk editor can do this too") — driven by
+// permission, not role name, so it stays correct if the role's permissions change.
+const permissions = computed(() => currentUser.value?.permissions ?? [])
+const canManageEditorialBoard = computed(() =>
+  permissions.value.includes('editorial_board:manage')
+)
+const canManageUsers = computed(() =>
+  permissions.value.includes('user:create')
+    || permissions.value.includes('user:edit')
+    || permissions.value.includes('user:delete')
+)
+const showAdminBackupLinks = computed(() =>
+  canManageEditorialBoard.value || canManageUsers.value
+)
 
 const defaultEditorSummary = (): EditorDashboardSummary => ({
   deskReview: 0,
@@ -87,7 +95,7 @@ const journalsGroup = useSidebarGroup([
   '/editor/published',
   '/editor/revision-requested',
   '/editor/declined',
-  '/editor/copy-desk'
+  '/copy-desk'
 ])
 const notificationsGroup = useSidebarGroup(['/editor/notifications'])
 </script>
@@ -308,9 +316,9 @@ const notificationsGroup = useSidebarGroup(['/editor/notifications'])
                 </li>
                 <li>
                   <NuxtLink
-                    to="/editor/copy-desk"
+                    to="/copy-desk"
                     class="flex items-center justify-between gap-2 text-sm"
-                    :class="dashboardSubLinkClassDark('/editor/copy-desk')"
+                    :class="dashboardSubLinkClassDark('/copy-desk')"
                   >
                     <span>Copy Desk</span>
                     <span

@@ -20,7 +20,7 @@ test('shared authenticated pages resolve the correct workspace layout', () => {
   assert.equal(resolveRoleLayout(['admin']), 'admin')
   assert.equal(resolveRoleLayout(['editor_in_chief']), 'editor')
   assert.equal(resolveRoleLayout(['managing_editor']), 'editor')
-  assert.equal(resolveRoleLayout(['copy_desk_editor']), 'editor')
+  assert.equal(resolveRoleLayout(['copy_desk_editor']), 'copy-desk')
   assert.equal(resolveRoleLayout(['associate_editor']), 'reviewer')
   assert.equal(resolveRoleLayout(['external_reviewer']), 'reviewer')
   assert.equal(resolveRoleLayout(['author']), 'author')
@@ -46,7 +46,7 @@ function permissionsFor(roleName: string) {
 test('superadmin sentinel permission exists and is granted only to admin', () => {
   const sentinel = permissionDefinitions.find(p => p.resource === '*' && p.action === 'manage')
   assert.ok(sentinel, 'sentinel *:manage permission must exist')
-  assert.equal(sentinel.name, 'superadmin')
+  assert.equal(sentinel?.name, 'superadmin')
 
   for (const role of systemRoles) {
     if (role.name === 'admin') {
@@ -225,8 +225,8 @@ test('ping templates have unique ids and valid target roles', () => {
 test('getPingTemplate returns the correct template or undefined', () => {
   const found = getPingTemplate('remind-reviewer-deadline')
   assert.ok(found)
-  assert.equal(found.id, 'remind-reviewer-deadline')
-  assert.equal(found.label, 'Review deadline reminder')
+  assert.equal(found?.id, 'remind-reviewer-deadline')
+  assert.equal(found?.label, 'Review deadline reminder')
 
   assert.equal(getPingTemplate('nonexistent'), undefined)
 })

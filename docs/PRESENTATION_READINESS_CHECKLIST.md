@@ -51,7 +51,17 @@ session (2026-10-10/11). Status legend:
 
 ---
 
-## 4. Approval workflow
+## 4. Admin-editable editorial board
+
+| Check | Status | How to test |
+|---|---|---|
+| Editorial board is admin-editable (`/admin/editorial-board`) | ✅ fixed 10-11 | Log in as `admin` or `copy_desk_editor`, open Editorial Board in the sidebar, add/edit/reorder/remove members. Changes should show on the public `/editorial` page without a code deploy. |
+| Sections are free text, not fixed roles | ✅ | Add a new section name (e.g. "Advisory Board") and a member; confirm the public page renders the new section. |
+| Existing 9 board members were carried over | ✅ fixed 10-11 | Open `/editorial` as a public visitor and confirm the current 9 members appear under "Leadership" and "Associate Editors". |
+
+---
+
+## 5. Approval workflow
 
 | Check | Status | How to test |
 |---|---|---|
@@ -61,7 +71,7 @@ session (2026-10-10/11). Status legend:
 
 ---
 
-## 5. Academic profile fields
+## 6. Academic profile fields
 
 | Check | Status | How to test |
 |---|---|---|
@@ -72,7 +82,7 @@ session (2026-10-10/11). Status legend:
 
 ---
 
-## 6. Geographic/country filtering
+## 7. Geographic/country filtering
 
 | Check | Status | How to test |
 |---|---|---|
@@ -80,7 +90,7 @@ session (2026-10-10/11). Status legend:
 
 ---
 
-## 7. "Ping" feature
+## 8. "Ping" feature
 
 | Check | Status | How to test |
 |---|---|---|
@@ -88,7 +98,7 @@ session (2026-10-10/11). Status legend:
 
 ---
 
-## 8. Book Review Editor role
+## 9. Book Review Editor role
 
 | Check | Status |
 |---|---|
@@ -96,7 +106,7 @@ session (2026-10-10/11). Status legend:
 
 ---
 
-## 9. Other known issues from the original notes
+## 10. Other known issues from the original notes
 
 | Issue | Status |
 |---|---|
@@ -110,7 +120,7 @@ session (2026-10-10/11). Status legend:
 
 ## Summary — what to say if asked
 
-**Fully resolved and ready to demo:** three-person simultaneous notification, desk/copy-desk editor backup reviewer assignment, regional country grouping, ping, profile field limits, CopyDesk publish step, hidden ME name on published articles, DOCX submission + preview, Africa-only manuscript country, automatic 2-of-3 reviewer approval/rejection.
+**Fully resolved and ready to demo:** three-person simultaneous notification, desk/copy-desk editor backup reviewer assignment, Copy Desk Editor user creation as admin backup, admin-editable editorial board, regional country grouping, ping, profile field limits, CopyDesk publish step, hidden ME name on published articles, DOCX submission + preview, Africa-only manuscript country, automatic 2-of-3 reviewer approval/rejection.
 
 **Changed from the original ask (explain proactively):** DOCX is now the standard format instead of auto-converting to PDF. Approval is now fully automatic on 2-of-3 agreement — no editor click at all for that case, which is a bigger change than a simple vote-count tweak since it removes human confirmation; a genuine split still goes to the editor as before.
 

@@ -5,7 +5,11 @@ export function resolveRoleLayout(roles: string[]): RoleLayout {
     return 'admin'
   }
 
-  if (roles.includes('editor_in_chief') || roles.includes('managing_editor') || roles.includes('copy_desk_editor')) {
+  if (roles.includes('copy_desk_editor')) {
+    return 'copy-desk'
+  }
+
+  if (roles.includes('editor_in_chief') || roles.includes('managing_editor')) {
     return 'editor'
   }
 
@@ -25,7 +29,11 @@ export function resolveWorkspacePath(roles: string[], options?: { hasInterests?:
     return '/admin'
   }
 
-  if (roles.includes('editor_in_chief') || roles.includes('managing_editor') || roles.includes('copy_desk_editor')) {
+  if (roles.includes('copy_desk_editor')) {
+    return '/copy-desk'
+  }
+
+  if (roles.includes('editor_in_chief') || roles.includes('managing_editor')) {
     return '/editor'
   }
 

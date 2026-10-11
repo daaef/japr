@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorialBoardMember } from '#shared/types/editorialBoard'
 definePageMeta({
+  layout: 'editor',
   middleware: ['auth', 'role'],
   // admin, or copy_desk_editor as admin-backup duty (the stakeholder's "desk editor can
   // do this too") — not ADMIN_ROLES, since this one page is intentionally broader.
