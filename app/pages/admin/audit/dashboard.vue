@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { auditActionLabel } from '~/utils/displayLabels'
 import { ADMIN_ROLES } from '#shared/constants/roles'
 
 definePageMeta({
@@ -90,7 +91,7 @@ const stats = computed(() => data.value)
         </p>
         <div v-else class="flex flex-col gap-3">
           <div v-for="row in stats.actionsByType" :key="row.action" class="flex items-center justify-between gap-3">
-            <span class="capitalize">{{ row.action.replaceAll('_', ' ') }}</span>
+            <span>{{ auditActionLabel(row.action) }}</span>
             <UBadge color="primary" variant="subtle">{{ row.count }}</UBadge>
           </div>
         </div>
@@ -131,7 +132,7 @@ const stats = computed(() => data.value)
             class="block rounded-2xl border border-default p-3 hover:bg-primary-50"
           >
             <div class="flex items-center justify-between gap-2">
-              <span class="font-semibold capitalize text-highlighted">{{ log.action.replaceAll('_', ' ') }}</span>
+              <span class="font-semibold text-highlighted">{{ auditActionLabel(log.action) }}</span>
               <span class="text-sm text-muted">{{ new Date(log.createdAt).toLocaleString() }}</span>
             </div>
             <p class="mb-0 text-sm text-muted">{{ log.description }}</p>

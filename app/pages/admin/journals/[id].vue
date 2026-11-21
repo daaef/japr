@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { versionStatusLabel } from '~/utils/displayLabels'
 import { $fetch as fetch } from 'ofetch'
 import { ADMIN_ROLES } from '#shared/constants/roles'
 import { getInitials } from '~/utils/initials'
@@ -351,7 +352,7 @@ async function deactivateJournal() {
                     {{ version.changesSummary }}
                   </p>
                   <p class="mt-1 text-xs text-dimmed">
-                    {{ formatDate(version.createdAt) }} · {{ version.status }}
+                    {{ formatDate(version.createdAt) }} · {{ versionStatusLabel(version.status) }}
                   </p>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { auditActionLabel, auditResourceLabel, riskLevelLabel } from '~/utils/displayLabels'
 import { ADMIN_ROLES } from '#shared/constants/roles'
 import { extractApiErrorMessage } from '~/utils/extractApiErrorMessage'
 
@@ -48,9 +49,9 @@ const logColumns = [
   { accessorKey: 'createdAt', header: 'Timestamp' },
   { accessorKey: 'userName', header: 'Admin' },
   { accessorKey: 'action', header: 'Action' },
-  { accessorKey: 'resourceType', header: 'Resource' },
+  { accessorKey: 'resourceType', header: 'Item' },
   { accessorKey: 'riskLevel', header: 'Risk' },
-  { accessorKey: 'ipAddress', header: 'IP' },
+  { accessorKey: 'ipAddress', header: 'Network address' },
   { id: 'actions', header: '' }
 ]
 
@@ -206,15 +207,15 @@ async function cleanupLogs() {
           <span class="block text-sm text-muted">{{ row.original.userEmail }}</span>
         </template>
         <template #action-cell="{ row }">
-          <span class="capitalize">{{ row.original.action.replaceAll('_', ' ') }}</span>
+          <span>{{ auditActionLabel(row.original.action) }}</span>
         </template>
         <template #resourceType-cell="{ row }">
-          <span class="font-semibold text-highlighted">{{ row.original.resourceType }}</span>
+          <span class="font-semibold text-highlighted">{{ auditResourceLabel(row.original.resourceType) }}</span>
           <span v-if="row.original.resourceId" class="block text-sm text-muted">{{ row.original.resourceId }}</span>
         </template>
         <template #riskLevel-cell="{ row }">
           <UBadge :color="row.original.riskLevel === 'high' ? 'error' : row.original.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle">
-            {{ row.original.riskLevel }}
+            {{ riskLevelLabel(row.original.riskLevel) }}
           </UBadge>
         </template>
         <template #ipAddress-cell="{ row }">

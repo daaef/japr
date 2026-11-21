@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { auditActionLabel, auditResourceLabel, riskLevelLabel } from '~/utils/displayLabels'
 import { ADMIN_ROLES } from '#shared/constants/roles'
 
 definePageMeta({
@@ -70,8 +71,8 @@ function formatJson(value: Record<string, unknown> | null) {
             {{ log.description || 'Review administrator activity details.' }}
           </p>
         </div>
-        <UBadge :color="log.riskLevel === 'high' ? 'error' : log.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle" class="capitalize">
-          {{ log.riskLevel }} risk
+        <UBadge :color="log.riskLevel === 'high' ? 'error' : log.riskLevel === 'medium' ? 'warning' : 'success'" variant="subtle">
+          {{ riskLevelLabel(log.riskLevel) }} risk
         </UBadge>
       </div>
     </UCard>
@@ -86,21 +87,21 @@ function formatJson(value: Record<string, unknown> | null) {
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <UCard>
           <template #header>
-            <h4 class="text-base font-semibold text-highlighted">Actor</h4>
+            <h4 class="text-base font-semibold text-highlighted">Done by</h4>
           </template>
           <p class="mb-1 font-semibold text-highlighted">{{ log.userName ?? 'System' }}</p>
           <p class="mb-3 text-sm text-muted">{{ log.userEmail ?? 'No email recorded' }}</p>
-          <p class="mb-1"><span class="font-semibold text-highlighted">IP:</span> {{ log.ipAddress ?? 'Unknown' }}</p>
-          <p class="mb-0"><span class="font-semibold text-highlighted">User agent:</span> {{ log.userAgent ?? 'Unknown' }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">Network address:</span> {{ log.ipAddress ?? 'Unknown' }}</p>
+          <p class="mb-0"><span class="font-semibold text-highlighted">Browser / device:</span> {{ log.userAgent ?? 'Unknown' }}</p>
         </UCard>
 
         <UCard>
           <template #header>
             <h4 class="text-base font-semibold text-highlighted">Action</h4>
           </template>
-          <p class="mb-1 capitalize"><span class="font-semibold text-highlighted">Action:</span> {{ log.action.replaceAll('_', ' ') }}</p>
-          <p class="mb-1"><span class="font-semibold text-highlighted">Resource:</span> {{ log.resourceType }}</p>
-          <p class="mb-1"><span class="font-semibold text-highlighted">Resource ID:</span> {{ log.resourceId ?? 'None' }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">Action:</span> {{ auditActionLabel(log.action) }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">Item:</span> {{ auditResourceLabel(log.resourceType) }}</p>
+          <p class="mb-1"><span class="font-semibold text-highlighted">Item reference:</span> {{ log.resourceId ?? 'None' }}</p>
           <p class="mb-0"><span class="font-semibold text-highlighted">Time:</span> {{ new Date(log.createdAt).toLocaleString() }}</p>
         </UCard>
 
