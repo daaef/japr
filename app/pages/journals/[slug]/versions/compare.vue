@@ -20,13 +20,14 @@ const selected = reactive({
   right: ''
 })
 
-const versionItems = computed(() => [
-  { label: 'Select version', value: '' },
-  ...(versionsData.value?.versions || []).map(version => ({
+// No empty-string "Select version" item: Reka UI's Select forbids '' as an item value.
+// The prompt is the USelect placeholder instead, shown while selected.left/right is ''.
+const versionItems = computed(() =>
+  (versionsData.value?.versions || []).map(version => ({
     label: `Version ${version.versionNumber}`,
     value: version.id
   }))
-])
+)
 
 const compareResult = ref<{ html: string } | null>(null)
 const compareLoading = ref(false)
@@ -74,6 +75,7 @@ async function runCompare() {
           <USelect
             v-model="selected.left"
             :items="versionItems"
+            placeholder="Select version"
             class="w-full"
           />
         </UFormField>
@@ -82,6 +84,7 @@ async function runCompare() {
           <USelect
             v-model="selected.right"
             :items="versionItems"
+            placeholder="Select version"
             class="w-full"
           />
         </UFormField>

@@ -25,7 +25,9 @@ type AuditLogRow = {
 const filters = reactive({
   action: '',
   resourceType: '',
-  riskLevel: '',
+  // 'all' (not '') because Reka UI's Select forbids an empty-string item value — it
+  // throws during SSR and 500s the whole page.
+  riskLevel: 'all',
   from: '',
   to: '',
   page: 1
@@ -36,7 +38,7 @@ const cleanupError = ref('')
 const cleaning = ref(false)
 
 const riskLevelItems = [
-  { label: 'All', value: '' },
+  { label: 'All', value: 'all' },
   { label: 'Low', value: 'low' },
   { label: 'Medium', value: 'medium' },
   { label: 'High', value: 'high' }
@@ -57,7 +59,7 @@ const query = computed(() => ({
   pageSize: 15,
   action: filters.action || undefined,
   resourceType: filters.resourceType || undefined,
-  riskLevel: filters.riskLevel || undefined,
+  riskLevel: filters.riskLevel === 'all' ? undefined : filters.riskLevel,
   from: filters.from || undefined,
   to: filters.to || undefined
 }))
@@ -88,7 +90,7 @@ const exportUrl = computed(() => {
 function resetFilters() {
   filters.action = ''
   filters.resourceType = ''
-  filters.riskLevel = ''
+  filters.riskLevel = 'all'
   filters.from = ''
   filters.to = ''
   filters.page = 1

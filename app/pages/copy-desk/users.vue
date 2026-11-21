@@ -26,7 +26,9 @@ const { data: usersData, refresh } = await useFetch<{
 const users = computed(() => usersData.value?.users ?? [])
 
 const selectedUser = ref<typeof users.value[number] | null>(null)
-const selectedTemplateId = ref<string>('')
+// 'custom' (not '') because Reka UI's Select forbids an empty-string item value.
+const CUSTOM_TEMPLATE = 'custom'
+const selectedTemplateId = ref<string>(CUSTOM_TEMPLATE)
 const customMessage = ref('')
 const sending = ref(false)
 const feedback = ref('')
@@ -37,7 +39,7 @@ const modalOpen = computed({
   set: (value: boolean) => {
     if (!value) {
       selectedUser.value = null
-      selectedTemplateId.value = ''
+      selectedTemplateId.value = CUSTOM_TEMPLATE
       customMessage.value = ''
       feedback.value = ''
     }
@@ -46,13 +48,13 @@ const modalOpen = computed({
 
 function openPing(user: typeof users.value[number]) {
   selectedUser.value = user
-  selectedTemplateId.value = ''
+  selectedTemplateId.value = CUSTOM_TEMPLATE
   customMessage.value = ''
   feedback.value = ''
 }
 
 watch(selectedTemplateId, (id) => {
-  if (!id) {
+  if (!id || id === CUSTOM_TEMPLATE) {
     return
   }
   const template = userPingTemplates.find(t => t.id === id)
@@ -72,7 +74,7 @@ async function sendPing() {
       method: 'POST',
       body: {
         targetUserId: selectedUser.value.id,
-        templateId: selectedTemplateId.value || undefined,
+        templateId: selectedTemplateId.value === CUSTOM_TEMPLATE ? undefined : selectedTemplateId.value,
         customMessage: customMessage.value.trim() || undefined
       }
     })
@@ -159,7 +161,7 @@ function roleLabel(role: string) {
             <USelect
               v-model="selectedTemplateId"
               :items="[
-                { label: 'Custom / write your own', value: '' },
+                { label: 'Custom / write your own', value: CUSTOM_TEMPLATE },
                 ...userPingTemplates.map(t => ({ label: t.label, value: t.id }))
               ]"
               placeholder="Choose a preset or write your own"
@@ -196,7 +198,7 @@ function roleLabel(role: string) {
             <UButton
               color="warning"
               :loading="sending"
-              :disabled="!customMessage.trim() && !selectedTemplateId"
+              :disabled="!customMessage.trim() && selectedTemplateId === CUSTOM_TEMPLATE"
               @click="sendPing"
             >
               Send Ping
